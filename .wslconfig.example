@@ -1,0 +1,15 @@
+# WSL2 resource cap for Docker Desktop on Windows 11 (PITFALLS Pitfall 9).
+# Install: copy this file to %USERPROFILE%\.wslconfig, then run `wsl --shutdown`
+# and restart Docker Desktop. See docs/dev-setup.md.
+#
+# memory= caps the WSL2 VM (Vmmem). Tune to YOUR host: leave at least 8 GB
+# for Windows + browsers. 16GB suits a typical 24-32 GB machine.
+
+[wsl2]
+memory=16GB
+processors=6
+swap=8GB
+
+[experimental]
+# Gradually return unused WSL2 memory to Windows instead of holding it forever
+autoMemoryReclaim=gradual

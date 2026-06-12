@@ -1,0 +1,9 @@
+# Normalize line endings (Windows host, Linux containers — PITFALLS Pitfall 5 CRLF guard)
+* text=auto
+
+# Files executed inside Linux containers MUST be LF
+*.sh text eol=lf
+Dockerfile* text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

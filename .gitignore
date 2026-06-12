@@ -1,0 +1,21 @@
+# Secrets — never commit (.env.example documents the shape)
+.env
+
+# Node
+node_modules/
+.next/
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+.pytest_cache/
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Generated per-app test repos — platform output, not platform source
+# (keep the README that documents the directory's purpose)
+workspaces/*
+!workspaces/README.md
