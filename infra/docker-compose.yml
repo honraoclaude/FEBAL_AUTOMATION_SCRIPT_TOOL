@@ -1,0 +1,64 @@
+# Platform core stack — Phase 1 (plan 01-01).
+#
+# Canonical invocation (from the REPO ROOT — the single mechanism for env interpolation):
+#   docker compose -f infra/docker-compose.yml --env-file .env up -d --wait
+# The repo-root .env is the one config source shared by compose and hybrid host mode (D-09);
+# ${VAR} below interpolates from that --env-file. Do not add per-service env_file keys.
+#
+# api / web / saucedemo services are appended by plans 01-02 / 01-04 / 01-07.
+# Dormant services (neo4j, rabbitmq, elasticsearch) carry `profiles:` so a plain
+# `up` NEVER starts them (D-08); they activate in Phases 3 / 7 / 9-10.
+#
+# Memory limits use service-level mem_limit (unconditionally enforced in non-swarm
+# compose) — NEVER deploy.resources.limits (PITFALLS Pitfall 3 / RESEARCH Pattern 1).
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    mem_limit: 512m
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # exposed for hybrid host mode (D-09)
+
+  redis:
+    image: redis:8-alpine
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "6379:6379" # exposed for hybrid host mode (D-09)
+
+  # --- Dormant: defined now, activated by later phases (D-08) ---
+  neo4j:
+    image: neo4j:2025
+    profiles: [graph] # Phase 3/5
+    mem_limit: 2g
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    profiles: [queue] # Phase 7
+    mem_limit: 512m
+
+  elasticsearch:
+    image: elasticsearch:9.4.1
+    profiles: [search] # Phase 9/10
+    mem_limit: 1536m
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx1g"
+      discovery.type: single-node
+
+volumes:
+  pgdata:
