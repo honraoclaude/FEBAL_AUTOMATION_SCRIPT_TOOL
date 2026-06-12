@@ -714,23 +714,24 @@ def redact_sensitive(logger, method_name, event_dict):
 | A7 | pytest-playwright UI tests run on the host (not in a container) against http://localhost:3000 | Validation Architecture | Low — containerized browsers come with Phase 7 workers |
 | A8 | All package installs (slopcheck unavailable) — see Package Legitimacy Audit | Standard Stack | Very low — all packages pinned in approved STACK.md and registry-verified twice |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+*All four questions were resolved during planning — every recommendation below is adopted by the Phase 1 plans.*
 
 1. **Does Compose v5.1.3 enforce `deploy.resources.limits` without swarm/--compatibility?**
    - What we know: Compose Spec documents the syntax; community sources and old issues say non-swarm needed `--compatibility`; modern Compose v2 implementations reportedly honor it, but no authoritative current statement found.
-   - What's unclear: behavior of the exact installed version.
-   - Recommendation: don't depend on it — use `mem_limit`/`cpus` (guaranteed) and verify with `docker inspect` as an explicit plan task. If the planner prefers spec-style `deploy.` keys, the verification step still arbitrates.
+   - **RESOLVED:** Plans don't depend on it — `mem_limit` (guaranteed to work) is used for every service, with explicit `docker inspect '{{.HostConfig.Memory}}'` assertions in plan acceptance criteria (01-02/01-04/01-07/01-08). No `deploy.` keys in the compose file.
 
 2. **Pin which upstream SauceDemo commit?**
    - What we know: repo is active master; `npm run build` produces a static `build/` dir.
-   - Recommendation: at execution time, resolve current master SHA, build once, pin that SHA in the Dockerfile ARG. Treat "image builds and serves login page" as the acceptance check.
+   - **RESOLVED:** Adopted in plan 01-07 Task 1 — resolve current master via `git ls-remote` at execution time, build once, pin that SHA as the `SAUCEDEMO_SHA` ARG default; acceptance criteria require a real 40-char SHA (not "master") and "image builds and serves login page" as the check.
 
 3. **uv workspace vs standalone apps/api project?**
    - What we know: only one Python project exists in Phase 1; `agents/` arrives Phase 2+.
-   - Recommendation: standalone `apps/api` uv project now; promote to a uv workspace when the second Python package (Phase 2 `agents/llm` or `shared/events`) appears. Don't pre-build the workspace.
+   - **RESOLVED:** Standalone `apps/api` uv project adopted (plan 01-02 `uv init`); promotion to a uv workspace is deferred until the second Python package appears (Phase 2 `agents/llm` or `shared/events`). No pre-built workspace.
 
-4. **Git repository does not exist yet** (working directory is not a repo despite `commit_docs: true`).
-   - Recommendation: `git init` + initial commit (with `.gitattributes` and `.gitignore` covering `.env`, `workspaces/`, `node_modules/`) is part of plan 1's scaffold task.
+4. **Git repository** *(originally: working directory was not a repo despite `commit_docs: true`)*.
+   - **RESOLVED:** The repository was initialized during planning (initial commit plus planning-doc commits exist). Plan 01-01's scaffold task retains responsibility for `.gitattributes` and `.gitignore` coverage of `.env`, `workspaces/`, and `node_modules/`.
 
 ## Environment Availability
 

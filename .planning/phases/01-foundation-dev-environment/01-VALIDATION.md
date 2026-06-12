@@ -1,8 +1,8 @@
 ---
 phase: 1
 slug: foundation-dev-environment
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-12
 ---
@@ -25,6 +25,8 @@ created: 2026-06-12
 
 D-02 mandate: tests are *functional* — they hit the running app over HTTP with real Postgres (no ASGITransport in-process shortcut, no DB mocking). UI tests run Playwright on the host against `http://localhost:3000`.
 
+**Exclusive resource:** the live compose stack. Stack-touching plans (01-04 through 01-08) are serialized one-per-wave (waves 4-8) — never run two plans' compose/build/test commands concurrently. Executors should use the quick functional loop between edits and keep the full compose `--build --wait` + e2e runs as task gates, not as the inner loop.
+
 ---
 
 ## Sampling Rate
@@ -40,13 +42,14 @@ D-02 mandate: tests are *functional* — they hit the running app over HTTP with
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
+| 01-02-T2 | 01-02 | 2 | INFRA-01 | — | GET /health 200 with postgres+redis reachable (D-02 functional coverage, not just curl) | functional | `uv run pytest tests/functional/test_health.py -x` | ❌ W0 | ⬜ pending |
 | 01-03-T1/T2 | 01-03 | 3 | PLAT-03 | V2/V3 | Login sets httpOnly cookies; bad password 401; refresh rotates; logout clears; uniform 401 (no user enumeration) | functional | `uv run pytest tests/functional/test_auth.py -x` | ❌ W0 | ⬜ pending |
-| 01-04-T3 | 01-04 | 4 | PLAT-03 | V3 | UI: login form → /targets; unauthenticated /targets → /login | e2e | `uv run pytest tests/e2e/test_login_ui.py -x` | ❌ W0 | ⬜ pending |
-| 01-05-T1/T2 | 01-05 | 4 | PLAT-01 | V5 | Register/edit/soft-delete target via API; defaults applied (allowlist=origin, sandbox=false) | functional | `uv run pytest tests/functional/test_targets.py -x` | ❌ W0 | ⬜ pending |
-| 01-06-T3 | 01-06 | 5 | PLAT-01 | V5 | UI: register target via dialog, appears in table, credentials masked | e2e | `uv run pytest tests/e2e/test_targets_ui.py -x` | ❌ W0 | ⬜ pending |
-| 01-05-T1/T2 | 01-05 | 4 | PLAT-07 | V6 / Info Disclosure | No plaintext password in any API response; DB column is Fernet ciphertext (round-trip); captured logs contain no plaintext | functional | `uv run pytest tests/functional/test_credential_security.py -x` | ❌ W0 | ⬜ pending |
-| 01-08-T1/T2 | 01-08 | 6 | INFRA-01 | — | All default services healthy; dormant services absent; every container has non-zero memory limit | smoke | `python infra/scripts/verify_stack.py` | ❌ W0 | ⬜ pending |
-| 01-07-T2 | 01-07 | 5 | QUAL-04 | — | SauceDemo serves 200; `reset_target.py saucedemo` exits 0 and target healthy after | smoke | `uv run pytest tests/functional/test_reset_target.py -x` | ❌ W0 | ⬜ pending |
+| 01-04-T3 | 01-04 | 4 | PLAT-03 | V3 | UI: login form → /targets; unauthenticated /targets → /login; expired access cookie resumes via refresh-once-then-retry (D-04) | e2e | `uv run pytest tests/e2e/test_login_ui.py -x` | ❌ W0 | ⬜ pending |
+| 01-05-T1/T2 | 01-05 | 5 | PLAT-01 | V5 | Register/edit/soft-delete target via API; defaults applied (allowlist=origin, sandbox=false) | functional | `uv run pytest tests/functional/test_targets.py -x` | ❌ W0 | ⬜ pending |
+| 01-05-T1/T2 | 01-05 | 5 | PLAT-07 | V6 / Info Disclosure | No plaintext password in any API response; DB column is Fernet ciphertext (round-trip); captured logs contain no plaintext | functional | `uv run pytest tests/functional/test_credential_security.py -x` | ❌ W0 | ⬜ pending |
+| 01-06-T3 | 01-06 | 6 | PLAT-01 | V5 | UI: register target via dialog, appears in table, credentials masked | e2e | `uv run pytest tests/e2e/test_targets_ui.py -x` | ❌ W0 | ⬜ pending |
+| 01-07-T2 | 01-07 | 7 | QUAL-04 | — | SauceDemo serves 200; `reset_target.py saucedemo` exits 0 and target healthy after | smoke | `uv run pytest tests/functional/test_reset_target.py -x` | ❌ W0 | ⬜ pending |
+| 01-08-T1/T2 | 01-08 | 8 | INFRA-01 | — | All default services healthy; dormant services absent; every container has non-zero memory limit | smoke | `python infra/scripts/verify_stack.py` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 *(Task IDs filled by planner — map rows to tasks in PLAN.md files.)*
@@ -57,7 +60,7 @@ D-02 mandate: tests are *functional* — they hit the running app over HTTP with
 
 - [ ] `apps/api/pyproject.toml` — pytest config (`asyncio_mode = "auto"`, markers `functional`, `e2e`)
 - [ ] `apps/api/tests/conftest.py` — base URLs from env, authed-client fixture, table-truncate fixture
-- [ ] `tests/functional/test_auth.py`, `test_targets.py`, `test_credential_security.py`, `test_reset_target.py` — written alongside their features (D-02), files created in each slice
+- [ ] `tests/functional/test_health.py`, `test_auth.py`, `test_targets.py`, `test_credential_security.py`, `test_reset_target.py` — written alongside their features (D-02), files created in each slice
 - [ ] `tests/e2e/` Playwright tests + `uv run playwright install chromium` (one-time)
 - [ ] `infra/scripts/verify_stack.py` — INFRA-01 evidence script
 
@@ -74,11 +77,11 @@ D-02 mandate: tests are *functional* — they hit the running app over HTTP with
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-06-12 (checker Dimension 8 passed — plans revised per checker feedback: refresh wiring in 01-04, compose stack serialized waves 4-8, /health functional test in 01-02)
