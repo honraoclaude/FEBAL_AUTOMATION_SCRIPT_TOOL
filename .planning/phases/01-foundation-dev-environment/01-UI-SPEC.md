@@ -1,7 +1,8 @@
 ---
 phase: 1
 slug: foundation-dev-environment
-status: draft
+status: approved
+reviewed_at: 2026-06-12
 shadcn_initialized: false
 preset: "shadcn init defaults — style: new-york, base color: zinc, CSS variables: true (init runs as a Phase 1 scaffold task; no app exists yet)"
 created: 2026-06-12
@@ -86,7 +87,7 @@ Accent reserved for: primary action buttons ("Log in", "Register target", "Save 
 |---------------------|-------|---------------|
 | `--status-pass` | #22C55E (green-500) | "Active" target badge (dot + label) |
 | `--status-fail` | #EF4444 (shares destructive) | none in Phase 1 |
-| `--status-quarantine` | #F59E0B (amber-500) | none in Phase 1 (heal quarantine, Phase 8) |
+| `--status-quarantine` | #F59E0B (amber-500) | Sandbox badge on targets table (amber-outline — warns destructive actions are permitted); heal quarantine reuses it in Phase 8 |
 | `--status-neutral` | #A1A1AA (zinc-400) | "Inactive" (soft-deleted) target badge |
 
 ---
@@ -104,7 +105,7 @@ Accent reserved for: primary action buttons ("Log in", "Register target", "Save 
 | Error state (login failure) | "Invalid email or password." (uniform message for unknown user vs wrong password — security posture per RESEARCH V2; no recovery hint beyond retry) |
 | Error state (request failure) | "Couldn't save the target. Try again — if it keeps failing, check that the API container is healthy (`docker compose ps`)." |
 | Error state (field validation) | Inline under field, 12px destructive text: "Name is required" / "Enter a valid URL (including http:// or https://)" |
-| Destructive confirmation | Deactivate target: "Deactivate {name}? The platform will stop running against this target. Its history is kept and you can reactivate it later." Confirm button (destructive variant): "Deactivate" / Cancel: "Cancel" |
+| Destructive confirmation | Deactivate target: "Deactivate {name}? The platform will stop running against this target. Its history is kept and you can reactivate it later." Confirm button (destructive variant): "Deactivate" / Dismiss: "Keep target" |
 | Credential masking (edit dialog) | Helper text under credential fields: "Stored encrypted and never shown. Enter new values to replace them." Placeholder in both fields: "••••••••" |
 
 Voice rules: sentence case everywhere (buttons, headings, labels — "Register target", not "Register Target"); verbs first on buttons; no exclamation marks; error copy states the problem then the next step.
@@ -137,7 +138,7 @@ Supplementary contract for planner/executor — every screen ships every listed 
 
 ### 3. Target registry (`/targets`)
 - Page header: Heading "Target Applications" left, accent "Register target" button right.
-- Table (secondary surface) columns: Name · Base URL (mono) · Sandbox (badge: "Sandbox" amber-outline when true, blank when false) · Status (Active green-dot badge / Inactive muted badge) · row-actions dropdown (Edit, Deactivate/Reactivate).
+- Table (secondary surface) columns: Name · Base URL (mono) · Sandbox (badge: "Sandbox" amber-outline when true, blank when false) · Status (Active green-dot badge / Inactive muted badge) · row-actions dropdown (Edit, Deactivate/Reactivate) — icon-only trigger carries `aria-label="Actions for {name}"`.
 - States: loading (skeleton rows) · empty (empty-state copy above, centered in table region) · populated · row inactive (entire row text muted; Reactivate replaces Deactivate in the menu).
 
 ### 4. Register/Edit target dialog
