@@ -16,7 +16,7 @@ NOT in this phase: RBAC roles (Phase 10), LLM gateway (Phase 2), any exploration
 ## Implementation Decisions
 
 ### Process directive (user-locked)
-- **D-01:** User delegated implementation decisions to Claude: "If you are clear what needs to be done we can start building in loop and keep developing." Build iteratively — after context, proceed to plan and execute without further discussion rounds; keep momentum phase to phase.
+- **D-01:** [informational] User delegated implementation decisions to Claude: "If you are clear what needs to be done we can start building in loop and keep developing." Build iteratively — after context, proceed to plan and execute without further discussion rounds; keep momentum phase to phase.
 - **D-02:** **Every feature ships with functional tests.** This is a standing directive for ALL phases, not just Phase 1. For Phase 1: API features get pytest functional tests (httpx AsyncClient against the running FastAPI app, real Postgres via the compose stack); UI flows (login, target registration) get Playwright functional tests. Tests are written alongside each feature, not deferred to a testing phase.
 
 ### Account bootstrap & login (Claude's discretion, applied)
