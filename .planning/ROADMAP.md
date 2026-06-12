@@ -47,7 +47,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Monorepo scaffold + Compose core (Postgres/Redis, dormant profiles, memory limits)
+- [x] 01-01-PLAN.md — Monorepo scaffold + Compose core (Postgres/Redis, dormant profiles, memory limits)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Dev Environment | 0/8 | Not started | - |
+| 1. Foundation & Dev Environment | 1/8 | In Progress|  |
 | 2. LLM Gateway | 0/TBD | Not started | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
