@@ -37,8 +37,18 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can register a target application (name, URL, credentials, exploration rules) through both the API and the UI, and see it listed
   4. Target-app credentials are encrypted at rest and never appear in logs or API responses
   5. A self-hosted SauceDemo demo target runs in Docker and can be reset to a clean snapshot on demand
-**Plans**: TBD
+**Plans**: 8 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 01-01-PLAN.md — Monorepo scaffold + Compose core (Postgres/Redis, dormant profiles, memory limits)
+- [ ] 01-02-PLAN.md — FastAPI skeleton: settings, log redaction, async Alembic, /health, api container
+- [ ] 01-03-PLAN.md — Auth slice: JWT cookie login/refresh/logout, seeded admin, functional tests
+- [ ] 01-04-PLAN.md — Web shell: Next 16 login UI, proxy.ts, compose web, Playwright e2e (walking skeleton)
+- [ ] 01-05-PLAN.md — Encrypted target registry API: Fernet write-only credentials, leak tests
+- [ ] 01-06-PLAN.md — Target registry UI: table + dialog per UI-SPEC, Playwright e2e
+- [ ] 01-07-PLAN.md — Self-hosted SauceDemo target + generic reset-target contract
+- [ ] 01-08-PLAN.md — verify_stack evidence, dev docs, clean-state phase gate + human sign-off
 
 ### Phase 2: LLM Gateway
 **Goal**: Every future LLM call flows through one provider-agnostic, budget-enforced gateway — no agent can spend money outside it
@@ -178,7 +188,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Dev Environment | 0/TBD | Not started | - |
+| 1. Foundation & Dev Environment | 0/8 | Not started | - |
 | 2. LLM Gateway | 0/TBD | Not started | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |

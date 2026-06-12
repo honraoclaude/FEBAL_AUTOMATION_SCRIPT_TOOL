@@ -40,13 +40,13 @@ D-02 mandate: tests are *functional* — they hit the running app over HTTP with
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | PLAT-03 | V2/V3 | Login sets httpOnly cookies; bad password 401; refresh rotates; logout clears; uniform 401 (no user enumeration) | functional | `uv run pytest tests/functional/test_auth.py -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | PLAT-03 | V3 | UI: login form → /targets; unauthenticated /targets → /login | e2e | `uv run pytest tests/e2e/test_login_ui.py -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | PLAT-01 | V5 | Register/edit/soft-delete target via API; defaults applied (allowlist=origin, sandbox=false) | functional | `uv run pytest tests/functional/test_targets.py -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | PLAT-01 | V5 | UI: register target via dialog, appears in table, credentials masked | e2e | `uv run pytest tests/e2e/test_targets_ui.py -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | PLAT-07 | V6 / Info Disclosure | No plaintext password in any API response; DB column is Fernet ciphertext (round-trip); captured logs contain no plaintext | functional | `uv run pytest tests/functional/test_credential_security.py -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | INFRA-01 | — | All default services healthy; dormant services absent; every container has non-zero memory limit | smoke | `python infra/scripts/verify_stack.py` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | QUAL-04 | — | SauceDemo serves 200; `reset_target.py saucedemo` exits 0 and target healthy after | smoke | `uv run pytest tests/functional/test_reset_target.py -x` | ❌ W0 | ⬜ pending |
+| 01-03-T1/T2 | 01-03 | 3 | PLAT-03 | V2/V3 | Login sets httpOnly cookies; bad password 401; refresh rotates; logout clears; uniform 401 (no user enumeration) | functional | `uv run pytest tests/functional/test_auth.py -x` | ❌ W0 | ⬜ pending |
+| 01-04-T3 | 01-04 | 4 | PLAT-03 | V3 | UI: login form → /targets; unauthenticated /targets → /login | e2e | `uv run pytest tests/e2e/test_login_ui.py -x` | ❌ W0 | ⬜ pending |
+| 01-05-T1/T2 | 01-05 | 4 | PLAT-01 | V5 | Register/edit/soft-delete target via API; defaults applied (allowlist=origin, sandbox=false) | functional | `uv run pytest tests/functional/test_targets.py -x` | ❌ W0 | ⬜ pending |
+| 01-06-T3 | 01-06 | 5 | PLAT-01 | V5 | UI: register target via dialog, appears in table, credentials masked | e2e | `uv run pytest tests/e2e/test_targets_ui.py -x` | ❌ W0 | ⬜ pending |
+| 01-05-T1/T2 | 01-05 | 4 | PLAT-07 | V6 / Info Disclosure | No plaintext password in any API response; DB column is Fernet ciphertext (round-trip); captured logs contain no plaintext | functional | `uv run pytest tests/functional/test_credential_security.py -x` | ❌ W0 | ⬜ pending |
+| 01-08-T1/T2 | 01-08 | 6 | INFRA-01 | — | All default services healthy; dormant services absent; every container has non-zero memory limit | smoke | `python infra/scripts/verify_stack.py` | ❌ W0 | ⬜ pending |
+| 01-07-T2 | 01-07 | 5 | QUAL-04 | — | SauceDemo serves 200; `reset_target.py saucedemo` exits 0 and target healthy after | smoke | `uv run pytest tests/functional/test_reset_target.py -x` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 *(Task IDs filled by planner — map rows to tasks in PLAN.md files.)*
