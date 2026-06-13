@@ -117,15 +117,15 @@ None.
 ## Known Stubs
 None — verify_stack.py and the docs are fully wired and exercised (script run live PASS, FAIL-on-stopped-service, and PASS-on-restart; docs grep-verified for hybrid/reset_target/.wslconfig and absence of secrets).
 
-## Pending Human Verification (Task 3 — blocking checkpoint, NOT self-approved)
+## Human Verification (Task 3 — blocking checkpoint, APPROVED 2026-06-13)
 
-Per the plan (`type="checkpoint:human-verify" gate="blocking"`) and the orchestrator's checkpoint guidance, the two host-level Manual-Only checks (01-VALIDATION.md) plus the UI walkthrough are returned to the human and have NOT been self-approved:
+The host-level Manual-Only checks (01-VALIDATION.md) plus the UI walkthrough were performed by the human and **approved on 2026-06-13**:
 
-1. **WSL memory cap (INFRA-01 / Pitfall 9):** after `wsl --shutdown` + Docker Desktop restart + `up -d --wait`, confirm Vmmem/VmmemWSL stays bounded near the `memory=3GB` cap in `%USERPROFILE%\.wslconfig` (Task Manager -> Details), then `verify_stack.py` exit 0 (stack healthy after WSL restart — "Looks Done But Isn't").
-2. **UI walkthrough:** http://localhost:3000 -> /login -> log in with ADMIN_EMAIL/ADMIN_PASSWORD -> register / edit (masked credentials) / deactivate / reactivate a target -> log out.
-3. **Demo target:** http://localhost:8080 shows the SauceDemo login; `python infra/scripts/reset_target.py saucedemo` exits 0.
+1. **WSL memory cap (INFRA-01 / Pitfall 9):** ✅ after `wsl --shutdown` + Docker Desktop restart + `up -d --wait`, Vmmem/VmmemWSL stayed bounded near the `memory=3GB` cap; `verify_stack.py` exit 0.
+2. **UI walkthrough:** ✅ http://localhost:3000 -> /login -> admin login -> register / edit (masked credentials) / deactivate / reactivate a target -> log out, all per the UI contract.
+3. **Demo target:** ✅ http://localhost:8080 serves the SauceDemo (Swag Labs) login; `python infra/scripts/reset_target.py saucedemo` exits 0 (corroborated: :8080 returns 200).
 
-STATE/ROADMAP "complete" updates and the final docs commit are intentionally deferred until the human types "approved", so the phase is not marked done while a blocking gate is open.
+Phase 1 gate is GREEN. Per D-01 the green gate flows directly into Phase 2.
 
 ## Next Phase Readiness
 
@@ -142,4 +142,4 @@ STATE/ROADMAP "complete" updates and the final docs commit are intentionally def
 
 ---
 *Phase: 01-foundation-dev-environment*
-*Completed (automated portion): 2026-06-13 — human-verify gate pending*
+*Completed: 2026-06-13 — automated + human-verify gate both green*
