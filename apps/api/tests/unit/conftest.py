@@ -82,7 +82,8 @@ async def _isolate_gateway_redis():
     """Isolate every unit test's gateway Redis use (cross-loop safety + no real counters).
 
     The gateway calls get_redis() on every complete() (kill-switch check, budget
-    counters). Two hazards this fixes for the whole unit suite:
+    counters, and — Plan 03 — the response cache). Three hazards this fixes for the
+    whole unit suite:
 
     1. Cross-loop reuse: app.core.redis_client._client is a module-level singleton.
        pytest-asyncio (asyncio_mode=auto) runs each test on a FRESH event loop, so a
@@ -92,15 +93,39 @@ async def _isolate_gateway_redis():
        test_gateway_provider) would otherwise read/write the REAL "llm:" keys on the dev
        Redis, eventually tripping the real daily kill-switch. Point _KEY_PREFIX at the
        "test:llm:" namespace (the prefix the redis_test/patch_redis fixtures already flush).
+    3. Cross-test cache bleed (Plan 03): the response cache writes test:llm:cache:<sha>
+       keys with a 24h TTL. Without a per-test flush of the test prefix, a cached
+       deterministic response (or kill-switch/counter) from a prior test OR a prior run
+       would serve into the next identical call and break test isolation. Flush the
+       test:llm:* prefix before AND after each test so every unit test starts clean.
     """
+    import redis.asyncio as aioredis
+
     import app.core.redis_client as rc
     import app.services.llm_gateway as gateway
 
     rc._client = None  # discard any client bound to a previous test's (closed) loop
     gateway._KEY_PREFIX = "test:llm:"
+
+    url = os.environ["REDIS_URL"].replace("@redis:", "@localhost:").replace(
+        "//redis:", "//localhost:"
+    )
+
+    async def _flush(client):
+        async for key in client.scan_iter(match="test:llm:*"):
+            await client.delete(key)
+
+    # One short-lived flush client for this test (open pre-flush, reuse for post-flush,
+    # close once) — avoids per-flush connect/close churn that can saturate compose Redis.
+    flush_client = aioredis.from_url(url, decode_responses=True)
+    await _flush(flush_client)
     try:
         yield
     finally:
+        try:
+            await _flush(flush_client)
+        finally:
+            await flush_client.aclose()
         if rc._client is not None:
             await rc._client.aclose()  # close on the still-live test loop
             rc._client = None

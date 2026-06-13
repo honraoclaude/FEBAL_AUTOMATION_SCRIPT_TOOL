@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     llm_daily_token_cap: int = 20_000_000  # env LLM_DAILY_TOKEN_CAP — max tokens per UTC day
     llm_run_ttl_s: int = 86400  # env LLM_RUN_TTL_S — TTL on per-run Redis budget counters
 
+    # --- LLM response cache (Phase 2, plan 02-03; PLAT-06, D-11/D-12) ---
+    # TTL (seconds) on a cached deterministic (temperature==0) response. Only
+    # temperature==0 calls without no_cache are cached; a hit costs $0 and writes a
+    # cache_hit=true ledger row. Default ~24h, env-configurable.
+    llm_cache_ttl_s: int = 86400  # env LLM_CACHE_TTL_S
+
     @field_validator("credential_keys", mode="before")
     @classmethod
     def _split_credential_keys(cls, value: object) -> object:
