@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
+status: executing
 stopped_at: Phase 2 planned (3 plans, checker-passed + revised)
-last_updated: "2026-06-13T16:18:35.157Z"
-last_activity: 2026-06-13 -- Phase 01 complete (8/8 plans)
+last_updated: "2026-06-13T16:42:16.933Z"
+last_activity: 2026-06-13
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
   percent: 9
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 02 — LLM Gateway (budgets + kill-switch) — next up
+**Current focus:** Phase 02 — llm-gateway
 
 ## Current Position
 
-Phase: 01 (Foundation & Dev Environment) — ✅ COMPLETE (gate green, human-approved 2026-06-13)
-Plan: 8 of 8 complete
-Status: Phase complete — ready to plan/discuss Phase 02
-Last activity: 2026-06-13 -- Phase 01 complete (8/8 plans)
+Phase: 02 (llm-gateway) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-06-13
 
-Progress: [██████████] 100% (Phase 01)
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [██████████] 100% (Phase 01)
 | Phase 01 P05 | ~15min | 2 tasks | 10 files |
 | Phase 01 P06 | ~35min | 3 tasks | 8 files |
 | Phase 01 P01-07 | ~12min | 2 tasks | 5 files |
+| Phase 02 P01 | 40min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-06: added api.patch to client wrapper (targets uses PATCH) and mounted sonner Toaster in dashboard layout (installed in 01-04 but never hosted)
 - [Phase ?]: [Phase 01]: 01-07: saucedemo healthcheck uses 127.0.0.1 not localhost — container localhost resolves to ::1 (IPv6) but nginx listens IPv4-only
 - [Phase ?]: [Phase 01]: 01-07: node:16 base IS the OpenSSL-3 mitigation; --openssl-legacy-provider removed (node:16 rejects it in NODE_OPTIONS)
+- [Phase ?]: [Phase 02]: 02-01: usage-event token keys must avoid the substring 'token' (SENSITIVE regex) — tokens_in/tokens_out still redact; used tok_in/tok_out
+- [Phase ?]: [Phase 02]: 02-01: pricing keyed on bare model name; lookup_price normalizes the provider-prefixed init_chat_model string via _bare_model (FIX-1)
+- [Phase ?]: [Phase 02]: 02-01: LLM_DEFAULT_MODEL required — wired into compose api env (compose does not pass whole .env); provider keys empty placeholders
 
 ### Pending Todos
 
@@ -101,9 +105,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T16:18:35.121Z
+Last session: 2026-06-13T16:41:33.526Z
 Stopped at: Phase 2 planned (3 plans, checker-passed + revised)
-Resume file: .planning/phases/02-llm-gateway/02-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 

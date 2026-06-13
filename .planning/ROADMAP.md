@@ -94,7 +94,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Provider-agnostic gateway call + effective-dated pricing + llm_usage ledger/usage-event (PLAT-05); package-legitimacy gate + Wave-0 mocked test scaffold
+- [x] 02-01-PLAN.md — Provider-agnostic gateway call + effective-dated pricing + llm_usage ledger/usage-event (PLAT-05); package-legitimacy gate + Wave-0 mocked test scaffold
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -259,7 +259,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
-| 2. LLM Gateway | 0/3 | Planned | - |
+| 2. LLM Gateway | 1/3 | In Progress|  |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
