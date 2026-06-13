@@ -42,6 +42,23 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = False  # env LANGSMITH_TRACING
     langsmith_api_key: str | None = None  # env LANGSMITH_API_KEY
 
+    # --- LLM budget caps (Phase 2, plan 02-02; PLAT-06, D-03/D-04) ---
+    # Global env defaults for all three scopes (per-call / per-run / per-day), on
+    # BOTH the USD and token axes (D-03). A breach on EITHER axis in ANY scope
+    # raises BudgetExceeded before spend (D-01/D-02).
+    #
+    # PER-RUN OVERRIDE CONTRACT (D-04, RESEARCH Q4): a caller's per-run override may
+    # only TIGHTEN — the gateway clamps it to min(override, global cap) and NEVER
+    # loosens past these global ceilings. Phase 4 feeds Target.budget_overrides in
+    # as the per-run override; this clamp is the hard ceiling it cannot exceed.
+    llm_per_call_usd_cap: float = 1.0  # env LLM_PER_CALL_USD_CAP — max USD for one call
+    llm_run_usd_cap: float = 25.0  # env LLM_RUN_USD_CAP — max USD across one run_id
+    llm_daily_usd_cap: float = 100.0  # env LLM_DAILY_USD_CAP — max USD per UTC day (auto-trips kill-switch)
+    llm_per_call_token_cap: int = 200_000  # env LLM_PER_CALL_TOKEN_CAP — max (in+out) tokens for one call
+    llm_run_token_cap: int = 5_000_000  # env LLM_RUN_TOKEN_CAP — max tokens across one run_id
+    llm_daily_token_cap: int = 20_000_000  # env LLM_DAILY_TOKEN_CAP — max tokens per UTC day
+    llm_run_ttl_s: int = 86400  # env LLM_RUN_TTL_S — TTL on per-run Redis budget counters
+
     @field_validator("credential_keys", mode="before")
     @classmethod
     def _split_credential_keys(cls, value: object) -> object:
