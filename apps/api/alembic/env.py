@@ -11,8 +11,9 @@ from app.core.config import settings
 from app.db.base import Base
 
 # Import model modules here as later plans add them so autogenerate sees
-# their tables on Base.metadata, e.g.:
-# import app.models.user  # noqa: F401  (plan 01-03)
+# their tables on Base.metadata:
+import app.models.user  # noqa: F401  (plan 01-03)
+
 # import app.models.target  # noqa: F401  (plan 01-05)
 
 # this is the Alembic Config object, which provides

@@ -61,7 +61,9 @@ async def test_login_wrong_password_401(client):
 async def test_login_unknown_email_401(client):
     r_unknown = await client.post(
         "/api/auth/login",
-        json={"email": "nobody@example.invalid", "password": "whatever-password"},
+        # NOTE: must be a syntactically normal domain — EmailStr (email-validator)
+        # rejects special-use TLDs like .invalid/.test with 422 before the handler.
+        json={"email": "nobody@no-such-user-01-03.com", "password": "whatever-password"},
     )
     assert r_unknown.status_code == 401
 
