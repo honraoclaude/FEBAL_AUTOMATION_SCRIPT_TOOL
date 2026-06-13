@@ -24,7 +24,8 @@ from app.core.config import settings
 
 pytestmark = pytest.mark.functional
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+# tests/functional/ is one level deeper than tests/conftest.py: parents[4] = repo root.
+REPO_ROOT = Path(__file__).resolve().parents[4]
 BASE_URL = "http://localhost:8080"
 
 
