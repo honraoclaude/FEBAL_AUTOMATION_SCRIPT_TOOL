@@ -130,6 +130,8 @@ def _cache_key(provider, model, messages, temperature, max_tokens, tools) -> str
     Exact-match only: a difference in provider, model, ANY message, temperature,
     max_tokens, or tools produces a different key -> a miss (no false hits, T-02-13).
     Canonical JSON (sort_keys, tight separators) makes the digest stable.
+
+    Key shape (production prefix): "llm:cache:<sha256>".
     """
     payload = json.dumps(
         {
