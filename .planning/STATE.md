@@ -91,7 +91,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 3+ BLOCKER]: Host has only 5.7 GB RAM (WSL capped at 3GB). Phase 1 stack (512m+256m+1g) fits, but neo4j (2g, Phase 3) and elasticsearch (1.5g, Phase 9/10) will NOT fit alongside it. Resolve before Phase 3: more RAM, remote/managed services, or trimmed mem_limits.
+- [Phase 3 memory — RESOLVED in 03-CONTEXT]: 5.7 GB host / 3GB WSL cap. Strategy locked (D-01/02/03): run neo4j LOCAL but trimmed (heap 512m/pagecache 256m/mem_limit 1g) behind the 'graph' profile; a scripted graph_mode helper STOPS web (1.5g) during graph work so postgres+redis+api+neo4j+saucedemo ≈ 2.9g fits under 3g. Re-evaluate sizing at Phase 5 (real KG). Elasticsearch (1.5g, Phase 9/10) is still an OPEN memory question for later.
 - [Phase 4]: Most novel component (perception prompts, state-abstraction fingerprints, action risk heuristics) — plan with `--research-phase`
 - [Phase 5]: Cypher schema + reconciliation strategy synthesized from research, no canonical reference — plan with `--research-phase`
 - [Phase 8]: Similarity scoring weights/thresholds need experimentation — plan with `--research-phase`
