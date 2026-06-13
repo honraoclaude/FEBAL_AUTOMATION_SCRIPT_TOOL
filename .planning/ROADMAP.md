@@ -14,7 +14,7 @@ The journey runs along the data-flow spine the platform itself embodies: stand u
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Dev Environment** - Docker Compose core (Postgres + Redis), JWT auth, encrypted target-app registry, Next.js shell, snapshot-restorable SauceDemo target (completed 2026-06-13)
-- [ ] **Phase 2: LLM Gateway** - Provider-agnostic `init_chat_model` gateway with budgets, kill-switch, caching, and cost-per-operation logging
+- [x] **Phase 2: LLM Gateway** - Provider-agnostic `init_chat_model` gateway with budgets, kill-switch, caching, and cost-per-operation logging (completed 2026-06-13)
 - [ ] **Phase 3: Tracer Bullet — Minimal End-to-End Loop** - Thin slice: explore SauceDemo → minimal graph → one scenario → one spec → one execution → result row; full REST API contract in place
 - [ ] **Phase 4: Explorer Agent** - Full autonomous exploration: snapshot-first perception, budgets/loop detection, auth handling, risk policy, sanitized observations, element fingerprints
 - [ ] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
@@ -102,7 +102,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — Custom Redis response cache (temp==0, $0 hit) + gated two-provider live parity test (PLAT-05/PLAT-06)
+- [x] 02-03-PLAN.md — Custom Redis response cache (temp==0, $0 hit) + gated two-provider live parity test (PLAT-05/PLAT-06)
 
 ### Phase 3: Tracer Bullet — Minimal End-to-End Loop
 
@@ -259,7 +259,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
-| 2. LLM Gateway | 2/3 | In Progress|  |
+| 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |

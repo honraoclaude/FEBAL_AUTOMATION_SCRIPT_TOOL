@@ -129,6 +129,10 @@ None — no placeholder/empty-data stubs introduced. The cache, parity test, and
 - PLAT-05 verified end-to-end (provider-agnostic parity, on-demand live proof) and PLAT-06's caching requirement closed: repeat deterministic spend is now eliminated with a logged `cache_hit` row and no budget impact.
 - The whole Phase 2 test strategy is now nyquist-compliant; the gateway is the complete money-control chokepoint (budgets + kill-switch + cache + cost logging) every Phase 4+ agent will route through.
 
+## Self-Check: PASSED
+- Files: test_cache.py, test_llm_parity.py, integration/__init__.py, 02-03-SUMMARY.md all present.
+- Commits e5c9079, e0a4431, e907fac, 58b5d68, 1abbe0f all in history.
+
 ---
 *Phase: 02-llm-gateway*
 *Completed: 2026-06-13*

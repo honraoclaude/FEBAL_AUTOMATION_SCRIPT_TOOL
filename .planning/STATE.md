@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 02-02 complete (budgets+kill-switch; PLAT-06 done); next plan 02-03 (cache+parity)
-last_updated: "2026-06-13T21:17:59.845Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-06-13T21:41:51.492Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 11
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 10
-  percent: 9
+  completed_plans: 11
+  percent: 18
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 02 (llm-gateway) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
+Plan: 3 of 3 (phase complete)
+Status: Phase 02 complete
 Last activity: 2026-06-13
 
-Progress: [████████░░] 82%
+Progress: [██░░░░░░░░] 18%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [████████░░] 82%
 | Phase 01 P06 | ~35min | 3 tasks | 8 files |
 | Phase 01 P01-07 | ~12min | 2 tasks | 5 files |
 | Phase 02 P01 | 40min | 3 tasks | 15 files |
+| Phase 02 P02-03 | ~16m | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 02]: 02-01: usage-event token keys must avoid the substring 'token' (SENSITIVE regex) — tokens_in/tokens_out still redact; used tok_in/tok_out
 - [Phase ?]: [Phase 02]: 02-01: pricing keyed on bare model name; lookup_price normalizes the provider-prefixed init_chat_model string via _bare_model (FIX-1)
 - [Phase ?]: [Phase 02]: 02-01: LLM_DEFAULT_MODEL required — wired into compose api env (compose does not pass whole .env); provider keys empty placeholders
+- [Phase ?]: Custom Redis response cache (not native LangChain cache): SHA-256 exact-match key, temp==0-only, env TTL, $0 cache_hit ledger row, checked AFTER kill-switch so a halt refuses hits (D-06)
+- [Phase ?]: Two-provider live_llm parity test (Anthropic+OpenAI by config alone) gated off the default suite via skipif + budget-raising fixture; proves PLAT-05 Success Criterion 1
 
 ### Pending Todos
 
@@ -105,9 +108,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T21:17:59.820Z
-Stopped at: Plan 02-02 complete (budgets+kill-switch; PLAT-06 done); next plan 02-03 (cache+parity)
-Resume file: .planning/phases/02-llm-gateway/02-03-PLAN.md
+Last session: 2026-06-13T21:41:51.467Z
+Stopped at: Completed 02-03-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 
