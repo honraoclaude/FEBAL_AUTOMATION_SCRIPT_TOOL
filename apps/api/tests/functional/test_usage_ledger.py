@@ -46,9 +46,14 @@ gw.init_chat_model = lambda *a, **k: _Chat()
 async def main():
     from app.db.session import SessionLocal
     async with SessionLocal() as db:
+        # no_cache=True forces the miss/spend path: this test verifies a REAL computed
+        # cost lands one cache_hit=false row. Without it, an identical prior call's
+        # 24h-TTL cache entry (Plan 03) would serve a $0 cache_hit=true row and the
+        # cost/cache_hit assertions below would flake by run order.
         res = await gw.complete(
             db, [{"role": "user", "content": "probe"}],
             operation_type=op, run_id=run_id, model=model, max_tokens=256,
+            no_cache=True,
         )
         print("RESULT_COST", res.cost_usd)
 
