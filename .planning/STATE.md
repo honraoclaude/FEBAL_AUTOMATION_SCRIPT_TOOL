@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Plan 01-02 complete (verified + committed); next is plan 01-03 (auth)
-last_updated: "2026-06-13T01:15:25.980Z"
+last_updated: "2026-06-13T01:41:20.460Z"
 last_activity: 2026-06-13
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 8
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (Foundation & Dev Environment) — EXECUTING
-Plan: 4 of 8 (01-01, 01-02 complete)
+Plan: 5 of 8 (01-01, 01-02 complete)
 Status: Ready to execute
 Last activity: 2026-06-13
 
-Progress: [████░░░░░░] 38%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [████░░░░░░] 38%
 
 *Updated after each plan completion*
 | Phase 01 P03 | ~12min | 2 tasks | 13 files |
+| Phase 01 P04 | ~26min | 3 tasks | 48 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Roadmap]: REQUIREMENTS.md actually contains 57 v1 REQ-IDs (initial count of 49 was incorrect); all 57 mapped
 - [Phase ?]: 01-03: JWT tokens carry a jti claim beyond sub/type/iat/exp — 1s iat resolution made same-second refresh rotation unobservable
 - [Phase ?]: 01-03: pydantic[email] extra adopted (EmailStr requires email-validator); test data must avoid special-use TLDs which 422 at the schema boundary
+- [Phase 01]: 01-04: shadcn CLI 4.x dropped init style/base-color flags — manual components.json path used to honor the locked UI-SPEC preset (new-york/zinc/CSS variables)
+- [Phase 01]: 01-04: hybrid-mode Next rewrite fallback is http://localhost:8001 per the 01-02 host-port decision (Next does not read repo-root .env)
 
 ### Pending Todos
 
@@ -92,7 +95,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T01:15:16.904Z
+Last session: 2026-06-13T01:38:32.101Z
 Stopped at: Plan 01-02 complete (verified + committed); next is plan 01-03 (auth)
 Resume file: None
 

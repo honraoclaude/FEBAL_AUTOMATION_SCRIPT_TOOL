@@ -59,7 +59,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-04-PLAN.md — Web shell: Next 16 login UI, proxy.ts, compose web, Playwright e2e (walking skeleton)
+- [x] 01-04-PLAN.md — Web shell: Next 16 login UI, proxy.ts, compose web, Playwright e2e (walking skeleton)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Dev Environment | 3/8 | In Progress|  |
+| 1. Foundation & Dev Environment | 4/8 | In Progress|  |
 | 2. LLM Gateway | 0/TBD | Not started | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
