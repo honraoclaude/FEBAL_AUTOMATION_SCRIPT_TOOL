@@ -11,7 +11,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **PLAT-01**: User can register a target application (name, URL, credentials, exploration rules) via API and UI
 - [ ] **PLAT-02**: Platform exposes REST API endpoints: POST /explore, /generate-bdd, /generate-scripts, /execute, /heal, /create-defect; GET /flows, /coverage, /executions, /dashboard
-- [ ] **PLAT-03**: User can log in to the platform with email/password; sessions persist via JWT
+- [x] **PLAT-03**: User can log in to the platform with email/password; sessions persist via JWT
 - [ ] **PLAT-04**: Admin can assign roles (Admin / QA Lead / QA Engineer / Developer) that gate API endpoints and dashboard views
 - [ ] **PLAT-05**: All agent LLM calls route through a provider-agnostic gateway that works with Anthropic or OpenAI via configuration only
 - [ ] **PLAT-06**: LLM gateway enforces per-call, per-run, and per-day token/cost budgets with a hard kill-switch, and logs cost per operation
@@ -133,7 +133,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | PLAT-01 | Phase 1 | Pending |
 | PLAT-02 | Phase 3 | Pending |
-| PLAT-03 | Phase 1 | Pending |
+| PLAT-03 | Phase 1 | Complete |
 | PLAT-04 | Phase 10 | Pending |
 | PLAT-05 | Phase 2 | Pending |
 | PLAT-06 | Phase 2 | Pending |

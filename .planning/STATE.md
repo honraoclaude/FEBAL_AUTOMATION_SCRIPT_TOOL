@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 01-02 complete, ready for plan 01-03
-last_updated: "2026-06-13T01:10:00.000Z"
-last_activity: 2026-06-13 -- Plan 01-02 complete (3-service stack healthy; API on host port 8001)
+stopped_at: Plan 01-02 complete (verified + committed); next is plan 01-03 (auth)
+last_updated: "2026-06-13T01:15:25.980Z"
+last_activity: 2026-06-13
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 8
-  completed_plans: 2
-  percent: 25
+  completed_plans: 3
+  percent: 0
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (Foundation & Dev Environment) — EXECUTING
-Plan: 3 of 8 (01-01, 01-02 complete)
-Status: Executing Phase 01
-Last activity: 2026-06-13 -- Plan 01-02 complete (3-service stack healthy; API on host port 8001)
+Plan: 4 of 8 (01-01, 01-02 complete)
+Status: Ready to execute
+Last activity: 2026-06-13
 
-Progress: [██░░░░░░░░] 25%
+Progress: [████░░░░░░] 38%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [██░░░░░░░░] 25%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P03 | ~12min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [Roadmap]: LLM gateway with budgets/kill-switch built BEFORE any agent (Phase 2) so no agent can spend unmetered money
 - [Roadmap]: Trust gates are phase launch requirements — draft-mode Jira, heal audit trails, ground-truth harnesses (QUAL-01/02/03 mapped to Phases 5/8/9)
 - [Roadmap]: REQUIREMENTS.md actually contains 57 v1 REQ-IDs (initial count of 49 was incorrect); all 57 mapped
+- [Phase ?]: 01-03: JWT tokens carry a jti claim beyond sub/type/iat/exp — 1s iat resolution made same-second refresh rotation unobservable
+- [Phase ?]: 01-03: pydantic[email] extra adopted (EmailStr requires email-validator); test data must avoid special-use TLDs which 422 at the schema boundary
 
 ### Pending Todos
 
@@ -89,10 +92,11 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13
+Last session: 2026-06-13T01:15:16.904Z
 Stopped at: Plan 01-02 complete (verified + committed); next is plan 01-03 (auth)
-Resume file: .planning/phases/01-foundation-dev-environment/01-03-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
+
 - Host has 5.7 GB RAM; %USERPROFILE%\.wslconfig tuned to memory=3GB/processors=2/swap=4GB (16GB template value wedged the WSL VM; required reboot)
 - API host-facing port is 8001 (host 8000 permanently held by another local project's auto-starting container, user's choice); container-internal port stays 8000

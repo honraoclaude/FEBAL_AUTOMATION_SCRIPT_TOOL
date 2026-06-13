@@ -55,7 +55,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — Auth slice: JWT cookie login/refresh/logout, seeded admin, functional tests
+- [x] 01-03-PLAN.md — Auth slice: JWT cookie login/refresh/logout, seeded admin, functional tests
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Dev Environment | 2/8 | In Progress|  |
+| 1. Foundation & Dev Environment | 3/8 | In Progress|  |
 | 2. LLM Gateway | 0/TBD | Not started | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
