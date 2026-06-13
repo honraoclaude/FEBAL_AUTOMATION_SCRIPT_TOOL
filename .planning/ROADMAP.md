@@ -51,7 +51,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — FastAPI skeleton: settings, log redaction, async Alembic, /health, api container
+- [x] 01-02-PLAN.md — FastAPI skeleton: settings, log redaction, async Alembic, /health, api container
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Dev Environment | 1/8 | In Progress|  |
+| 1. Foundation & Dev Environment | 2/8 | In Progress|  |
 | 2. LLM Gateway | 0/TBD | Not started | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
