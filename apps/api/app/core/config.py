@@ -30,6 +30,18 @@ class Settings(BaseSettings):
     admin_password: str  # env ADMIN_PASSWORD
     cookie_secure: bool = False  # env COOKIE_SECURE
 
+    # --- LLM gateway (Phase 2, plan 02-01) ---
+    # Provider-prefixed default model passed straight to init_chat_model
+    # (e.g. "anthropic:claude-..." / "openai:gpt-..."), D-13.
+    llm_default_model: str  # env LLM_DEFAULT_MODEL
+    # Provider keys default None so the app boots without them; live tests skip
+    # when absent (RESEARCH Pitfall 6). Never logged, never stored in the ledger.
+    anthropic_api_key: str | None = None  # env ANTHROPIC_API_KEY
+    openai_api_key: str | None = None  # env OPENAI_API_KEY
+    # Optional LangSmith tracing — env-gated, OFF by default (RESEARCH Q3).
+    langsmith_tracing: bool = False  # env LANGSMITH_TRACING
+    langsmith_api_key: str | None = None  # env LANGSMITH_API_KEY
+
     @field_validator("credential_keys", mode="before")
     @classmethod
     def _split_credential_keys(cls, value: object) -> object:
