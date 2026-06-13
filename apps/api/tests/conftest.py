@@ -35,6 +35,23 @@ def _host_dsn() -> str:
     )
 
 
+def pytest_collection_modifyitems(items: list) -> None:
+    """Run all functional (pytest-asyncio) tests before any e2e (Playwright) tests.
+
+    `uv run pytest tests` collects both suites into ONE process. pytest-asyncio
+    (functional) drives an asyncio event loop; pytest-playwright (e2e) drives its
+    own. If pytest's default file order interleaves them, an async functional
+    fixture can tear down while Playwright's loop is still running, raising
+    "Cannot run the event loop while another loop is running" / "Runner is closed".
+
+    Sorting e2e last makes the two loop regimes strictly sequential within the
+    single process, so the canonical one-command full-suite run is green. Tests
+    keyed by path: anything under tests/e2e/ sorts after everything else; order is
+    otherwise stable.
+    """
+    items.sort(key=lambda item: 1 if (os.sep + "e2e" + os.sep) in str(item.fspath) else 0)
+
+
 @pytest.fixture
 async def client() -> AsyncIterator[httpx.AsyncClient]:
     """Live-HTTP client against the running API (compose or hybrid host mode)."""
