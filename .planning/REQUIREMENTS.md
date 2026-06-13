@@ -14,7 +14,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PLAT-03**: User can log in to the platform with email/password; sessions persist via JWT
 - [ ] **PLAT-04**: Admin can assign roles (Admin / QA Lead / QA Engineer / Developer) that gate API endpoints and dashboard views
 - [x] **PLAT-05**: All agent LLM calls route through a provider-agnostic gateway that works with Anthropic or OpenAI via configuration only
-- [ ] **PLAT-06**: LLM gateway enforces per-call, per-run, and per-day token/cost budgets with a hard kill-switch, and logs cost per operation
+- [x] **PLAT-06**: LLM gateway enforces per-call, per-run, and per-day token/cost budgets with a hard kill-switch, and logs cost per operation
 - [x] **PLAT-07**: Target-app credentials are stored encrypted and never appear in logs, prompts, or generated code
 
 ### Explorer Agent
@@ -136,7 +136,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAT-03 | Phase 1 | Complete |
 | PLAT-04 | Phase 10 | Pending |
 | PLAT-05 | Phase 2 | Complete |
-| PLAT-06 | Phase 2 | Pending |
+| PLAT-06 | Phase 2 | Complete |
 | PLAT-07 | Phase 1 | Complete |
 | EXPL-01 | Phase 4 | Pending |
 | EXPL-02 | Phase 4 | Pending |

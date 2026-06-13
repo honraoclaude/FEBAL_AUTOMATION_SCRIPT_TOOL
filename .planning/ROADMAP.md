@@ -98,7 +98,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — Budgets (pre-check/reconcile) + kill-switch (admin endpoint + daily auto-trip) over a shared Redis client (PLAT-06)
+- [x] 02-02-PLAN.md — Budgets (pre-check/reconcile) + kill-switch (admin endpoint + daily auto-trip) over a shared Redis client (PLAT-06)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -259,7 +259,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
-| 2. LLM Gateway | 1/3 | In Progress|  |
+| 2. LLM Gateway | 2/3 | In Progress|  |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
