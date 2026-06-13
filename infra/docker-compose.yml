@@ -69,6 +69,28 @@ services:
     ports:
       - "8001:8000" # host 8001 (8000 held by another local project); container-internal 8000
 
+  web:
+    build: ../apps/web
+    mem_limit: 1536m # next dev + Turbopack is memory-hungry
+    environment:
+      API_URL: http://api:8000 # compose-internal; hybrid host mode uses http://localhost:8001
+      WATCHPACK_POLLING: "true" # webpack-fallback polling; Turbopack hot-reload NOT promised (Pitfall 1)
+    volumes:
+      - ../apps/web:/app # source mount (stack-up promise, not sub-second DX)
+      - /app/node_modules # volume-mask: NEVER bind-mount node_modules on Windows
+      - /app/.next
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>process.exit(r.ok||(r.status>=300&&r.status<400)?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    ports:
+      - "3000:3000"
+
   # --- Dormant: defined now, activated by later phases (D-08) ---
   neo4j:
     image: neo4j:2025
