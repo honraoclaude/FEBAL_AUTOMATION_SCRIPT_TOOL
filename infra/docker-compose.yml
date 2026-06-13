@@ -41,6 +41,34 @@ services:
     ports:
       - "6379:6379" # exposed for hybrid host mode (D-09)
 
+  api:
+    build: ../apps/api
+    mem_limit: 1g
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      TARGET_CREDENTIAL_KEY: ${TARGET_CREDENTIAL_KEY}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      COOKIE_SECURE: "false"
+      WATCHFILES_FORCE_POLLING: "true" # uvicorn --reload over a Windows bind mount needs polling
+    volumes:
+      - ../apps/api/app:/app/app # hot-reload mount
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    ports:
+      - "8001:8000" # host 8001 (8000 held by another local project); container-internal 8000
+
   # --- Dormant: defined now, activated by later phases (D-08) ---
   neo4j:
     image: neo4j:2025
