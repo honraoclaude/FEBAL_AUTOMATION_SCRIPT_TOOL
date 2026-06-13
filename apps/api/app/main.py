@@ -14,6 +14,7 @@ from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
 from app.models.llm_usage import LLMUsage  # noqa: F401 -- Base.metadata/Alembic discovery
 from app.models.user import User
+from app.routers.admin_llm import router as admin_llm_router
 from app.routers.auth import router as auth_router
 from app.routers.health import router as health_router
 from app.routers.targets import router as targets_router
@@ -58,3 +59,4 @@ app = FastAPI(title="Autonomous QA Engineer Platform API", lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(targets_router)
+app.include_router(admin_llm_router)
