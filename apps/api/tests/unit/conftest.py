@@ -77,6 +77,36 @@ def fake_chat_model(monkeypatch):
     return controller
 
 
+@pytest.fixture(autouse=True)
+async def _isolate_gateway_redis():
+    """Isolate every unit test's gateway Redis use (cross-loop safety + no real counters).
+
+    The gateway calls get_redis() on every complete() (kill-switch check, budget
+    counters). Two hazards this fixes for the whole unit suite:
+
+    1. Cross-loop reuse: app.core.redis_client._client is a module-level singleton.
+       pytest-asyncio (asyncio_mode=auto) runs each test on a FRESH event loop, so a
+       client opened in one test and reused in the next raises "Event loop is closed".
+       Reset the singleton before AND after each test so each test opens its own client.
+    2. Real-counter pollution: tests that don't patch get_redis (e.g. Plan-01
+       test_gateway_provider) would otherwise read/write the REAL "llm:" keys on the dev
+       Redis, eventually tripping the real daily kill-switch. Point _KEY_PREFIX at the
+       "test:llm:" namespace (the prefix the redis_test/patch_redis fixtures already flush).
+    """
+    import app.core.redis_client as rc
+    import app.services.llm_gateway as gateway
+
+    rc._client = None  # discard any client bound to a previous test's (closed) loop
+    gateway._KEY_PREFIX = "test:llm:"
+    try:
+        yield
+    finally:
+        if rc._client is not None:
+            await rc._client.aclose()  # close on the still-live test loop
+            rc._client = None
+        gateway._KEY_PREFIX = "llm:"
+
+
 @pytest.fixture
 async def redis_test():
     """A redis.asyncio client on the compose Redis, namespaced + flushed per test.
@@ -89,7 +119,9 @@ async def redis_test():
     url = os.environ["REDIS_URL"].replace("@redis:", "@localhost:").replace(
         "//redis:", "//localhost:"
     )
-    client = aioredis.from_url(url)
+    # decode_responses=True mirrors the production redis_client (app/core/redis_client.py)
+    # so GET/MGET return str — the gateway parses counters/kill-reason as text, not bytes.
+    client = aioredis.from_url(url, decode_responses=True)
     prefix = "test:llm:"
 
     async def _flush_prefix():

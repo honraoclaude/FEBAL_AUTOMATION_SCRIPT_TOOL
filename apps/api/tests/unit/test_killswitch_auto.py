@@ -51,21 +51,24 @@ async def test_daily_exhaustion_auto_trips_and_next_call_halts(
 ):
     """A reconcile that lands day USD >= the daily cap SETs the kill flag; the very
     next complete() raises KillSwitchActive before invoking the provider."""
-    monkeypatch.setattr(settings, "llm_daily_usd_cap", 0.001)  # exhaust on first call
+    # Cap == the exact actual cost so the pre-check reserve (est_in=100, out=50 ==
+    # actual) passes (reserve <= cap) and the reconcile lands day USD == cap, tripping.
+    # reserve/actual cost = 100*3/1e6 + 50*15/1e6 = $0.001050.
+    monkeypatch.setattr(settings, "llm_daily_usd_cap", 0.001050)
     today = datetime.now(timezone.utc).strftime("%Y%m%d")
     fake_chat_model.set(
         content="ok",
         usage_metadata={"input_tokens": 100, "output_tokens": 50, "total_tokens": 150},
     )
 
-    # First call succeeds but its reconcile pushes day USD (~$0.00105) >= $0.001 cap.
+    # First call succeeds; its reconcile pushes day USD (~$0.00105) >= the cap.
     await gateway.complete(
         _DBSentinel(),
         [{"role": "user", "content": "hi"}],
         operation_type="test.autotrip",
         run_id=uuid.uuid4().hex,
         model=MODEL,
-        max_tokens=100,
+        max_tokens=50,
     )
 
     flag = await patch_redis.get("test:llm:killswitch")
