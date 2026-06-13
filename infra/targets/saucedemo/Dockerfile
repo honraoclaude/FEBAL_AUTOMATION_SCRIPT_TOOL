@@ -1,0 +1,32 @@
+# Self-hosted SauceDemo (saucelabs/sample-app-web) — QUAL-04 / D-10.
+#
+# We build our own multi-stage image because the upstream repo's Dockerfile is
+# unusable (node:14 base, no CMD/EXPOSE, bundles Sauce Connect cruft) — RESEARCH
+# Pattern 5 / Alternatives Considered.
+#
+# Pinned to an exact upstream commit SHA (NOT "master") for reproducibility —
+# threat T-01-25 (upstream drift/compromise): the build is fixed to a known
+# revision and the final image only serves static files via nginx (no
+# server-side code runs). Resolve a fresh SHA with:
+#   git ls-remote https://github.com/saucelabs/sample-app-web.git HEAD
+#
+# build stage uses node:16-bullseye: the app's webpack/babel toolchain predates
+# OpenSSL 3, so Node 17+ commonly fails with ERR_OSSL_EVP_UNSUPPORTED on the old
+# webpack build (RESEARCH assumption A1 / Pitfall 9). node:16 ships OpenSSL 1.1.1
+# (no md4 removal), so the `--openssl-legacy-provider` flag is neither needed nor
+# accepted here — setting it globally via NODE_OPTIONS makes node abort
+# ("not allowed in NODE_OPTIONS") even for `npm ci`. The pinned node:16 base IS
+# the A1 mitigation; the legacy-provider flag is only relevant if this base is
+# ever bumped to Node 17+.
+
+FROM node:16-bullseye AS build
+ARG SAUCEDEMO_SHA=89b11dca1b11b5cae36966e34b8c902212670c9a
+RUN git clone https://github.com/saucelabs/sample-app-web.git /src \
+ && cd /src && git checkout ${SAUCEDEMO_SHA}
+WORKDIR /src
+RUN npm ci && npm run build
+
+FROM nginx:alpine
+COPY --from=build /src/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80

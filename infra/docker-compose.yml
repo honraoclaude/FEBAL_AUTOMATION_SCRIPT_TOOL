@@ -91,6 +91,24 @@ services:
     ports:
       - "3000:3000"
 
+  # Self-hosted demo target — QUAL-04 / D-10. Default profile (no `profiles:` key):
+  # part of `docker compose up`. Own multi-stage build pinned to an upstream SHA
+  # (infra/targets/saucedemo/Dockerfile). Tiny nginx static serve, mem_limit 128m.
+  saucedemo:
+    build: ./targets/saucedemo
+    mem_limit: 128m
+    healthcheck:
+      # 127.0.0.1, not localhost: inside the container `localhost` resolves to
+      # ::1 (IPv6) but nginx listens on IPv4 0.0.0.0:80, so a localhost probe
+      # gets connection-refused. -O /dev/null avoids the --spider HEAD path.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8080:80" # host 8080 verified free before adoption
+
   # --- Dormant: defined now, activated by later phases (D-08) ---
   neo4j:
     image: neo4j:2025
