@@ -15,6 +15,12 @@ __pycache__/
 test-results/
 playwright-report/
 
+# Local run logs — transient process output, never source (alembic/uvicorn/verify runs)
+*.log
+
+# Local-only Claude/editor settings (machine-specific, not shared config)
+.claude/
+
 # Generated per-app test repos — platform output, not platform source
 # (keep the README that documents the directory's purpose)
 workspaces/*
