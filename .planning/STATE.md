@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 01-05 complete (verified + committed); next is plan 01-06 (targets UI)
-last_updated: "2026-06-13T02:00:00.000Z"
-last_activity: 2026-06-13 -- Plan 01-05 complete (encrypted target registry; PLAT-07 done)
+stopped_at: Plan 01-06 complete (verified + committed); next is plan 01-07 (target reset/SauceDemo)
+last_updated: "2026-06-13T11:29:02.012Z"
+last_activity: 2026-06-13 -- Plan 01-06 complete (targets registry UI; PLAT-01 done)
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 8
-  completed_plans: 5
-  percent: 63
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (Foundation & Dev Environment) — EXECUTING
-Plan: 6 of 8 (01-01 through 01-05 complete)
+Plan: 7 of 8 (01-01 through 01-06 complete)
 Status: Ready to execute
-Last activity: 2026-06-13 -- Plan 01-05 complete (encrypted target registry; PLAT-07 done)
+Last activity: 2026-06-13 -- Plan 01-06 complete (targets registry UI; PLAT-01 done)
 
-Progress: [██████░░░░] 63%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -54,6 +54,8 @@ Progress: [██████░░░░] 63%
 *Updated after each plan completion*
 | Phase 01 P03 | ~12min | 2 tasks | 13 files |
 | Phase 01 P04 | ~26min | 3 tasks | 48 files |
+| Phase 01 P05 | ~15min | 2 tasks | 10 files |
+| Phase 01 P06 | ~35min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -71,6 +73,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 01-03: pydantic[email] extra adopted (EmailStr requires email-validator); test data must avoid special-use TLDs which 422 at the schema boundary
 - [Phase 01]: 01-04: shadcn CLI 4.x dropped init style/base-color flags — manual components.json path used to honor the locked UI-SPEC preset (new-york/zinc/CSS variables)
 - [Phase 01]: 01-04: hybrid-mode Next rewrite fallback is http://localhost:8001 per the 01-02 host-port decision (Next does not read repo-root .env)
+- [Phase 01]: 01-06: added api.patch to client wrapper (targets uses PATCH) and mounted sonner Toaster in dashboard layout (installed in 01-04 but never hosted)
 
 ### Pending Todos
 
@@ -95,9 +98,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13 (opus)
-Stopped at: Plan 01-05 complete (verified + committed); next is plan 01-06 (targets UI)
-Resume file: .planning/phases/01-foundation-dev-environment/01-06-PLAN.md
+Last session: 2026-06-13T11:28:53.280Z
+Stopped at: Plan 01-06 complete (verified + committed); next is plan 01-07 (target reset / SauceDemo)
+Resume file: .planning/phases/01-foundation-dev-environment/01-07-PLAN.md
 
 ENVIRONMENT FACTS (2026-06-13):
 

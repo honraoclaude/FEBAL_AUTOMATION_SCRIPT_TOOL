@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Platform Foundation
 
-- [ ] **PLAT-01**: User can register a target application (name, URL, credentials, exploration rules) via API and UI
+- [x] **PLAT-01**: User can register a target application (name, URL, credentials, exploration rules) via API and UI
 - [ ] **PLAT-02**: Platform exposes REST API endpoints: POST /explore, /generate-bdd, /generate-scripts, /execute, /heal, /create-defect; GET /flows, /coverage, /executions, /dashboard
 - [x] **PLAT-03**: User can log in to the platform with email/password; sessions persist via JWT
 - [ ] **PLAT-04**: Admin can assign roles (Admin / QA Lead / QA Engineer / Developer) that gate API endpoints and dashboard views
@@ -131,7 +131,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLAT-01 | Phase 1 | Pending |
+| PLAT-01 | Phase 1 | Complete |
 | PLAT-02 | Phase 3 | Pending |
 | PLAT-03 | Phase 1 | Complete |
 | PLAT-04 | Phase 10 | Pending |
