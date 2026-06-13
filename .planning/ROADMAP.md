@@ -89,7 +89,20 @@ Plans:
   2. Per-call, per-run, and per-day token/cost budgets stop execution when exceeded, and a hard kill-switch halts all LLM traffic immediately
   3. Every LLM operation logs tokens and cost, queryable per operation, with Redis response caching reducing repeat-call spend
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Provider-agnostic gateway call + effective-dated pricing + llm_usage ledger/usage-event (PLAT-05); package-legitimacy gate + Wave-0 mocked test scaffold
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — Budgets (pre-check/reconcile) + kill-switch (admin endpoint + daily auto-trip) over a shared Redis client (PLAT-06)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — Custom Redis response cache (temp==0, $0 hit) + gated two-provider live parity test (PLAT-05/PLAT-06)
 
 ### Phase 3: Tracer Bullet — Minimal End-to-End Loop
 
@@ -246,7 +259,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
-| 2. LLM Gateway | 0/TBD | Not started | - |
+| 2. LLM Gateway | 0/3 | Planned | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
