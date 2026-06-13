@@ -95,7 +95,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **QUAL-01**: A hand-labeled ground-truth graph of a demo app (SauceDemo) measures exploration coverage (>80% target)
 - [ ] **QUAL-02**: A seeded-bug / benign-mutation harness measures self-healing success (>90%) and false-heal rate, and proves generated tests fail on real bugs
 - [ ] **QUAL-03**: A labeled failure set measures defect classification accuracy (>85%) and calibrates the Jira confidence threshold
-- [ ] **QUAL-04**: Self-hosted demo target apps run in Docker with snapshot/restore so exploration and execution are repeatable
+- [x] **QUAL-04**: Self-hosted demo target apps run in Docker with snapshot/restore so exploration and execution are repeatable
 
 ## v2 Requirements
 
@@ -187,7 +187,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-01 | Phase 5 | Pending |
 | QUAL-02 | Phase 8 | Pending |
 | QUAL-03 | Phase 9 | Pending |
-| QUAL-04 | Phase 1 | Pending |
+| QUAL-04 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 57 total (corrected from earlier count of 49)

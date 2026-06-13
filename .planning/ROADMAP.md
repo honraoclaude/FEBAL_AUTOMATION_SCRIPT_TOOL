@@ -71,7 +71,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 01-07-PLAN.md — Self-hosted SauceDemo target + generic reset-target contract
+- [x] 01-07-PLAN.md — Self-hosted SauceDemo target + generic reset-target contract
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
@@ -245,7 +245,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Dev Environment | 6/8 | In Progress|  |
+| 1. Foundation & Dev Environment | 7/8 | In Progress|  |
 | 2. LLM Gateway | 0/TBD | Not started | - |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
 | 4. Explorer Agent | 0/TBD | Not started | - |

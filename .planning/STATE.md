@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 01-06 complete (verified + committed); next is plan 01-07 (target reset/SauceDemo)
-last_updated: "2026-06-13T11:29:02.012Z"
-last_activity: 2026-06-13 -- Plan 01-06 complete (targets registry UI; PLAT-01 done)
+stopped_at: Plan 01-06 complete (verified + committed); next is plan 01-07 (target reset / SauceDemo)
+last_updated: "2026-06-13T11:47:37.149Z"
+last_activity: 2026-06-13
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 0
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (Foundation & Dev Environment) — EXECUTING
-Plan: 7 of 8 (01-01 through 01-06 complete)
+Plan: 8 of 8 (01-01 through 01-06 complete)
 Status: Ready to execute
-Last activity: 2026-06-13 -- Plan 01-06 complete (targets registry UI; PLAT-01 done)
+Last activity: 2026-06-13
 
-Progress: [████████░░] 75%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [████████░░] 75%
 | Phase 01 P04 | ~26min | 3 tasks | 48 files |
 | Phase 01 P05 | ~15min | 2 tasks | 10 files |
 | Phase 01 P06 | ~35min | 3 tasks | 8 files |
+| Phase 01 P01-07 | ~12min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-04: shadcn CLI 4.x dropped init style/base-color flags — manual components.json path used to honor the locked UI-SPEC preset (new-york/zinc/CSS variables)
 - [Phase 01]: 01-04: hybrid-mode Next rewrite fallback is http://localhost:8001 per the 01-02 host-port decision (Next does not read repo-root .env)
 - [Phase 01]: 01-06: added api.patch to client wrapper (targets uses PATCH) and mounted sonner Toaster in dashboard layout (installed in 01-04 but never hosted)
+- [Phase ?]: [Phase 01]: 01-07: saucedemo healthcheck uses 127.0.0.1 not localhost — container localhost resolves to ::1 (IPv6) but nginx listens IPv4-only
+- [Phase ?]: [Phase 01]: 01-07: node:16 base IS the OpenSSL-3 mitigation; --openssl-legacy-provider removed (node:16 rejects it in NODE_OPTIONS)
 
 ### Pending Todos
 
@@ -98,9 +101,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T11:28:53.280Z
+Last session: 2026-06-13T11:47:17.728Z
 Stopped at: Plan 01-06 complete (verified + committed); next is plan 01-07 (target reset / SauceDemo)
-Resume file: .planning/phases/01-foundation-dev-environment/01-07-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 
