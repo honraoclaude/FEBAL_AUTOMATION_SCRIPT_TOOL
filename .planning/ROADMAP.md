@@ -14,7 +14,8 @@ The journey runs along the data-flow spine the platform itself embodies: stand u
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Dev Environment** - Docker Compose core (Postgres + Redis), JWT auth, encrypted target-app registry, Next.js shell, snapshot-restorable SauceDemo target (completed 2026-06-13)
-- [x] **Phase 2: LLM Gateway** - Provider-agnostic `init_chat_model` gateway with budgets, kill-switch, caching, and cost-per-operation logging (completed 2026-06-13)
+- [x] **Phase 2: LLM Gateway** - Provider-agnostic `init_chat_model` gateway with budgets, kill-switch, caching, and cost-per-operation logging
+ (completed 2026-06-13)
 - [ ] **Phase 3: Tracer Bullet — Minimal End-to-End Loop** - Thin slice: explore SauceDemo → minimal graph → one scenario → one spec → one execution → result row; full REST API contract in place
 - [ ] **Phase 4: Explorer Agent** - Full autonomous exploration: snapshot-first perception, budgets/loop detection, auth handling, risk policy, sanitized observations, element fingerprints
 - [ ] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
@@ -117,7 +118,24 @@ Plans:
   3. POST /execute runs that spec and a result row lands in PostgreSQL, retrievable via GET /executions
   4. All spec'd REST endpoints (POST /explore, /generate-bdd, /generate-scripts, /execute, /heal, /create-defect; GET /flows, /coverage, /executions, /dashboard) exist with documented contracts — real where the slice covers them, honest stubs elsewhere — and queue message schemas live in `shared/events/`
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Foundation: package gate + trimmed neo4j + lifespan driver + graph_mode helper + Wave-0 test scaffold
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 03-02-PLAN.md — Slice A: runs/executions model + shared/events + deterministic explore → Neo4j Page/NavigatesTo + GET /executions
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 03-03-PLAN.md — Slice B: generate-bdd + generate-scripts via the gateway → gherkin-validated .feature + Jinja2 runnable spec
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 03-04-PLAN.md — Slice C: /execute subprocess runner → result row + 5 honest 501 stubs (full 10-endpoint surface) + traceability tests
 
 ### Phase 4: Explorer Agent
 
