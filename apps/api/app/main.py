@@ -20,6 +20,7 @@ from app.routers.admin_llm import router as admin_llm_router
 from app.routers.auth import router as auth_router
 from app.routers.executions import router as executions_router
 from app.routers.explore import router as explore_router
+from app.routers.generate import router as generate_router
 from app.routers.health import router as health_router
 from app.routers.targets import router as targets_router
 
@@ -68,3 +69,4 @@ app.include_router(targets_router)
 app.include_router(admin_llm_router)
 app.include_router(explore_router)
 app.include_router(executions_router)
+app.include_router(generate_router)

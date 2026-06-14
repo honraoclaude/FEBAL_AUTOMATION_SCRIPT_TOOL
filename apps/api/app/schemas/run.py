@@ -17,6 +17,15 @@ class ExploreRequest(BaseModel):
     target_id: int = Field(ge=1)
 
 
+class GenerateRequest(BaseModel):
+    """POST /generate-bdd and /generate-scripts body — the run_id to generate for (V5).
+
+    The run_id threads explore -> generate: it must be the run_id returned by /explore.
+    """
+
+    run_id: str = Field(min_length=1)
+
+
 class RunResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
