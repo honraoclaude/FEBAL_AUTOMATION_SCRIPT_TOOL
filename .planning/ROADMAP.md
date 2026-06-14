@@ -123,7 +123,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Foundation: package gate + trimmed neo4j + lifespan driver + graph_mode helper + Wave-0 test scaffold
+- [x] 03-01-PLAN.md — Foundation: package gate + trimmed neo4j + lifespan driver + graph_mode helper + Wave-0 test scaffold
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -278,7 +278,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
-| 3. Tracer Bullet — Minimal End-to-End Loop | 0/TBD | Not started | - |
+| 3. Tracer Bullet — Minimal End-to-End Loop | 1/4 | In Progress|  |
 | 4. Explorer Agent | 0/TBD | Not started | - |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |

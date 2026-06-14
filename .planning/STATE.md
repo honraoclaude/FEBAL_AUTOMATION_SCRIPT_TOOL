@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
+status: executing
 stopped_at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
-last_updated: "2026-06-14T11:31:00.584Z"
-last_activity: 2026-06-13 -- Phase 02 complete (PLAT-05/PLAT-06 done)
+last_updated: "2026-06-14T18:47:50.213Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 15
-  completed_plans: 11
+  completed_plans: 12
   percent: 18
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 03 — Tracer Bullet (minimal end-to-end loop) — next up
+**Current focus:** Phase 03 — tracer-bullet-minimal-end-to-end-loop
 
 ## Current Position
 
-Phase: 02 (LLM Gateway) — ✅ COMPLETE (verified passed 2026-06-13)
-Plan: 3 of 3 complete
-Status: Phase 02 complete — ready to discuss/plan Phase 03
-Last activity: 2026-06-13 -- Phase 02 complete (PLAT-05/PLAT-06 done)
+Phase: 03 (tracer-bullet-minimal-end-to-end-loop) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-14
 
-Progress: [██░░░░░░░░] 18% (2 of 11 phases)
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [██░░░░░░░░] 18% (2 of 11 phases)
 | Phase 01 P01-07 | ~12min | 2 tasks | 5 files |
 | Phase 02 P01 | 40min | 3 tasks | 15 files |
 | Phase 02 P02-03 | ~16m | 2 tasks | 9 files |
+| Phase 03 P01 | ~9min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,10 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 02]: 02-01: LLM_DEFAULT_MODEL required — wired into compose api env (compose does not pass whole .env); provider keys empty placeholders
 - [Phase ?]: Custom Redis response cache (not native LangChain cache): SHA-256 exact-match key, temp==0-only, env TTL, $0 cache_hit ledger row, checked AFTER kill-switch so a halt refuses hits (D-06)
 - [Phase ?]: Two-provider live_llm parity test (Anthropic+OpenAI by config alone) gated off the default suite via skipif + budget-raising fixture; proves PLAT-05 Success Criterion 1
+- [Phase 03]: 03-01: gherkin-official is 29.x TRANSITIVE via pytest-bdd 8.1 (which hard-pins gherkin-official>=29,<30) — a direct gherkin-official==40.* pin is INCOMPATIBLE. CLAUDE.md stack table (gherkin-official 40.x) is WRONG and should be corrected. Standalone Gherkin validation imports the SAME parser pytest-bdd uses (from gherkin.parser import Parser).
+- [Phase 03]: 03-01: neo4j driver opens LAZILY (AsyncGraphDatabase.driver does not connect until first session) so init_neo4j() never blocks startup when neo4j is down; api has NO depends_on:neo4j (graph-profile-gated). Verified api boots healthy with neo4j absent.
+- [Phase 03]: 03-01: graph_mode helper stops web (1.5g) BEFORE starting neo4j — VERIFIED neo4j reaches healthy at ~1.14GB total, well under the 3GB WSL cap. After graph_mode down, callers must stop neo4j before relying on the full default stack (web+neo4j together exceed headroom).
+- [Phase 03]: 03-01: neo4j compose mem env-var underscore-doubling (Pitfall 1): NEO4J_server_memory_heap_max__size (DOUBLE) / NEO4J_server_memory_pagecache_size (single).
 
 ### Pending Todos
 
@@ -104,13 +109,13 @@ Items acknowledged and carried forward from previous milestone close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| docs/stack | Correct CLAUDE.md Browser-Automation stack table: gherkin-official is constrained to 29.x by pytest-bdd 8.1 (>=29,<30) — the listed 40.x is incompatible and must not be a direct pin | Open | 03-01 |
 
 ## Session Continuity
 
-Last session: 2026-06-14T11:31:00.519Z
+Last session: 2026-06-14T18:47:50.166Z
 Stopped at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
-Resume file: .planning/phases/03-tracer-bullet-minimal-end-to-end-loop/03-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 
