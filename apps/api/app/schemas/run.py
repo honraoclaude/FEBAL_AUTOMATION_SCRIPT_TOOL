@@ -26,6 +26,16 @@ class GenerateRequest(BaseModel):
     run_id: str = Field(min_length=1)
 
 
+class ExecuteRequest(BaseModel):
+    """POST /execute body — run the generated spec for this run_id (FIX 1/FIX 3).
+
+    The run_id threads explore -> generate -> execute: it must be a run_id whose spec was
+    written to workspaces/<run_id>/test_login.py by /generate-scripts.
+    """
+
+    run_id: str = Field(min_length=1)
+
+
 class RunResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
