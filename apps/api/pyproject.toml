@@ -50,6 +50,7 @@ markers = [
     "functional: live-HTTP functional tests against the running stack (D-02)",
     "e2e: Playwright UI tests against the running web tier",
     "live_llm: needs real provider keys; skipped when absent; off the default gate",
+    "graph: needs the neo4j graph profile active (run under graph_mode; web stopped)",
 ]
 
 [tool.ruff]

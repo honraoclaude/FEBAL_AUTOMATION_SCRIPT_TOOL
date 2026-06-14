@@ -5,7 +5,9 @@ real Postgres/Redis. No ASGITransport in-process shortcut, no DB session
 fixtures that bypass HTTP.
 """
 
+import asyncio
 import os
+import time
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -32,6 +34,81 @@ def _host_dsn() -> str:
     url = os.environ["DATABASE_URL"]
     return url.replace("postgresql+asyncpg://", "postgresql://").replace(
         "@postgres:", "@localhost:"
+    )
+
+
+def _host_bolt_uri() -> str:
+    """NEO4J_URI rewritten for host-side Bolt (in-cluster 'neo4j' host → localhost).
+
+    Mirrors the redis host rewrite in tests/unit/conftest.py: the compose env points
+    the api at `bolt://neo4j:7687`, but a host-run test reaches the same DB at
+    `bolt://localhost:7687` (the 7687 port published by the neo4j service).
+    """
+    uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    return uri.replace("://neo4j:", "://localhost:")
+
+
+@pytest.fixture
+async def neo4j_session():
+    """Host-side Bolt session against the neo4j graph profile (mark tests `graph`).
+
+    Connects a SHORT-LIVED driver to bolt://localhost:7687 and yields one session for
+    a downstream functional test to assert Page/NavigatesTo nodes; closes both on
+    teardown. Only usable when neo4j is up (run under graph_mode, web stopped) — tests
+    that use it MUST carry the `graph` marker. neo4j is imported lazily inside the
+    fixture so importing this conftest never requires neo4j when the graph suite is
+    not being run.
+    """
+    from neo4j import AsyncGraphDatabase
+
+    driver = AsyncGraphDatabase.driver(
+        _host_bolt_uri(),
+        auth=(
+            os.environ.get("NEO4J_USER", "neo4j"),
+            os.environ.get("NEO4J_PASSWORD", "please-change"),
+        ),
+    )
+    session = driver.session()
+    try:
+        yield session
+    finally:
+        await session.close()
+        await driver.close()
+
+
+# Terminal states for an execution run (Plans 02-04 produce these). poll_until_terminal
+# polls AFTER a 202-accepted enqueue rather than asserting immediately (RESEARCH run_id
+# poll contract): a freshly enqueued run is not yet terminal.
+_TERMINAL_STATUSES = {"passed", "failed"}
+
+
+async def poll_until_terminal(
+    client: httpx.AsyncClient,
+    run_id: str,
+    timeout: float = 60.0,
+    interval: float = 1.0,
+) -> dict:
+    """Poll GET /api/executions/{run_id} until status is terminal, or raise on timeout.
+
+    Mirrors reset_target._wait_for_health's monotonic-deadline loop. Returns the final
+    execution JSON (status in {"passed","failed"}). Consumed by Plans 02-04 functional
+    tests; the endpoint does not exist yet, so this helper is defined but not called by
+    the current suite (importing it must not require the endpoint to exist).
+    """
+    deadline = time.monotonic() + timeout
+    last = "no attempt made"
+    while time.monotonic() < deadline:
+        resp = await client.get(f"/api/executions/{run_id}")
+        if resp.status_code == 200:
+            body = resp.json()
+            if body.get("status") in _TERMINAL_STATUSES:
+                return body
+            last = f"status={body.get('status')!r}"
+        else:
+            last = f"HTTP {resp.status_code}"
+        await asyncio.sleep(interval)
+    raise TimeoutError(
+        f"run {run_id} not terminal within {timeout}s (last: {last})"
     )
 
 
