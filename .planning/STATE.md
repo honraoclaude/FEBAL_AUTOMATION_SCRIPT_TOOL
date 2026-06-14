@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
+status: verifying
 stopped_at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
-last_updated: "2026-06-14T19:32:32.486Z"
+last_updated: "2026-06-14T19:55:47.410Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 11
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 13
-  percent: 18
+  completed_plans: 15
+  percent: 27
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 Phase: 03 (tracer-bullet-minimal-end-to-end-loop) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-14
 
-Progress: [█████████░] 87%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [█████████░] 87%
 | Phase 03 P01 | ~9min | 2 tasks | 9 files |
 | Phase 03 P03-02 | 20min | 3 tasks | 17 files |
 | Phase 03 P03-03 | 70min | 3 tasks | 5 files |
+| Phase 03 P04 | ~95min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 03-02: shared/ mounted (not COPY-d) into the api container at /app/shared because it is outside the apps/api build context; pyproject pythonpath adds the repo root for host tests, so import shared.events resolves identically in container and host.
 - [Phase ?]: 03-02: chromium plus OS libs baked into the api image via playwright install --with-deps; playwright promoted from transitive dev dep to runtime pin; alembic/ bind-mounted so new migrations reach the self-migrating entrypoint without a rebuild.
 - [Phase ?]: 03-03: generation routes both generate-bdd and generate-scripts through llm_gateway.complete() with the explore run_id (D-07) — no direct provider call; gherkin-official validates the .feature before any write; the Jinja2 skeleton owns all spec structure and selectors (LLM fills only narrow slots, Pitfall 5).
+- [Phase 03]: 03-04: /execute discovers the run's spec by the workspaces/<run_id>/test_login.py filesystem convention (404 if absent, FIX 3) and runs it ONLY via asyncio.create_subprocess_exec (argv list, no shell) — never in-process pytest (Pitfall 3); spec_path is run_id-derived, never client input (T-03-15); the runner finishes the run_id-keyed Execution row (FIX 1).
+- [Phase 03]: 03-04: the 10-endpoint PLAT-02 surface is completed with 5 honest 501 stubs (heal/create-defect/flows/coverage/dashboard) carrying documented OpenAPI contracts but NEVER fabricated results (T-03-19) — PLAT-02 now COMPLETE.
+- [Phase 03]: 03-04: workspaces root + execution cwd are settings-driven (WORKSPACES_DIR=/app/workspaces, EXECUTION_CWD=/app in-container) with the host workspaces/ bind-mounted; fixes a latent 03-03 parents[4] resolution that never worked in the container and lets generate WRITE / execute DISCOVER+RUN the same spec. uvicorn --reload scoped to --reload-dir app so spec/artifact writes don't restart the server mid-run.
 
 ### Pending Todos
 
@@ -119,7 +123,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-14T19:32:08.713Z
+Last session: 2026-06-14T19:55:47.389Z
 Stopped at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
 Resume file: None
 
