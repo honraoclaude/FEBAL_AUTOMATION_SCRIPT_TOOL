@@ -69,6 +69,13 @@ services:
       WATCHFILES_FORCE_POLLING: "true" # uvicorn --reload over a Windows bind mount needs polling
     volumes:
       - ../apps/api/app:/app/app # hot-reload mount
+      # alembic dir bind-mounted so new migrations (e.g. 0004) are visible to the
+      # self-migrating entrypoint without an image rebuild (03-02).
+      - ../apps/api/alembic:/app/alembic
+      # repo-root shared/ mounted at /app/shared so `import shared.events` resolves
+      # identically to host tests (WORKDIR /app is on sys.path) — shared/ is outside
+      # the build context, so it must be a mount, not a COPY (03-02 D-05).
+      - ../shared:/app/shared
     depends_on:
       postgres:
         condition: service_healthy
