@@ -18,20 +18,32 @@ The run_id threads explore -> generate -> execute -> result: `finish_execution(d
 """
 
 import asyncio
+from pathlib import Path
 
 import structlog
 
+from app.core.config import settings
 from app.db.session import SessionLocal
 from app.services import run_service
 
 log = structlog.get_logger()
 
-# The spec runs from the api project dir so `uv run` resolves THIS project's env + pytest
-# config; spec_path is absolute (run_id-derived) so cwd does not affect spec resolution.
-_RUN_CWD = "apps/api"
-
 # Cap captured output so a noisy spec cannot bloat the executions row / Postgres.
 _OUTPUT_TAIL_CHARS = 8000
+
+
+def _run_cwd() -> str:
+    """The cwd for `uv run pytest` — the dir holding the uv project (pyproject.toml).
+
+    settings.execution_cwd when set (container WORKDIR /app), else apps/api relative to
+    this file (host/hybrid layout: app/services/execution.py -> app -> api). `uv run`
+    resolves THIS project's env + pytest config from there; spec_path is absolute
+    (run_id-derived) so cwd never affects spec resolution.
+    """
+    if settings.execution_cwd:
+        return settings.execution_cwd
+    # app/services/execution.py -> parents: services(0) app(1) api(2) -> apps/api.
+    return str(Path(__file__).resolve().parents[2])
 
 
 async def run_execution(run_id: str, spec_path: str) -> None:
@@ -55,7 +67,7 @@ async def run_execution(run_id: str, spec_path: str) -> None:
             "-q",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
-            cwd=_RUN_CWD,
+            cwd=_run_cwd(),
         )
         out, _ = await proc.communicate()
         exit_code = proc.returncode

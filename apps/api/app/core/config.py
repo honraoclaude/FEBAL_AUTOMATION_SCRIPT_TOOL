@@ -74,6 +74,18 @@ class Settings(BaseSettings):
     neo4j_user: str  # env NEO4J_USER
     neo4j_password: str  # env NEO4J_PASSWORD
 
+    # --- Artifact workspaces + execution runner (Phase 3, plan 03-04; PLAT-02) ---
+    # WORKSPACES_DIR: where generate-scripts writes (and /execute discovers) the run's
+    #   spec at <WORKSPACES_DIR>/<run_id>/test_login.py. Default None => resolve the
+    #   gitignored repo-root workspaces/ relative to this file (host/hybrid layout). In
+    #   the container the path differs (WORKDIR /app), so compose sets WORKSPACES_DIR
+    #   explicitly to /app/workspaces (a bind mount of the host repo-root workspaces/).
+    # EXECUTION_CWD: the cwd for the `uv run pytest` subprocess — the dir holding the uv
+    #   project (pyproject.toml). Default None => apps/api relative to this file (host);
+    #   compose sets it to /app (the container WORKDIR / project root).
+    workspaces_dir: str | None = None  # env WORKSPACES_DIR
+    execution_cwd: str | None = None  # env EXECUTION_CWD
+
     @field_validator("credential_keys", mode="before")
     @classmethod
     def _split_credential_keys(cls, value: object) -> object:

@@ -33,6 +33,10 @@ from neo4j import AsyncDriver
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.neo4j_driver import get_neo4j
+from app.core.workspaces import run_dir as _ws_run_dir
+from app.core.workspaces import (  # noqa: F401 -- re-exported for 03-03 unit tests
+    workspaces_root as _workspaces_root,
+)
 from app.services import llm_gateway
 
 log = structlog.get_logger()
@@ -71,20 +75,13 @@ class GenerationError(Exception):
     """
 
 
-def _workspaces_root() -> Path:
-    """Resolve the gitignored workspaces/ root relative to the repo.
-
-    app/services/generation.py -> parents: services -> app -> api -> apps -> repo root.
-    The repo root holds workspaces/ (gitignored: `workspaces/*`).
-    """
-    return Path(__file__).resolve().parents[4] / "workspaces"
-
-
 def _run_dir(run_id: str) -> Path:
-    """workspaces/<run_id>/ — created on demand; both artifacts land here, keyed by run_id."""
-    d = _workspaces_root() / run_id
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    """workspaces/<run_id>/ — created on demand; both artifacts land here, keyed by run_id.
+
+    Delegates to app.core.workspaces so generate-scripts WRITES to the SAME root /execute
+    DISCOVERS from (settings.workspaces_dir in the container, repo-root on the host).
+    """
+    return _ws_run_dir(run_id, create=True)
 
 
 def validate_gherkin(text: str) -> None:

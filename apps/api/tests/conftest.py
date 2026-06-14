@@ -129,17 +129,23 @@ def pytest_collection_modifyitems(items: list) -> None:
     items.sort(key=lambda item: 1 if (os.sep + "e2e" + os.sep) in str(item.fspath) else 0)
 
 
+# Generous default timeout: /execute runs a Chromium subprocess in the api container that
+# can briefly busy the event loop; the default 5s httpx timeout is too tight for the poll
+# during a heavy run (03-04). 30s covers it without masking a genuinely hung server.
+_CLIENT_TIMEOUT = httpx.Timeout(30.0)
+
+
 @pytest.fixture
 async def client() -> AsyncIterator[httpx.AsyncClient]:
     """Live-HTTP client against the running API (compose or hybrid host mode)."""
-    async with httpx.AsyncClient(base_url=API_BASE) as c:
+    async with httpx.AsyncClient(base_url=API_BASE, timeout=_CLIENT_TIMEOUT) as c:
         yield c
 
 
 @pytest.fixture
 async def authed_client() -> AsyncIterator[httpx.AsyncClient]:
     """Client that has logged in as the seeded admin and holds the auth cookies."""
-    async with httpx.AsyncClient(base_url=API_BASE) as c:
+    async with httpx.AsyncClient(base_url=API_BASE, timeout=_CLIENT_TIMEOUT) as c:
         r = await c.post(
             "/api/auth/login",
             json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},

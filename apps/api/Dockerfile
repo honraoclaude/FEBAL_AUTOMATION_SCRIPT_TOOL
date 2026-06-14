@@ -19,5 +19,9 @@ RUN uv run playwright install --with-deps chromium
 
 EXPOSE 8000
 
-# Self-migrating entrypoint (D-08): one command means one command — no manual pre-steps
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+# Self-migrating entrypoint (D-08): one command means one command — no manual pre-steps.
+# --reload-dir app scopes the reload watcher to the application source ONLY (the hot-reload
+# mount). WITHOUT it, --reload watches the whole WORKDIR /app, so writes under the mounted
+# /app/workspaces (the spec /execute runs + Chromium/pytest artifacts) would trigger a
+# mid-execution server reload that drops the poll connection (03-04). Watch only app/.
+CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"]
