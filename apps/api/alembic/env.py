@@ -14,6 +14,7 @@ from app.db.base import Base
 # their tables on Base.metadata:
 import app.models.user  # noqa: F401  (plan 01-03)
 import app.models.target  # noqa: F401  (plan 01-05)
+import app.models.run  # noqa: F401  (plan 03-02 — runs/executions)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
