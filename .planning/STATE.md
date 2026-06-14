@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
-last_updated: "2026-06-14T19:19:11.502Z"
+last_updated: "2026-06-14T19:32:32.486Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 11
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 03 (tracer-bullet-minimal-end-to-end-loop) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-06-14
 
@@ -61,6 +61,7 @@ Progress: [█████████░] 87%
 | Phase 02 P02-03 | ~16m | 2 tasks | 9 files |
 | Phase 03 P01 | ~9min | 2 tasks | 9 files |
 | Phase 03 P03-02 | 20min | 3 tasks | 17 files |
+| Phase 03 P03-03 | 70min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 03-02: get_status_by_run_id is the single run_id-keyed poll surface — Execution row for execute-path run_ids else the Run row for explore-path run_ids (FIX 1).
 - [Phase ?]: 03-02: shared/ mounted (not COPY-d) into the api container at /app/shared because it is outside the apps/api build context; pyproject pythonpath adds the repo root for host tests, so import shared.events resolves identically in container and host.
 - [Phase ?]: 03-02: chromium plus OS libs baked into the api image via playwright install --with-deps; playwright promoted from transitive dev dep to runtime pin; alembic/ bind-mounted so new migrations reach the self-migrating entrypoint without a rebuild.
+- [Phase ?]: 03-03: generation routes both generate-bdd and generate-scripts through llm_gateway.complete() with the explore run_id (D-07) — no direct provider call; gherkin-official validates the .feature before any write; the Jinja2 skeleton owns all spec structure and selectors (LLM fills only narrow slots, Pitfall 5).
 
 ### Pending Todos
 
@@ -117,7 +119,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-14T19:18:10.150Z
+Last session: 2026-06-14T19:32:08.713Z
 Stopped at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
 Resume file: None
 
