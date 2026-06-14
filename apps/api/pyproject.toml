@@ -45,7 +45,9 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 # Make the `app` package importable in tests run via `uv run pytest`
 # (the pytest entrypoint script does not add the cwd to sys.path).
-pythonpath = ["."]
+# "../.." adds the repo root so cross-service `shared.events` schemas resolve
+# the same way they do in the api container (where shared/ is mounted at /app/shared).
+pythonpath = [".", "../.."]
 markers = [
     "functional: live-HTTP functional tests against the running stack (D-02)",
     "e2e: Playwright UI tests against the running web tier",
