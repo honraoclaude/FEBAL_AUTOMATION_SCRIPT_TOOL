@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
-last_updated: "2026-06-14T18:47:50.213Z"
+last_updated: "2026-06-14T19:19:11.502Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 18
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 03 (tracer-bullet-minimal-end-to-end-loop) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-14
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 87%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [████████░░] 80%
 | Phase 02 P01 | 40min | 3 tasks | 15 files |
 | Phase 02 P02-03 | ~16m | 2 tasks | 9 files |
 | Phase 03 P01 | ~9min | 2 tasks | 9 files |
+| Phase 03 P03-02 | 20min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,9 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-01: neo4j driver opens LAZILY (AsyncGraphDatabase.driver does not connect until first session) so init_neo4j() never blocks startup when neo4j is down; api has NO depends_on:neo4j (graph-profile-gated). Verified api boots healthy with neo4j absent.
 - [Phase 03]: 03-01: graph_mode helper stops web (1.5g) BEFORE starting neo4j — VERIFIED neo4j reaches healthy at ~1.14GB total, well under the 3GB WSL cap. After graph_mode down, callers must stop neo4j before relying on the full default stack (web+neo4j together exceed headroom).
 - [Phase 03]: 03-01: neo4j compose mem env-var underscore-doubling (Pitfall 1): NEO4J_server_memory_heap_max__size (DOUBLE) / NEO4J_server_memory_pagecache_size (single).
+- [Phase ?]: 03-02: get_status_by_run_id is the single run_id-keyed poll surface — Execution row for execute-path run_ids else the Run row for explore-path run_ids (FIX 1).
+- [Phase ?]: 03-02: shared/ mounted (not COPY-d) into the api container at /app/shared because it is outside the apps/api build context; pyproject pythonpath adds the repo root for host tests, so import shared.events resolves identically in container and host.
+- [Phase ?]: 03-02: chromium plus OS libs baked into the api image via playwright install --with-deps; playwright promoted from transitive dev dep to runtime pin; alembic/ bind-mounted so new migrations reach the self-migrating entrypoint without a rebuild.
 
 ### Pending Todos
 
@@ -113,7 +117,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-14T18:47:50.166Z
+Last session: 2026-06-14T19:18:10.150Z
 Stopped at: Phase 3 planned (4 slices, checker-passed + revised); ready to execute
 Resume file: None
 
