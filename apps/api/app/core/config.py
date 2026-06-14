@@ -65,6 +65,15 @@ class Settings(BaseSettings):
     # cache_hit=true ledger row. Default ~24h, env-configurable.
     llm_cache_ttl_s: int = 86400  # env LLM_CACHE_TTL_S
 
+    # --- Neo4j knowledge graph (Phase 3, plan 03-01; PLAT-02) ---
+    # Bolt URI + auth for the lifespan-managed AsyncGraphDatabase driver. Required
+    # so Settings() fails loudly if compose/.env omit them (compose enumerates env
+    # explicitly; 02-01 deviation #2). The driver opens lazily, so the api still
+    # boots when neo4j is down (graph profile inactive) — only a graph query errors.
+    neo4j_uri: str  # env NEO4J_URI (bolt://neo4j:7687 in-cluster, bolt://localhost:7687 host)
+    neo4j_user: str  # env NEO4J_USER
+    neo4j_password: str  # env NEO4J_PASSWORD
+
     @field_validator("credential_keys", mode="before")
     @classmethod
     def _split_credential_keys(cls, value: object) -> object:

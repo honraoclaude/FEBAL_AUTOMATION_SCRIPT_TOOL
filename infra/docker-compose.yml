@@ -59,6 +59,13 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      # Neo4j knowledge graph (Phase 3) — enumerated explicitly (compose does not
+      # pass the whole .env; omitting these makes Settings() fail, 02-01 deviation #2).
+      # In-cluster host is `neo4j` (Pitfall 6); the driver opens lazily, so the api
+      # boots even when neo4j is down (graph profile inactive — no depends_on, A6).
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-please-change}
       WATCHFILES_FORCE_POLLING: "true" # uvicorn --reload over a Windows bind mount needs polling
     volumes:
       - ../apps/api/app:/app/app # hot-reload mount
@@ -117,10 +124,34 @@ services:
       - "8080:80" # host 8080 verified free before adoption
 
   # --- Dormant: defined now, activated by later phases (D-08) ---
+  # Trimmed to fit the 3GB WSL cap (D-01/02/03): heap 512m + pagecache 256m +
+  # mem_limit 1g. Run ONLY via graph_mode (stops web's 1.5g first) so
+  # postgres+redis+api+neo4j+saucedemo ≈ 2.9g stays under 3g (Pitfall 4).
   neo4j:
     image: neo4j:2025
     profiles: [graph] # Phase 3/5
-    mem_limit: 2g
+    mem_limit: 1g
+    environment:
+      # auth as user/password; default flagged in .env.example, never a literal secret here.
+      NEO4J_AUTH: ${NEO4J_AUTH:-neo4j/please-change}
+      # Pitfall 1: heap max is `server.memory.heap.max_size` → DOUBLE underscore on
+      # `max__size` (the dot before `size` IS a literal underscore in the key); the
+      # initial/heap keys use single underscores.
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      # `server.memory.pagecache.size` — single underscores throughout (no literal
+      # underscore inside any segment), so NO doubling here.
+      NEO4J_server_memory_pagecache_size: 256m
+    healthcheck:
+      # Mirrors the saucedemo wget shape; 7474 is the Neo4j HTTP browser/health port.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:7474/"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    ports:
+      - "7687:7687" # Bolt (host-side neo4j_session fixture connects here)
+      - "7474:7474" # HTTP browser / healthcheck
 
   rabbitmq:
     image: rabbitmq:4-management

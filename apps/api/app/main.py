@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.logging import configure_logging
+from app.core.neo4j_driver import close_neo4j, init_neo4j
 from app.core.redis_client import close_redis, init_redis
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
@@ -47,8 +48,10 @@ async def seed_admin() -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     init_redis()  # open the single long-lived gateway Redis client (hot-path GET/MGET/pipeline)
+    init_neo4j()  # open the single lifespan Neo4j driver/pool (lazy connect — boots even if neo4j is down)
     await seed_admin()
     yield
+    await close_neo4j()
     await close_redis()
     await engine.dispose()
 
