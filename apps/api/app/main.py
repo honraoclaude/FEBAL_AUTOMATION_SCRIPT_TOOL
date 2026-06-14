@@ -19,9 +19,11 @@ from app.models.user import User
 from app.routers.admin_llm import router as admin_llm_router
 from app.routers.auth import router as auth_router
 from app.routers.executions import router as executions_router
+from app.routers.execute import router as execute_router
 from app.routers.explore import router as explore_router
 from app.routers.generate import router as generate_router
 from app.routers.health import router as health_router
+from app.routers.stubs import router as stubs_router
 from app.routers.targets import router as targets_router
 
 log = structlog.get_logger()
@@ -70,3 +72,5 @@ app.include_router(admin_llm_router)
 app.include_router(explore_router)
 app.include_router(executions_router)
 app.include_router(generate_router)
+app.include_router(execute_router)
+app.include_router(stubs_router)
