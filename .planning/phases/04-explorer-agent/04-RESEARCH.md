@@ -467,18 +467,21 @@ if written < 1:
 | A6 | Neo4j `Element` nodes are an acceptable minimal locator-store seam (vs a Postgres table) | Element Locator Chain | Phase 5 may prefer Postgres; the `fingerprint(state)->str` + chain JSON interface keeps it swappable |
 | A7 | SauceDemo uses `data-test` (confirmed in Phase-3 code) and aria_snapshot covers its controls | Locator/Auth | Generalization to other apps unverified this phase (single demo target) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Shared checkpoint pool vs per-run saver.**
    - Known: both `AsyncPostgresSaver(pool)` and `from_conn_string` exist.
    - Unclear: exact thread-safety of one saver across overlapping runs.
    - Recommendation: single lifespan pool + single concurrent run for the MVP; revisit if Phase 7 parallelizes.
+   - **RESOLVED: single lifespan AsyncPostgresSaver pool + a single concurrent exploration run for this phase (planned in 04-01). Parallel/overlapping runs deferred to Phase 7.**
 2. **Workflow detection depth (EXPL-04).**
    - Known: the LLM can flag "this is step N of a multi-step flow" in its decide response.
    - Unclear: how rich the `Workflow` node should be vs deferring richer flow mining to Phase 5 (KG-04).
    - Recommendation: record an ordered `Workflow`→`STEP`→`Page` chain + detected form-validation messages; defer flow categorization/risk scoring to Phase 5.
+   - **RESOLVED: record an ordered `Workflow`→`STEP`→`Page` chain (planned in 04-03 Task 3); flow categorization + risk scoring deferred to Phase 5 (KG-04).**
 3. **Form-validation detection.**
    - Recommendation: submit a form with empty/invalid input in sandbox mode (or read-only if non-sandbox forbids submit), capture the validation message text + the offending field; record as `Form.validation_rules`. Only attempt submit when the risk gate allows it.
+   - **RESOLVED: submit empty/invalid input ONLY when the deterministic risk gate allows it (sandbox-gated), capture the validation message + offending field into `Form.validation_rules` (planned in 04-03 Task 3).**
 
 ## Environment Availability
 
