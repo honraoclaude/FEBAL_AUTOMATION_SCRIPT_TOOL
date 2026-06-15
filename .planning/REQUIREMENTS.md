@@ -19,7 +19,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Explorer Agent
 
-- [ ] **EXPL-01**: User can start an exploration of a registered app and watch live progress (pages found, actions taken, cost so far)
+- [x] **EXPL-01**: User can start an exploration of a registered app and watch live progress (pages found, actions taken, cost so far)
 - [x] **EXPL-02**: Explorer logs into target apps automatically (login-form detection, credential injection, Playwright storageState reuse, logout recovery)
 - [x] **EXPL-03**: Explorer discovers pages, forms, menus, buttons, links, and tables, capturing DOM metadata and a screenshot per discovered state
 - [x] **EXPL-04**: Explorer detects multi-step workflows (e.g., create customer → assign product → generate invoice) and form validation rules
@@ -138,7 +138,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAT-05 | Phase 2 | Complete |
 | PLAT-06 | Phase 2 | Complete |
 | PLAT-07 | Phase 1 | Complete |
-| EXPL-01 | Phase 4 | Pending |
+| EXPL-01 | Phase 4 | Complete |
 | EXPL-02 | Phase 4 | Complete |
 | EXPL-03 | Phase 4 | Complete |
 | EXPL-04 | Phase 4 | Complete |
