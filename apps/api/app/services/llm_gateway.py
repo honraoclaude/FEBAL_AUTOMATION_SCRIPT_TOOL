@@ -75,6 +75,18 @@ log = structlog.get_logger()
 _KEY_PREFIX = "llm:"
 
 
+async def get_run_cost_usd(run_id: str) -> float:
+    """Read the per-run accumulated USD cost from the gateway's Redis counter (D-06).
+
+    This is the SINGLE source of run spend — the explorer NEVER computes cost, it reads this
+    aggregate for the live ExploreProgressEvent. Returns 0.0 when no call has been metered yet
+    (the counter does not exist until the first reconcile INCRBYFLOAT).
+    """
+    run_usd_key = f"{_KEY_PREFIX}budget:run:{run_id}:usd"
+    raw = await get_redis().get(run_usd_key)
+    return float(raw) if raw else 0.0
+
+
 class TransientProviderError(Exception):
     """A retryable provider failure (429/529/transient network) — drives tenacity."""
 

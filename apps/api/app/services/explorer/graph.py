@@ -18,6 +18,7 @@ from langgraph.graph import END, START, StateGraph
 from app.services.explorer.budget import ExploreBudget
 from app.services.explorer.nodes import (
     act,
+    check_cancel,
     converge,
     decide,
     enumerate_node,
@@ -40,6 +41,11 @@ def build_explorer_graph(checkpointer, budget: ExploreBudget):  # noqa: ANN001
         return await converge({**state, "_budget": budget})
 
     g = StateGraph(ExplorerState)
+    # L-3 cooperative Stop: check_cancel is the loop-TOP node — every iteration starts by
+    # honoring the Redis cancel flag before doing any work (navigate/perceive/...). When the
+    # flag is set it short-circuits to END with stop_reason="stopped" (a terminal event is
+    # published in the converge path on prior steps; the cancel itself routes straight to END).
+    g.add_node("check_cancel", check_cancel)
     g.add_node("navigate", navigate)
     g.add_node("perceive", perceive_node)
     g.add_node("enumerate", enumerate_node)
@@ -48,13 +54,14 @@ def build_explorer_graph(checkpointer, budget: ExploreBudget):  # noqa: ANN001
     g.add_node("persist", persist_to_neo4j)
     g.add_node("converge", _converge)
 
-    g.add_edge(START, "navigate")
+    g.add_edge(START, "check_cancel")
+    g.add_conditional_edges("check_cancel", should_continue, {"loop": "navigate", "stop": END})
     g.add_edge("navigate", "perceive")
     g.add_edge("perceive", "enumerate")
     g.add_edge("enumerate", "decide")
     g.add_edge("decide", "act")
     g.add_edge("act", "persist")
     g.add_edge("persist", "converge")
-    g.add_conditional_edges("converge", should_continue, {"loop": "navigate", "stop": END})
+    g.add_conditional_edges("converge", should_continue, {"loop": "check_cancel", "stop": END})
 
     return g.compile(checkpointer=checkpointer)

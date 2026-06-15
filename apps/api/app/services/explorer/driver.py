@@ -27,6 +27,7 @@ from playwright.async_api import async_playwright
 
 from app.core.checkpointer import get_checkpointer
 from app.core.config import settings
+from app.core.redis_client import get_redis
 from app.db.session import SessionLocal
 from app.services import run_service, target_service
 from app.services.explorer import auth
@@ -137,6 +138,12 @@ async def run_explore(run_id: str, target_id: int) -> None:
                     await browser.close()
                     clear_handles(run_id)
                     auth.clear_creds(run_id)  # drop the transient creds (never outlive the run)
+                    # L-3: clear the cooperative-cancel flag so a stale "1" never aborts a
+                    # later run that happens to reuse the run_id space (best-effort).
+                    try:
+                        await get_redis().delete(f"explore:cancel:{run_id}")
+                    except Exception:  # noqa: BLE001 -- teardown cleanup must never raise
+                        pass
 
             if stop_reason not in STOP_REASONS:
                 stop_reason = "stopped"

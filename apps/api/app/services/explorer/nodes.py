@@ -31,6 +31,7 @@ import time
 import structlog
 
 from app.core.neo4j_driver import get_neo4j
+from app.core.redis_client import get_redis
 from app.db.session import SessionLocal
 from app.services import llm_gateway
 from app.services.explorer import budget as budget_mod
@@ -39,6 +40,7 @@ from app.services.explorer.auth import maybe_relogin
 from app.services.explorer.fingerprint import page_fingerprint
 from app.services.explorer.locators import merge_locator_history
 from app.services.explorer.perception import capture_screenshot, perceive
+from app.services.explorer.progress import build_progress_event, publish_progress
 from app.services.explorer.risk import is_destructive, is_off_origin
 from app.services.explorer.state import get_handles
 
@@ -120,6 +122,22 @@ def parse_index(content: str | None, menu_len: int) -> int:
             break
     idx = int(digits) if digits else 0
     return max(0, min(idx, menu_len - 1))
+
+
+async def check_cancel(state: dict) -> dict:
+    """L-3 cooperative Stop: at the TOP of each loop iteration, honor a Redis cancel flag.
+
+    The POST /api/explore/{run_id}/stop route sets `explore:cancel:{run_id}` in Redis. This
+    node reads it (REUSING the shared lifespan client) and, when set, short-circuits the loop
+    to the terminal `stopped` STOP_REASON — should_continue then routes to END. Without the
+    flag it is a no-op (returns {} so no prior stop_reason is disturbed). Durable/forceful
+    cancellation stays Phase 7; this is the minimal cooperative stop the UI's Stop button needs.
+    """
+    flag = await get_redis().get(f"explore:cancel:{state['run_id']}")
+    if flag:
+        log.info("explore_cancel_requested", run_id=state["run_id"])
+        return {"stop_reason": "stopped"}
+    return {}
 
 
 async def navigate(state: dict) -> dict:
@@ -588,27 +606,67 @@ async def converge(state: dict) -> dict:
 
     # stop_reason precedence: budget (set by decide) > hard cap > loop > saturation.
     if state.get("stop_reason"):
-        return out  # budget already set
+        out["stop_reason"] = state["stop_reason"]
+    else:
+        # Evaluate caps/loop against the updated seen_keys + the PRIOR pairs (recurrence = the
+        # same (fingerprint, action) seen on an EARLIER step, not this one).
+        eval_state = {
+            **state,
+            **out,
+            "seen_pairs": prior_pairs,
+            "started_at": state.get("started_at", time.monotonic()),
+        }
+        reason = budget_mod.cap_reason(eval_state, budget)
+        if reason is None and budget_mod.is_loop(eval_state, from_key, chosen, budget):
+            reason = "converged"
+        if reason is None and not state.get("frontier") and budget_mod.is_saturated(eval_state, budget):
+            reason = "saturation"
+        if reason is None and not state.get("frontier"):
+            reason = "saturation"
+        if reason is not None:
+            out["stop_reason"] = reason
 
-    # Evaluate caps/loop against the updated seen_keys + the PRIOR pairs (recurrence = the
-    # same (fingerprint, action) seen on an EARLIER step, not this one).
-    eval_state = {
-        **state,
-        **out,
-        "seen_pairs": prior_pairs,
-        "started_at": state.get("started_at", time.monotonic()),
-    }
-    reason = budget_mod.cap_reason(eval_state, budget)
-    if reason is None and budget_mod.is_loop(eval_state, from_key, chosen, budget):
-        reason = "converged"
-    if reason is None and not state.get("frontier") and budget_mod.is_saturated(eval_state, budget):
-        reason = "saturation"
-    if reason is None and not state.get("frontier"):
-        reason = "saturation"
-
-    if reason is not None:
-        out["stop_reason"] = reason
+    # EXPL-01 (D-07): publish a live-progress event after EACH step — counters + the latest
+    # feed line + current page + screenshot + the gateway-sourced run cost (NEVER computed
+    # here, D-06). When stop_reason is set this is the TERMINAL event the UI maps to a state
+    # (L-2). Best-effort: a publish failure must never crash the crawl.
+    await _publish_step(state, out)
     return out
+
+
+async def _publish_step(state: dict, out: dict) -> None:
+    """Publish the per-step ExploreProgressEvent to Redis pub/sub (best-effort, never raises).
+
+    Gated on a registered browser handle: a LIVE crawl always calls set_handles before invoking
+    the graph (driver.py), so a missing handle means this is a pure unit harness (the
+    convergence proof drives the real converge node with NO browser/Redis). Skip the publish
+    there so we never open a Redis connection on a throwaway asyncio.run loop (cross-loop leak).
+    """
+    try:
+        try:
+            page = get_handles(state["run_id"]).page
+        except Exception:  # noqa: BLE001 -- no live handle => pure harness; skip the publish
+            return
+        events = state.get("events") or []
+        feed_line = events[-1] if events else f"step {out.get('step', 0)}"
+        cost_usd = await llm_gateway.get_run_cost_usd(state["run_id"])
+        elapsed_s = max(0.0, time.monotonic() - state.get("started_at", time.monotonic()))
+        try:
+            title = await page.title()
+        except Exception:  # noqa: BLE001 -- title is best-effort; the handle may be gone on teardown
+            title = ""
+        merged = {**state, **out}
+        event = build_progress_event(
+            merged,
+            cost_usd=cost_usd,
+            elapsed_s=elapsed_s,
+            feed_line=feed_line,
+            current_title=title,
+            stop_reason=out.get("stop_reason"),
+        )
+        await publish_progress(state["run_id"], event)
+    except Exception as exc:  # noqa: BLE001 -- progress publish must never break the crawl
+        log.info("explore_progress_publish_skip", run_id=state.get("run_id"), error=str(exc))
 
 
 def should_continue(state: dict) -> str:

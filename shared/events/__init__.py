@@ -39,4 +39,32 @@ class RunStatusEvent(BaseModel):
     error: str | None = None
 
 
-__all__ = ["ExploreJob", "ExecuteJob", "RunStatusEvent"]
+class ExploreProgressEvent(BaseModel):
+    """A per-step live-progress event the explorer publishes to Redis pub/sub (EXPL-01, D-07).
+
+    Schemas-only (no broker): the explorer publishes `model_dump_json()` to the channel
+    `explore:{run_id}`; the SSE endpoint (`GET /api/explore/{run_id}/events`) re-emits it to
+    the browser, which renders the Live Exploration View (04-UI-SPEC). Counters are ABSOLUTE
+    values (not deltas) so the live view takes the latest event's values directly.
+
+    `cost_usd` is sourced from the LLM gateway's per-run counter — the explorer NEVER computes
+    spend (D-06). `screenshot_path` is the run-RELATIVE filename (e.g. "state-3.png"); the
+    frontend builds the URL `/api/explore/{run_id}/screenshot/{name}` (M-1). `stop_reason` is
+    None while running and a STOP_REASONS value on the terminal event (L-2 maps it to a UI
+    state — no terminal value falls through to "no banner").
+    """
+
+    run_id: str
+    step: int
+    pages_found: int
+    actions_taken: int
+    current_url: str
+    current_title: str
+    screenshot_path: str | None
+    feed_line: str
+    cost_usd: float
+    elapsed_s: float
+    stop_reason: str | None = None
+
+
+__all__ = ["ExploreJob", "ExecuteJob", "RunStatusEvent", "ExploreProgressEvent"]
