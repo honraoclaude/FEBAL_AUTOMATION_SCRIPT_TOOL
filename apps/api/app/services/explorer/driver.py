@@ -117,6 +117,7 @@ async def run_explore(run_id: str, target_id: int) -> None:
                         "pending_action": None,
                         "last_snapshot_yaml": "",
                         "current_screenshot": None,
+                        "element_history": {},
                         "events": [],
                         "stop_reason": None,
                     }

@@ -24,6 +24,7 @@ Invariants carried from Phase 3:
 
 from __future__ import annotations
 
+import json
 import time
 
 import structlog
@@ -35,6 +36,7 @@ from app.services.explorer import budget as budget_mod
 from app.services.explorer.actions import enumerate_actions, page_key, render_menu
 from app.services.explorer.auth import maybe_relogin
 from app.services.explorer.fingerprint import page_fingerprint
+from app.services.explorer.locators import merge_locator_history
 from app.services.explorer.perception import capture_screenshot, perceive
 from app.services.explorer.risk import is_destructive, is_off_origin
 from app.services.explorer.state import get_handles
@@ -258,7 +260,10 @@ def _build_persist_cypher() -> str:
         "MERGE (a)-[:NavigatesTo]->(b) "
         "MERGE (e:Element {key:$el_key}) "
         "ON CREATE SET e.role=$el_role, e.label=$el_label "
-        "SET e.run_id=$run_id "
+        # EXPL-09: the FULL prioritized locator chain + append-only history as JSON params
+        # (never f-string page-derived strings into Cypher — T-04-14). Minimal-but-real seam:
+        # Phase 5 owns the canonical Element Repository.
+        "SET e.run_id=$run_id, e.chain_json=$el_chain_json, e.history_json=$el_history_json "
         "MERGE (a)-[:HAS_ELEMENT]->(e) "
         "RETURN count(*) AS n"
     )
@@ -294,6 +299,14 @@ async def persist_to_neo4j(state: dict) -> dict:
     el_role = el.get("role", "element") if el else "element"
     el_key = f"{a_key}#{el_role}:{el_label}"[:300]
 
+    # EXPL-09: the chosen element's FULL prioritized locator chain + append-only history.
+    el_chain = el.get("locator_chain") or [] if el else []
+    element_history = dict(state.get("element_history", {}))
+    merged = merge_locator_history(
+        element_history.get(el_key, []), el_chain, step=state.get("step", 0)
+    )
+    element_history[el_key] = merged
+
     cypher = _build_persist_cypher()
     params = {
         "a_key": a_key,
@@ -306,6 +319,9 @@ async def persist_to_neo4j(state: dict) -> dict:
         "el_key": el_key,
         "el_role": el_role,
         "el_label": el_label,
+        # JSON-serialized chain/history params (never f-string page text into Cypher, T-04-14).
+        "el_chain_json": json.dumps(el_chain),
+        "el_history_json": json.dumps(merged),
         "run_id": state["run_id"],
     }
 
@@ -319,7 +335,12 @@ async def persist_to_neo4j(state: dict) -> dict:
     if written < 1:
         raise RuntimeError("explore persisted nothing to Neo4j")
 
-    return {"events": [f"persisted page {a_key}"], "_last_from_key": a_key, "_last_to_key": b_key}
+    return {
+        "events": [f"persisted page {a_key}"],
+        "_last_from_key": a_key,
+        "_last_to_key": b_key,
+        "element_history": element_history,
+    }
 
 
 async def converge(state: dict) -> dict:

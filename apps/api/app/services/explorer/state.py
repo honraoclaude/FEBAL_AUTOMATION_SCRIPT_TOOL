@@ -69,6 +69,9 @@ class ExplorerState(TypedDict, total=False):
     last_snapshot_yaml: str
     current_fingerprint: str  # EXPL-06 structural fingerprint of the landed page (dedup key)
     current_screenshot: str | None  # path of the latest evidence screenshot (JSON-safe)
+    # EXPL-09: append-only per-element locator history keyed by element key (JSON-safe);
+    # a re-observed element APPENDS a step-stamped chain snapshot (Phase 8 healing fallback).
+    element_history: dict
     events: Annotated[list, add]
     stop_reason: str | None
     # Internal scratch (JSON-safe strings) passed between persist -> converge.

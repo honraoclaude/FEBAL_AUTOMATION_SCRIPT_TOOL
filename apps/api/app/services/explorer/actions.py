@@ -8,13 +8,15 @@ element handles (Pitfall 4: aria_snapshot has roles/names but not data-testid/hr
 H-2: in-origin `a[href]` targets become frontier candidates (key derived from page_key) so
 the crawl advances to NEW pages instead of re-perceiving the landing page.
 
-Full locator-chain extraction is Slice 3 (EXPL-09) — the `locator_chain` field is left as a
-documented stub here.
+Each menu entry's `locator_chain` is the full prioritized chain (data-testid→aria-label→role
+→text→xpath) extracted per element (EXPL-09, locators.extract_locator_chain).
 """
 
 from __future__ import annotations
 
 from urllib.parse import urljoin, urlsplit, urlunsplit
+
+from app.services.explorer.locators import extract_locator_chain
 
 _CANDIDATE_SELECTOR = (
     "a[href], button, input, select, textarea, "
@@ -62,8 +64,8 @@ async def enumerate_actions(page, base_url: str) -> tuple[list[dict], list[dict]
             "index": i,
             "role": role,
             "label": label,
-            # Slice 3 (EXPL-09) replaces this stub with the full prioritized locator chain.
-            "locator_chain": None,  # STUB: data-testid->aria-label->role->text->xpath (Slice 3)
+            # EXPL-09: full prioritized locator chain (data-testid→aria-label→role→text→xpath).
+            "locator_chain": await extract_locator_chain(h),
         }
         if href:
             absolute = urljoin(page.url, href)
