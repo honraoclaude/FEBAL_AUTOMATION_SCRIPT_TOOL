@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: "Phase 4 planned (4 slices, checker-passed + revised: H-1/H-2/M-1/M-2/L-2/L-3); ready to execute"
-last_updated: "2026-06-15T08:09:54.282Z"
-last_activity: 2026-06-15 -- Phase 03 complete (PLAT-02; tracer loop end-to-end)
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-06-15T12:57:51.403Z"
+last_activity: 2026-06-15
 progress:
   total_phases: 11
   completed_phases: 3
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 16
   percent: 27
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 04 — Explorer Agent (full autonomous exploration) — next up
+**Current focus:** Phase 04 — explorer-agent
 
 ## Current Position
 
-Phase: 03 (Tracer Bullet) — ✅ COMPLETE (verified passed 4/4, 2026-06-15)
-Plan: 4 of 4 complete
-Status: Phase 03 complete — ready to discuss/plan Phase 04
-Last activity: 2026-06-15 -- Phase 03 complete (PLAT-02; tracer loop end-to-end)
+Phase: 04 (explorer-agent) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-15
 
-Progress: [███░░░░░░░] 27% (3 of 11 phases)
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [███░░░░░░░] 27% (3 of 11 phases)
 | Phase 03 P03-02 | 20min | 3 tasks | 17 files |
 | Phase 03 P03-03 | 70min | 3 tasks | 5 files |
 | Phase 03 P04 | ~95min | 3 tasks | 15 files |
+| Phase 04 P04-01 | 75min | 2 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-04: /execute discovers the run's spec by the workspaces/<run_id>/test_login.py filesystem convention (404 if absent, FIX 3) and runs it ONLY via asyncio.create_subprocess_exec (argv list, no shell) — never in-process pytest (Pitfall 3); spec_path is run_id-derived, never client input (T-03-15); the runner finishes the run_id-keyed Execution row (FIX 1).
 - [Phase 03]: 03-04: the 10-endpoint PLAT-02 surface is completed with 5 honest 501 stubs (heal/create-defect/flows/coverage/dashboard) carrying documented OpenAPI contracts but NEVER fabricated results (T-03-19) — PLAT-02 now COMPLETE.
 - [Phase 03]: 03-04: workspaces root + execution cwd are settings-driven (WORKSPACES_DIR=/app/workspaces, EXECUTION_CWD=/app in-container) with the host workspaces/ bind-mounted; fixes a latent 03-03 parents[4] resolution that never worked in the container and lets generate WRITE / execute DISCOVER+RUN the same spec. uvicorn --reload scoped to --reload-dir app so spec/artifact writes don't restart the server mid-run.
+- [Phase ?]: explorer.py relocated to explorer/driver.py (package/module name collision); run_explore re-exported from __init__.py
+- [Phase ?]: ExploreBudget bound into converge via closure, never in the checkpointed JSON-serializable ExplorerState (H-1)
+- [Phase ?]: Graph discovery test marked graph+live_llm: in-container BackgroundTask drives the real gateway; skipped without a provider key
 
 ### Pending Todos
 
@@ -123,9 +127,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-15T08:09:54.231Z
-Stopped at: Phase 4 planned (4 slices, checker-passed + revised: H-1/H-2/M-1/M-2/L-2/L-3); ready to execute
-Resume file: .planning/phases/04-explorer-agent/04-01-PLAN.md
+Last session: 2026-06-15T12:57:51.373Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 

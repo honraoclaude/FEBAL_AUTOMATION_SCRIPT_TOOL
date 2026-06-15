@@ -158,7 +158,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Slice 1: package gate + LangGraph StateGraph core loop (aria_snapshot perceive → gateway decide → act → Neo4j persist) + AsyncPostgresSaver checkpointer + budgets/loop (EXPL-03, EXPL-05 budgets)
+- [x] 04-01-PLAN.md — Slice 1: package gate + LangGraph StateGraph core loop (aria_snapshot perceive → gateway decide → act → Neo4j persist) + AsyncPostgresSaver checkpointer + budgets/loop (EXPL-03, EXPL-05 budgets)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -297,7 +297,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
-| 4. Explorer Agent | 0/4 | Planned | - |
+| 4. Explorer Agent | 1/4 | In Progress|  |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
