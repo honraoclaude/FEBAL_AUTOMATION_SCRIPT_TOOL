@@ -33,6 +33,7 @@ from app.db.session import SessionLocal
 from app.services import llm_gateway
 from app.services.explorer import budget as budget_mod
 from app.services.explorer.actions import enumerate_actions, page_key, render_menu
+from app.services.explorer.auth import maybe_relogin
 from app.services.explorer.fingerprint import page_fingerprint
 from app.services.explorer.perception import capture_screenshot, perceive
 from app.services.explorer.state import get_handles
@@ -103,9 +104,11 @@ async def perceive_node(state: dict) -> dict:
     Slice 2 (EXPL-06): also compute the STRUCTURAL FINGERPRINT of the landed page here (the
     one node that holds the live page) and carry it on state as `current_fingerprint` — this
     REPLACES the Slice-1 URL `page_key` as the converge/persist dedup key.
-    The mid-run relogin guard (EXPL-02) is wired into this node in Task 3 (auth.py).
+    EXPL-02 guard: if the session logged out mid-run (a login form reappeared), re-login with
+    the cached creds BEFORE perceiving so the loop recovers instead of mapping the login page.
     """
     page = get_handles(state["run_id"]).page
+    await maybe_relogin(state, page)
     snapshot = await perceive(page)
     screenshot_path = await capture_screenshot(page, state["run_id"], state.get("step", 0))
     fp = await page_fingerprint(page)

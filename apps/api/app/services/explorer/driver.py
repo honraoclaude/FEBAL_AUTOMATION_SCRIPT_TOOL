@@ -29,6 +29,7 @@ from app.core.checkpointer import get_checkpointer
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.services import run_service, target_service
+from app.services.explorer import auth
 from app.services.explorer.actions import page_key
 from app.services.explorer.budget import build_budget
 from app.services.explorer.graph import build_explorer_graph
@@ -41,21 +42,24 @@ from app.services.explorer.state import (
 
 log = structlog.get_logger()
 
-# SauceDemo (Swag Labs) stable selectors — the Slice-1 login fast path. The generalized
-# input[type=password] heuristic + storageState reuse + relogin recovery land in Slice 2.
-_USER_SEL = "#user-name"
-_PASS_SEL = "#password"
-_LOGIN_SEL = "#login-button"
-_INVENTORY_SEL = ".inventory_list"
 
+async def _login(page, base_url: str, user: str, password: str, run_id: str) -> None:  # noqa: ANN001
+    """Heuristic login (EXPL-02): detect the login form and log in via the single decrypt surface.
 
-async def _login(page, base_url: str, user: str, password: str) -> None:  # noqa: ANN001
-    """Drive the SauceDemo login with the decrypted creds (single decrypt surface)."""
+    Generalizes the Slice-1 hardcoded SauceDemo selectors to the input[type=password]
+    heuristic (auth.detect_login_form) so the explorer logs into ANY target without
+    hardcoded selectors. Caches the creds on the per-run registry (auth) for mid-run relogin
+    and captures storageState for reuse. Creds are NEVER logged or written to a node.
+    """
     await page.goto(f"{base_url}/", wait_until="domcontentloaded")
-    await page.fill(_USER_SEL, user)
-    await page.fill(_PASS_SEL, password)
-    await page.click(_LOGIN_SEL)
-    await page.wait_for_selector(_INVENTORY_SEL)
+    tree = await auth._page_node_tree(page)
+    form = auth.detect_login_form(tree)
+    if form is None:
+        # No login form on the landing page — nothing to authenticate (already in, or open app).
+        return
+    await auth.perform_login(page, user, password, form)
+    auth._cache_creds(run_id, user, password, form)
+    await auth.capture_storage_state(page.context, run_id)
 
 
 async def run_explore(run_id: str, target_id: int) -> None:
@@ -77,9 +81,16 @@ async def run_explore(run_id: str, target_id: int) -> None:
             async with async_playwright() as p:
                 browser = await p.chromium.launch()
                 try:
-                    context = await browser.new_context()
+                    # Reuse a prior run's storageState if present (skip re-login); else a
+                    # fresh context. The path is run_id-derived (T-04-08).
+                    storage = auth.load_storage_state_path(run_id)
+                    context = (
+                        await browser.new_context(storage_state=storage)
+                        if storage
+                        else await browser.new_context()
+                    )
                     page = await context.new_page()
-                    await _login(page, base_url, user, password)
+                    await _login(page, base_url, user, password, run_id)
 
                     # H-1: register the live, NON-serializable handles OUTSIDE state.
                     set_handles(run_id, BrowserHandles(browser, context, page))
@@ -117,6 +128,7 @@ async def run_explore(run_id: str, target_id: int) -> None:
                     # memory (Pitfall 2) regardless of how the invoke ended.
                     await browser.close()
                     clear_handles(run_id)
+                    auth.clear_creds(run_id)  # drop the transient creds (never outlive the run)
 
             if stop_reason not in STOP_REASONS:
                 stop_reason = "stopped"
