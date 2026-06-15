@@ -1,107 +1,65 @@
-"""Deterministic, LLM-free explore crawl (D-04/D-06) — the Playwright→Neo4j seam.
+"""LangGraph explorer driver (Phase 4, EXPL-03/EXPL-05) — POST /explore BackgroundTask.
 
-`run_explore` is the POST /explore BackgroundTask entrypoint. It proves two seams with
-ZERO gateway calls: (1) an async Playwright login+crawl of the registered SauceDemo
-target, (2) writing minimal Page/NavigatesTo nodes to Neo4j, both threaded by run_id.
+`run_explore` is the entrypoint. It KEEPS the Phase-3 wrapper verbatim (fresh SessionLocal,
+set_status running/passed/failed, single decrypt surface) and REPLACES the deterministic
+crawl body with a real LangGraph StateGraph loop:
+  - launch ONE Playwright browser/context/page, log in (single decrypt surface),
+  - register the live handles in the per-run registry BEFORE ainvoke (H-1),
+  - build the graph via get_checkpointer() + a per-run ExploreBudget and ainvoke it with
+    config thread_id=run_id (resumable),
+  - in a finally: browser.close() (Pitfall 2 memory) AND clear_handles(run_id) so the
+    non-serializable handle never outlives the run (H-1),
+  - persist the terminal stop_reason onto the Run row.
 
-CRITICAL invariants:
-  - Pitfall 2: the task opens its OWN `async with SessionLocal()` — NEVER the request's
-    get_db session (that session is closed once the 202 response is sent). The lifespan
-    neo4j driver IS safe to reuse across tasks.
-  - PLAT-07 / T-03-06: credentials come ONLY from target_service.get_decrypted_credentials
-    (the single decrypt surface) and are NEVER written to a Page node or logged.
-  - T-03-05: graph writes use PARAMETERIZED Cypher only — never f-string page-derived
-    text into the query.
-  - T-03-09: the whole body is wrapped so a failure flips the run to "failed" with an
-    error string rather than crashing the task silently.
-
-The `key`/MERGE here is a deliberate TRACER seam (a normalized-url node identity), NOT
-the Phase-5 structural fingerprint — Phase 5 replaces write_page_graph.
+CRITICAL invariants (carried from Phase 3):
+  - Pitfall 2: the task opens its OWN SessionLocal — never the request's get_db session.
+  - PLAT-07/T-03-06: creds ONLY via target_service.get_decrypted_credentials; never logged,
+    never written to a node.
+  - T-03-09: a failure flips the run to "failed" with an error string, never a silent crash.
 """
 
-from urllib.parse import urlsplit, urlunsplit
+from __future__ import annotations
+
+import time
 
 import structlog
-from neo4j import AsyncDriver
 from playwright.async_api import async_playwright
 
-from app.core.neo4j_driver import get_neo4j
+from app.core.checkpointer import get_checkpointer
+from app.core.config import settings
 from app.db.session import SessionLocal
 from app.services import run_service, target_service
+from app.services.explorer.actions import page_key
+from app.services.explorer.budget import build_budget
+from app.services.explorer.graph import build_explorer_graph
+from app.services.explorer.state import (
+    STOP_REASONS,
+    BrowserHandles,
+    clear_handles,
+    set_handles,
+)
 
 log = structlog.get_logger()
 
-# SauceDemo (Swag Labs) stable selectors the crawl OBSERVES (A4 / interfaces).
+# SauceDemo (Swag Labs) stable selectors — the Slice-1 login fast path. The generalized
+# input[type=password] heuristic + storageState reuse + relogin recovery land in Slice 2.
 _USER_SEL = "#user-name"
 _PASS_SEL = "#password"
 _LOGIN_SEL = "#login-button"
 _INVENTORY_SEL = ".inventory_list"
-# One deterministic click target on the inventory page → the second (detail) page.
-_ITEM_LINK_SEL = ".inventory_item_name, [data-test='inventory-item-name']"
 
 
-def _page_key(url: str) -> str:
-    """Stable node identity for the tracer: scheme+host+path (drop query/fragment).
-
-    A normalized-url key — the TRACER seam, NOT the Phase-5 structural fingerprint.
-    """
-    parts = urlsplit(url)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path.rstrip("/") or "/", "", ""))
-
-
-async def write_page_graph(
-    driver: AsyncDriver,
-    run_id: str,
-    landing: dict,
-    second: dict,
-) -> int:
-    """Write two Page nodes + one NavigatesTo edge via PARAMETERIZED Cypher (T-03-05).
-
-    Returns the NavigatesTo edge count read back inside the SAME managed write
-    transaction, so the caller can fail the run when nothing was persisted.
-
-    Uses `session.execute_write` (a MANAGED transaction that commits on success).
-    The earlier `session.run()` auto-commit form left the MERGE uncommitted from the
-    long-lived lifespan driver — the write silently never landed. Never f-string
-    page text into the query.
-
-    TRACER seam: a minimal landing→second navigation. Phase 5 replaces this with the
-    full structural-fingerprint write.
-    """
-    # Pages are URL-keyed (stable across runs), so run_id is SET on every run — not just
-    # ON CREATE — so the most recent run owns the run_id tag and is queryable by it.
-    # (Phase 5 replaces this with fingerprint MERGE + first_seen/last_verified freshness.)
-    cypher = (
-        "MERGE (a:Page {key:$a_key}) "
-        "ON CREATE SET a.url=$a_url, a.title=$a_title "
-        "SET a.run_id=$run_id "
-        "MERGE (b:Page {key:$b_key}) "
-        "ON CREATE SET b.url=$b_url, b.title=$b_title "
-        "SET b.run_id=$run_id "
-        "MERGE (a)-[:NavigatesTo]->(b) "
-        "RETURN count(*) AS edges"
-    )
-
-    async def _write(tx) -> int:
-        result = await tx.run(
-            cypher,
-            a_key=landing["key"],
-            a_url=landing["url"],
-            a_title=landing["title"],
-            b_key=second["key"],
-            b_url=second["url"],
-            b_title=second["title"],
-            run_id=run_id,
-        )
-        record = await result.single()
-        return int(record["edges"]) if record else 0
-
-    async with driver.session() as session:
-        return await session.execute_write(_write)
+async def _login(page, base_url: str, user: str, password: str) -> None:  # noqa: ANN001
+    """Drive the SauceDemo login with the decrypted creds (single decrypt surface)."""
+    await page.goto(f"{base_url}/", wait_until="domcontentloaded")
+    await page.fill(_USER_SEL, user)
+    await page.fill(_PASS_SEL, password)
+    await page.click(_LOGIN_SEL)
+    await page.wait_for_selector(_INVENTORY_SEL)
 
 
 async def run_explore(run_id: str, target_id: int) -> None:
-    """BackgroundTask entrypoint: deterministic SauceDemo crawl → Neo4j, threaded by run_id."""
+    """BackgroundTask entrypoint: a LangGraph StateGraph crawl of the target, threaded by run_id."""
     # Pitfall 2: a FRESH session owned by this task — never the request's get_db session.
     async with SessionLocal() as db:
         try:
@@ -113,44 +71,67 @@ async def run_explore(run_id: str, target_id: int) -> None:
             # The SINGLE decrypt surface — creds never touch the graph or logs (PLAT-07).
             user, password = await target_service.get_decrypted_credentials(db, target_id)
             base_url = target.base_url.rstrip("/")
+            budget = build_budget(getattr(target, "budget_overrides", None), settings)
 
+            stop_reason: str | None = None
             async with async_playwright() as p:
                 browser = await p.chromium.launch()
                 try:
-                    page = await browser.new_page()
-                    await page.goto(f"{base_url}/")
-                    await page.fill(_USER_SEL, user)
-                    await page.fill(_PASS_SEL, password)
-                    await page.click(_LOGIN_SEL)
-                    await page.wait_for_selector(_INVENTORY_SEL)
+                    context = await browser.new_context()
+                    page = await context.new_page()
+                    await _login(page, base_url, user, password)
 
-                    landing = {
-                        "url": page.url,
-                        "title": await page.title(),
-                        "key": _page_key(page.url),
+                    # H-1: register the live, NON-serializable handles OUTSIDE state.
+                    set_handles(run_id, BrowserHandles(browser, context, page))
+
+                    initial_state = {
+                        "run_id": run_id,
+                        "target_id": target_id,
+                        "base_url": base_url,
+                        "current_url": page.url,
+                        "step": 0,
+                        "depth": 0,
+                        "started_at": time.monotonic(),
+                        "seen_keys": {},
+                        "seen_pairs": [],
+                        "steps_since_new": 0,
+                        "frontier": [],
+                        "visited_keys": [page_key(page.url)],
+                        "action_menu": [],
+                        "chosen_index": None,
+                        "pending_action": None,
+                        "last_snapshot_yaml": "",
+                        "current_screenshot": None,
+                        "events": [],
+                        "stop_reason": None,
                     }
 
-                    # One deterministic click → the second page (item detail).
-                    await page.click(_ITEM_LINK_SEL)
-                    await page.wait_for_load_state("networkidle")
-                    second = {
-                        "url": page.url,
-                        "title": await page.title(),
-                        "key": _page_key(page.url),
-                    }
+                    graph = build_explorer_graph(get_checkpointer(), budget)
+                    final_state = await graph.ainvoke(
+                        initial_state,
+                        config={"configurable": {"thread_id": run_id}},
+                    )
+                    stop_reason = final_state.get("stop_reason") or "stopped"
                 finally:
+                    # H-1 lifecycle: tear down the non-serializable handle + free Chromium
+                    # memory (Pitfall 2) regardless of how the invoke ended.
                     await browser.close()
+                    clear_handles(run_id)
 
-            # The lifespan neo4j driver IS safe to reuse across tasks.
-            edges = await write_page_graph(get_neo4j(), run_id, landing, second)
-            # Read-back guard: a zero-edge write must FAIL the run, never report passed
-            # (the prior bug logged "passed" while persisting nothing).
-            if edges < 1:
-                raise RuntimeError("explore persisted no NavigatesTo edge to Neo4j")
-
+            if stop_reason not in STOP_REASONS:
+                stop_reason = "stopped"
             await run_service.set_status(db, run_id, "passed")
-            log.info("explore_completed", run_id=run_id, target_id=target_id, edges=edges)
+            await _record_stop_reason(db, run_id, stop_reason)
+            log.info("explore_completed", run_id=run_id, target_id=target_id, stop_reason=stop_reason)
         except Exception as exc:  # noqa: BLE001 -- never crash the task silently (T-03-09)
-            # Capture failure as status+error; do NOT log credentials or page secrets.
             await run_service.set_status(db, run_id, "failed", error=str(exc))
+            await _record_stop_reason(db, run_id, "failed")
             log.warning("explore_failed", run_id=run_id, target_id=target_id, error=str(exc))
+
+
+async def _record_stop_reason(db, run_id: str, stop_reason: str) -> None:  # noqa: ANN001
+    """Persist the terminal stop_reason onto the Run row (best-effort, idempotent)."""
+    run = await run_service.get_run(db, run_id)
+    if run is not None:
+        run.stop_reason = stop_reason
+        await db.commit()

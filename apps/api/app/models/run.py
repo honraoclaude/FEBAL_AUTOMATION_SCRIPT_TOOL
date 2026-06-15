@@ -33,6 +33,10 @@ class Run(Base):
     target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(16), server_default="queued")
     error: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    # Phase 4 (EXPL-05): the terminal exploration stop_reason from the STOP_REASONS
+    # vocabulary (max_steps/max_depth/wall_clock/budget/saturation/converged/failed/stopped).
+    # Nullable — only explore runs set it; the 04-04 UI consumes it.
+    stop_reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
