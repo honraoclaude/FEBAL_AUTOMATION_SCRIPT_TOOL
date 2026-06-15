@@ -16,7 +16,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Dev Environment** - Docker Compose core (Postgres + Redis), JWT auth, encrypted target-app registry, Next.js shell, snapshot-restorable SauceDemo target (completed 2026-06-13)
 - [x] **Phase 2: LLM Gateway** - Provider-agnostic `init_chat_model` gateway with budgets, kill-switch, caching, and cost-per-operation logging
  (completed 2026-06-13)
-- [x] **Phase 3: Tracer Bullet — Minimal End-to-End Loop** - Thin slice: explore SauceDemo → minimal graph → one scenario → one spec → one execution → result row; full REST API contract in place (completed 2026-06-14)
+- [x] **Phase 3: Tracer Bullet — Minimal End-to-End Loop** - Thin slice: explore SauceDemo → minimal graph → one scenario → one spec → one execution → result row; full REST API contract in place
+ (completed 2026-06-14)
 - [ ] **Phase 4: Explorer Agent** - Full autonomous exploration: snapshot-first perception, budgets/loop detection, auth handling, risk policy, sanitized observations, element fingerprints
 - [ ] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
 - [ ] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
@@ -151,8 +152,25 @@ Plans:
   4. Multi-step workflows and form validation rules are detected and recorded from the exploration
   5. Destructive actions are refused on targets not flagged as restorable sandboxes, navigation stays inside the origin allowlist with page content treated as delimited untrusted input, and every discovered element carries a prioritized locator chain (data-testid → aria-label → role → text → xpath) with history
 
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Slice 1: package gate + LangGraph StateGraph core loop (aria_snapshot perceive → gateway decide → act → Neo4j persist) + AsyncPostgresSaver checkpointer + budgets/loop (EXPL-03, EXPL-05 budgets)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 04-02-PLAN.md — Slice 2: structural-skeleton fingerprint dedup + deterministic two-run convergence + auth (login detection, storageState reuse, relogin) (EXPL-06, EXPL-05 convergence, EXPL-02)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 04-03-PLAN.md — Slice 3: deterministic risk classifier + origin allowlist + untrusted-content delimiting + locator chains/history + workflow/form-validation detection (EXPL-07, EXPL-08, EXPL-09, EXPL-04)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 04-04-PLAN.md — Slice 4: ExploreProgressEvent + Redis pub/sub + sse-starlette SSE endpoint + Next.js live exploration view (UI-SPEC, zero new shadcn) (EXPL-01)
 
 ### Phase 5: Knowledge Graph & Flow Learning
 
@@ -279,7 +297,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
-| 4. Explorer Agent | 0/TBD | Not started | - |
+| 4. Explorer Agent | 0/4 | Planned | - |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
