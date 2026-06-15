@@ -23,11 +23,13 @@ _CANDIDATE_SELECTOR = (
 
 
 def page_key(url: str) -> str:
-    """Stable page identity: scheme+host+path (drop query/fragment).
+    """Stable URL identity: scheme+host+path (drop query/fragment).
 
-    # TEMP: replaced by structural_fingerprint in Slice 2 (EXPL-06). Slice 1 uses the
-    # normalized-URL key as the dedup/fingerprint stand-in (same shape as the Phase-3
-    # tracer _page_key it replaces).
+    Slice 2 (EXPL-06): this is NO LONGER the state dedup/fingerprint key — the structural
+    `fingerprint.fingerprint(...)` computed in the perceive node replaced it as the
+    converge/persist dedup key. page_key now serves only the FRONTIER (in-origin a[href]
+    candidate identity), where URL identity is the correct notion (the frontier dedups URLs
+    to visit, not page structures). Same shape as the Phase-3 tracer _page_key.
     """
     parts = urlsplit(url)
     return urlunsplit((parts.scheme, parts.netloc, parts.path.rstrip("/") or "/", "", ""))

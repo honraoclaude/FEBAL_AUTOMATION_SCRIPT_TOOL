@@ -33,6 +33,7 @@ from app.db.session import SessionLocal
 from app.services import llm_gateway
 from app.services.explorer import budget as budget_mod
 from app.services.explorer.actions import enumerate_actions, page_key, render_menu
+from app.services.explorer.fingerprint import page_fingerprint
 from app.services.explorer.perception import capture_screenshot, perceive
 from app.services.explorer.state import get_handles
 
@@ -97,11 +98,22 @@ async def navigate(state: dict) -> dict:
 
 
 async def perceive_node(state: dict) -> dict:
-    """Snapshot the page (LLM view) + capture an evidence screenshot (D-01)."""
+    """Snapshot the page (LLM view) + capture an evidence screenshot (D-01).
+
+    Slice 2 (EXPL-06): also compute the STRUCTURAL FINGERPRINT of the landed page here (the
+    one node that holds the live page) and carry it on state as `current_fingerprint` — this
+    REPLACES the Slice-1 URL `page_key` as the converge/persist dedup key.
+    The mid-run relogin guard (EXPL-02) is wired into this node in Task 3 (auth.py).
+    """
     page = get_handles(state["run_id"]).page
     snapshot = await perceive(page)
     screenshot_path = await capture_screenshot(page, state["run_id"], state.get("step", 0))
-    return {"last_snapshot_yaml": snapshot, "current_screenshot": screenshot_path}
+    fp = await page_fingerprint(page)
+    return {
+        "last_snapshot_yaml": snapshot,
+        "current_screenshot": screenshot_path,
+        "current_fingerprint": fp,
+    }
 
 
 async def enumerate_node(state: dict) -> dict:
@@ -226,16 +238,19 @@ async def persist_to_neo4j(state: dict) -> dict:
     the loop/saturation detector handled in converge.
     """
     page = get_handles(state["run_id"]).page
-    a_key = page_key(state.get("current_url") or page.url)
     a_url = state.get("current_url") or page.url
+    # EXPL-06: the dedup key is the STRUCTURAL FINGERPRINT computed in perceive (replaces the
+    # Slice-1 URL page_key). Fall back to the URL key only if perceive did not run (defensive).
+    a_key = state.get("current_fingerprint") or page_key(a_url)
     a_title = await page.title()
     a_shot = state.get("current_screenshot")
 
     pending = state.get("pending_action") or {}
     # The "to" page: a url-bearing action's target, else the current page (self-loop avoided
-    # by MERGE — Slice 1 still records the discovered second page from the menu url).
+    # by MERGE). The target page's fingerprint is unknown until we navigate there, so its key
+    # uses the URL stand-in until that page is itself perceived (then fingerprinted).
     b_url = pending.get("url") or a_url
-    b_key = page_key(b_url)
+    b_key = page_key(b_url) if pending.get("url") else a_key
     b_title = pending.get("label") or a_title
 
     menu = state.get("action_menu", [])
@@ -283,7 +298,13 @@ async def converge(state: dict) -> dict:
     step = state.get("step", 0) + 1
     depth = state.get("depth", 0)
 
-    from_key = state.get("_last_from_key") or page_key(state.get("current_url", ""))
+    # EXPL-06: dedup/saturate by the STRUCTURAL FINGERPRINT (persist set _last_from_key to it).
+    # Fall back to the live fingerprint, then the URL key only if neither ran (defensive).
+    from_key = (
+        state.get("_last_from_key")
+        or state.get("current_fingerprint")
+        or page_key(state.get("current_url", ""))
+    )
     seen = dict(state.get("seen_keys", {}))
     is_new = from_key not in seen
     seen[from_key] = seen.get(from_key, 0) + 1

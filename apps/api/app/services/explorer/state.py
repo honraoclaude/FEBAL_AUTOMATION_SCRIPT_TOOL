@@ -62,6 +62,7 @@ class ExplorerState(TypedDict, total=False):
     chosen_index: int | None
     pending_action: dict | None  # the chosen menu entry to act on next (else pop frontier)
     last_snapshot_yaml: str
+    current_fingerprint: str  # EXPL-06 structural fingerprint of the landed page (dedup key)
     current_screenshot: str | None  # path of the latest evidence screenshot (JSON-safe)
     events: Annotated[list, add]
     stop_reason: str | None
