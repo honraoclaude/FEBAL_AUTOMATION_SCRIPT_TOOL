@@ -54,21 +54,36 @@ async def write_page_graph(
     run_id: str,
     landing: dict,
     second: dict,
-) -> None:
+) -> int:
     """Write two Page nodes + one NavigatesTo edge via PARAMETERIZED Cypher (T-03-05).
 
+    Returns the NavigatesTo edge count read back inside the SAME managed write
+    transaction, so the caller can fail the run when nothing was persisted.
+
+    Uses `session.execute_write` (a MANAGED transaction that commits on success).
+    The earlier `session.run()` auto-commit form left the MERGE uncommitted from the
+    long-lived lifespan driver — the write silently never landed. Never f-string
+    page text into the query.
+
     TRACER seam: a minimal landing→second navigation. Phase 5 replaces this with the
-    full structural-fingerprint write. Never f-string page text into the query.
+    full structural-fingerprint write.
     """
+    # Pages are URL-keyed (stable across runs), so run_id is SET on every run — not just
+    # ON CREATE — so the most recent run owns the run_id tag and is queryable by it.
+    # (Phase 5 replaces this with fingerprint MERGE + first_seen/last_verified freshness.)
     cypher = (
         "MERGE (a:Page {key:$a_key}) "
-        "ON CREATE SET a.url=$a_url, a.title=$a_title, a.run_id=$run_id "
+        "ON CREATE SET a.url=$a_url, a.title=$a_title "
+        "SET a.run_id=$run_id "
         "MERGE (b:Page {key:$b_key}) "
-        "ON CREATE SET b.url=$b_url, b.title=$b_title, b.run_id=$run_id "
-        "MERGE (a)-[:NavigatesTo]->(b)"
+        "ON CREATE SET b.url=$b_url, b.title=$b_title "
+        "SET b.run_id=$run_id "
+        "MERGE (a)-[:NavigatesTo]->(b) "
+        "RETURN count(*) AS edges"
     )
-    async with driver.session() as session:
-        await session.run(
+
+    async def _write(tx) -> int:
+        result = await tx.run(
             cypher,
             a_key=landing["key"],
             a_url=landing["url"],
@@ -78,6 +93,11 @@ async def write_page_graph(
             b_title=second["title"],
             run_id=run_id,
         )
+        record = await result.single()
+        return int(record["edges"]) if record else 0
+
+    async with driver.session() as session:
+        return await session.execute_write(_write)
 
 
 async def run_explore(run_id: str, target_id: int) -> None:
@@ -122,10 +142,14 @@ async def run_explore(run_id: str, target_id: int) -> None:
                     await browser.close()
 
             # The lifespan neo4j driver IS safe to reuse across tasks.
-            await write_page_graph(get_neo4j(), run_id, landing, second)
+            edges = await write_page_graph(get_neo4j(), run_id, landing, second)
+            # Read-back guard: a zero-edge write must FAIL the run, never report passed
+            # (the prior bug logged "passed" while persisting nothing).
+            if edges < 1:
+                raise RuntimeError("explore persisted no NavigatesTo edge to Neo4j")
 
             await run_service.set_status(db, run_id, "passed")
-            log.info("explore_completed", run_id=run_id, target_id=target_id)
+            log.info("explore_completed", run_id=run_id, target_id=target_id, edges=edges)
         except Exception as exc:  # noqa: BLE001 -- never crash the task silently (T-03-09)
             # Capture failure as status+error; do NOT log credentials or page secrets.
             await run_service.set_status(db, run_id, "failed", error=str(exc))

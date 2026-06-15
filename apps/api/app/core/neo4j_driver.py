@@ -36,6 +36,10 @@ def init_neo4j() -> AsyncDriver:
         _driver = AsyncGraphDatabase.driver(
             settings.neo4j_uri,
             auth=(settings.neo4j_user, settings.neo4j_password),
+            # graph_mode restarts the neo4j container (new IP) under a long-running api,
+            # leaving defunct pooled connections. Liveness-check idle connections before
+            # reuse so the driver transparently re-dials the recreated server.
+            liveness_check_timeout=0,
         )
     return _driver
 
