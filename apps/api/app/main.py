@@ -7,6 +7,7 @@ import structlog
 from fastapi import FastAPI
 from sqlalchemy import select
 
+from app.core.checkpointer import close_checkpointer, init_checkpointer
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.core.neo4j_driver import close_neo4j, init_neo4j
@@ -55,8 +56,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     init_redis()  # open the single long-lived gateway Redis client (hot-path GET/MGET/pipeline)
     init_neo4j()  # open the single lifespan Neo4j driver/pool (lazy connect — boots even if neo4j is down)
+    # Open the LangGraph checkpointer pool + run setup() ONCE (creates checkpoint tables
+    # OUTSIDE Alembic, idempotent — Pitfall 6). Coexists with the asyncpg SQLAlchemy engine.
+    await init_checkpointer()
     await seed_admin()
     yield
+    await close_checkpointer()
     await close_neo4j()
     await close_redis()
     await engine.dispose()

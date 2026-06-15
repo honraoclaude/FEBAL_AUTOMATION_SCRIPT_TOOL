@@ -77,6 +77,55 @@ def fake_chat_model(monkeypatch):
     return controller
 
 
+@pytest.fixture
+def fake_gateway(monkeypatch):
+    """Patch llm_gateway.complete to return SCRIPTED action indices (no provider, no spend).
+
+    Mirrors the fake_chat_model pattern but one level up — it stubs the gateway entrypoint
+    the explorer decide node calls, so deterministic graph/convergence tests never invoke a
+    real provider. Call `.script([0, 1, 2, ...])` to queue the indices the decide node will
+    parse from successive `complete()` calls; once exhausted it repeats the last index.
+    Records each call's operation_type + run_id on `.calls` so tests can assert the decide
+    node passed operation_type="explore.decide" and the run_id (D-06 budget binding).
+    """
+    from decimal import Decimal
+
+    from app.schemas.llm import LLMResult
+
+    state = {"indices": [0], "pos": 0}
+
+    class Controller:
+        calls: list[dict] = []
+
+        def script(self, indices):
+            state["indices"] = list(indices) or [0]
+            state["pos"] = 0
+
+    controller = Controller()
+    controller.calls = []
+
+    async def _fake_complete(db, messages, *, operation_type, run_id=None, **kwargs):  # noqa: ANN001
+        controller.calls.append({"operation_type": operation_type, "run_id": run_id})
+        idx = state["indices"][min(state["pos"], len(state["indices"]) - 1)]
+        state["pos"] += 1
+        return LLMResult(
+            content=str(idx),
+            input_tokens=10,
+            output_tokens=2,
+            cost_usd=Decimal("0"),
+            cache_hit=False,
+            provider="fake",
+            model="fake:test",
+            run_id=run_id or "test-run",
+            operation_type=operation_type,
+        )
+
+    import app.services.llm_gateway as gateway
+
+    monkeypatch.setattr(gateway, "complete", _fake_complete)
+    return controller
+
+
 @pytest.fixture(autouse=True)
 async def _isolate_gateway_redis():
     """Isolate every unit test's gateway Redis use (cross-loop safety + no real counters).

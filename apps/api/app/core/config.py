@@ -86,6 +86,28 @@ class Settings(BaseSettings):
     workspaces_dir: str | None = None  # env WORKSPACES_DIR
     execution_cwd: str | None = None  # env EXECUTION_CWD
 
+    # --- Explorer budget caps (Phase 4, plan 04-01; EXPL-05, D-05/D-06) ---
+    # Code-enforced EXPLORATION caps (NOT token/USD — the Phase-2 gateway owns spend,
+    # D-06). Per-run overrides come from Target.budget_overrides, clamped TIGHTEN-ONLY
+    # (min(override, global)) by explorer.budget.build_budget — mirroring the LLM-cap
+    # clamp at llm_gateway._effective_caps. These globals are the hard ceiling a target
+    # override can never loosen past.
+    explore_max_steps: int = 60  # env EXPLORE_MAX_STEPS — max loop iterations per run
+    explore_max_depth: int = 6  # env EXPLORE_MAX_DEPTH — max navigation depth per run
+    explore_max_revisits_per_fingerprint: int = 2  # env EXPLORE_MAX_REVISITS_PER_FINGERPRINT
+    explore_wall_clock_seconds: int = 600  # env EXPLORE_WALL_CLOCK_SECONDS — hard time cap
+    explore_saturation_window: int = 8  # env EXPLORE_SATURATION_WINDOW — steps w/o new fp -> stop
+
+    @property
+    def checkpoint_dsn(self) -> str:
+        """Plain psycopg3 conninfo for AsyncPostgresSaver (Pitfall 1: NOT the SQLAlchemy DSN).
+
+        langgraph-checkpoint-postgres uses psycopg3, which rejects the SQLAlchemy
+        `postgresql+asyncpg://` dialect prefix. Strip the `+asyncpg` so the SAME database
+        is reached over a plain `postgresql://` conninfo. Two drivers, one Postgres.
+        """
+        return self.database_url.replace("postgresql+asyncpg://", "postgresql://")
+
     @field_validator("credential_keys", mode="before")
     @classmethod
     def _split_credential_keys(cls, value: object) -> object:
