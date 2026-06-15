@@ -166,7 +166,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 04-03-PLAN.md — Slice 3: deterministic risk classifier + origin allowlist + untrusted-content delimiting + locator chains/history + workflow/form-validation detection (EXPL-07, EXPL-08, EXPL-09, EXPL-04)
+- [x] 04-03-PLAN.md — Slice 3: deterministic risk classifier + origin allowlist + untrusted-content delimiting + locator chains/history + workflow/form-validation detection (EXPL-07, EXPL-08, EXPL-09, EXPL-04)
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -297,7 +297,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
-| 4. Explorer Agent | 2/4 | In Progress|  |
+| 4. Explorer Agent | 3/4 | In Progress|  |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
