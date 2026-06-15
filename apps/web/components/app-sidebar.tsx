@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Crosshair, LogOut, type LucideIcon } from "lucide-react";
+import { Crosshair, LogOut, Radar, type LucideIcon } from "lucide-react";
 
 import { api } from "@/lib/api/client";
 import {
@@ -27,6 +27,10 @@ type NavItem = { icon: LucideIcon; label: string; href: string };
 
 const NAV_ITEMS: NavItem[] = [
   { icon: Crosshair, label: "Targets", href: "/targets" },
+  // EXPL-01: the Live Exploration View is reached at /explore/{runId}; the nav item points at
+  // /explore (active via pathname.startsWith). A run-less /explore index is out of scope this
+  // phase — a thin placeholder page directs the user to start a run from Targets.
+  { icon: Radar, label: "Explorations", href: "/explore" },
 ];
 
 type Me = { id: number; email: string };

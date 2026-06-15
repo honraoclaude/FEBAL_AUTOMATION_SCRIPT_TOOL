@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Table,
   TableBody,
   TableCell,
@@ -34,6 +39,7 @@ interface TargetsTableProps {
   targets: TargetResponse[];
   isLoading: boolean;
   onRegister: () => void;
+  onExplore: (target: TargetResponse) => void;
   onEdit: (target: TargetResponse) => void;
   onDeactivate: (target: TargetResponse) => void;
   onReactivate: (target: TargetResponse) => void;
@@ -125,6 +131,7 @@ export function TargetsTable({
   targets,
   isLoading,
   onRegister,
+  onExplore,
   onEdit,
   onDeactivate,
   onReactivate,
@@ -183,6 +190,28 @@ export function TargetsTable({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {/* "Explore" above "Edit"; disabled + tooltip when inactive
+                          (UI-SPEC §3 shared additions). */}
+                      {target.is_active ? (
+                        <DropdownMenuItem onSelect={() => onExplore(target)}>
+                          Explore
+                        </DropdownMenuItem>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {/* A disabled item can't host a tooltip trigger directly; wrap a
+                                focusable span so the tooltip + disabled affordance both work. */}
+                            <span>
+                              <DropdownMenuItem disabled>
+                                Explore
+                              </DropdownMenuItem>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Activate this target to explore it
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       <DropdownMenuItem onSelect={() => onEdit(target)}>
                         Edit
                       </DropdownMenuItem>

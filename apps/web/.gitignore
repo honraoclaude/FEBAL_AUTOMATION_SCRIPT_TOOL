@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# playwright e2e (plan 04-04)
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
+
 # next.js
 /.next/
 /out/

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ import {
   type TargetResponse,
   type TargetUpdate,
 } from "@/lib/api/targets";
+import { startExplore } from "@/lib/api/explore";
 import { Button } from "@/components/ui/button";
 import { DeactivateDialog } from "@/components/targets/deactivate-dialog";
 import { TargetDialog } from "@/components/targets/target-dialog";
@@ -30,6 +32,7 @@ const TARGETS_KEY = ["targets"] as const;
 
 export default function TargetsPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // include_inactive=true so soft-deleted rows render muted with the menu's
   // Reactivate action (UI-SPEC §3 inactive state).
@@ -79,6 +82,16 @@ export default function TargetsPage() {
     },
   });
 
+  // Start an exploration: success-only toast, then navigate to the live run page (EXPL-01).
+  // A failure surfaces inline via the mutation's thrown error (no toast on error, UI-SPEC rule).
+  const exploreMutation = useMutation({
+    mutationFn: (targetId: number) => startExplore(targetId),
+    onSuccess: ({ run_id }) => {
+      toast.success("Exploration started");
+      router.push(`/explore/${run_id}`);
+    },
+  });
+
   function openRegister() {
     setEditing(null);
     setDialogOpen(true);
@@ -103,6 +116,7 @@ export default function TargetsPage() {
         targets={targets}
         isLoading={isLoading}
         onRegister={openRegister}
+        onExplore={(t) => exploreMutation.mutate(t.id)}
         onEdit={openEdit}
         onDeactivate={(t) => setDeactivating(t)}
         onReactivate={(t) => reactivateMutation.mutate(t.id)}
