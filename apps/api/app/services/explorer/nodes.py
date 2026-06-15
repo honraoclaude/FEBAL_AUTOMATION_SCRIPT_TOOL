@@ -311,7 +311,12 @@ async def converge(state: dict) -> dict:
 
     steps_since_new = 0 if is_new else state.get("steps_since_new", 0) + 1
 
-    seen_pairs = list(state.get("seen_pairs", []))
+    # The loop detector must compare against the PRIOR (fingerprint, action) history — NOT a
+    # history that already contains the current step's pair. Capture the prior pairs first,
+    # run the loop check against them, THEN record this step's pair (Rule 1 fix: appending
+    # before the check made every first-occurrence step self-detect as a loop).
+    prior_pairs = list(state.get("seen_pairs", []))
+    seen_pairs = list(prior_pairs)
     chosen = state.get("chosen_index")
     if chosen is not None:
         pair = [from_key, chosen]
@@ -334,7 +339,14 @@ async def converge(state: dict) -> dict:
     if state.get("stop_reason"):
         return out  # budget already set
 
-    eval_state = {**state, **out, "started_at": state.get("started_at", time.monotonic())}
+    # Evaluate caps/loop against the updated seen_keys + the PRIOR pairs (recurrence = the
+    # same (fingerprint, action) seen on an EARLIER step, not this one).
+    eval_state = {
+        **state,
+        **out,
+        "seen_pairs": prior_pairs,
+        "started_at": state.get("started_at", time.monotonic()),
+    }
     reason = budget_mod.cap_reason(eval_state, budget)
     if reason is None and budget_mod.is_loop(eval_state, from_key, chosen, budget):
         reason = "converged"
