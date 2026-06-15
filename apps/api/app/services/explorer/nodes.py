@@ -36,6 +36,7 @@ from app.services.explorer.actions import enumerate_actions, page_key, render_me
 from app.services.explorer.auth import maybe_relogin
 from app.services.explorer.fingerprint import page_fingerprint
 from app.services.explorer.perception import capture_screenshot, perceive
+from app.services.explorer.risk import is_destructive, is_off_origin
 from app.services.explorer.state import get_handles
 
 log = structlog.get_logger()
@@ -177,24 +178,54 @@ async def decide(state: dict) -> dict:
 
 
 async def act(state: dict) -> dict:
-    """Execute the chosen menu entry (click/fill/goto). Origin/risk gates land in Slice 3.
+    """Execute the chosen menu entry (click/fill/goto) AFTER the deterministic safety gate.
 
-    Slice 1 only navigates SauceDemo (a sandbox target) — the deterministic risk gate +
-    origin allowlist are Slice 3 (EXPL-07/08), a documented seam. For a link target with a
-    url, navigate() handles the goto on the next loop via pending_action; for a button-like
-    entry we click by its menu index against the same candidate selector order.
+    EXPL-07/08 defense in depth (Pitfall 5): the decide node let the LLM pick an INDEX; this
+    node runs the PURE, CODE-ENFORCED risk + origin gates BEFORE the click/goto. Even a fully
+    prompt-injected LLM that picks a destructive or off-origin action is REFUSED here — the
+    action never executes, a refusal feed entry is recorded, and pending_action is cleared so
+    navigate() does NOT follow the refused url on the next loop. The gate is NEVER LLM
+    judgment (is_destructive / is_off_origin are static, table-tested functions).
+
+    For a link target with a url, navigate() handles the (now gate-cleared) goto next loop via
+    pending_action; for a button-like entry we click by its menu index against the candidate
+    selector order.
     """
     if state.get("stop_reason"):
         return {}
     pending = state.get("pending_action")
     if not pending:
         return {}
-    page = get_handles(state["run_id"]).page
+
+    sandbox = bool(state.get("sandbox", False))
+    allowlist = state.get("origin_allowlist") or []
+
+    # GATE 1 — destructive deny-list (sandbox lifts the deny, D-03). Refuse BEFORE acting.
+    if is_destructive(pending, sandbox=sandbox):
+        refusal = (
+            f"step {state.get('step', 0)}: Refused [{pending.get('index')}] "
+            f"{pending.get('label', '')} — destructive action blocked"
+        )
+        log.info("explore_act_refused", run_id=state["run_id"], reason="destructive", label=pending.get("label", ""))
+        return {"events": [refusal], "pending_action": None}
+
+    # GATE 2 — origin allowlist (off-origin gotos refused in code, D-04). Only url-bearing
+    # actions can navigate off-origin; a non-url control stays on the current (in-scope) page.
+    target_url = pending.get("url")
+    if target_url and is_off_origin(target_url, allowlist):
+        refusal = (
+            f"step {state.get('step', 0)}: Refused [{pending.get('index')}] "
+            f"{pending.get('label', '')} — outside allowed origins"
+        )
+        log.info("explore_act_refused", run_id=state["run_id"], reason="off_origin", url=target_url)
+        return {"events": [refusal], "pending_action": None}
+
     feed = f"step {state.get('step', 0)}: chose [{pending['index']}] {pending.get('label', '')}"
 
     # Link with a same-page-or-in-origin url: defer the goto to navigate() (pending_action
     # carries the url). For a non-link control, click it by re-querying the candidate order.
-    if not pending.get("url"):
+    if not target_url:
+        page = get_handles(state["run_id"]).page
         try:
             from app.services.explorer.actions import _CANDIDATE_SELECTOR
 
@@ -206,7 +237,7 @@ async def act(state: dict) -> dict:
             log.info("explore_act_skip", run_id=state["run_id"], error=str(exc))
         return {"events": [feed], "pending_action": None}
 
-    # url-bearing pending stays for navigate() to goto next loop.
+    # url-bearing pending stays for navigate() to goto next loop (gate passed).
     return {"events": [feed]}
 
 

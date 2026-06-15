@@ -49,6 +49,11 @@ class ExplorerState(TypedDict, total=False):
     run_id: str
     target_id: int
     base_url: str
+    # Safety inputs read from the Target row at run start (EXPL-07/08). sandbox LIFTS the
+    # destructive deny (D-03); origin_allowlist gates navigation in code (D-04). Both are
+    # JSON-safe (bool / list[str]) so they ride the checkpoint with the rest of state.
+    sandbox: bool
+    origin_allowlist: list
     current_url: str
     step: int
     depth: int

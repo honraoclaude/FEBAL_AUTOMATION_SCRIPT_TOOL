@@ -99,6 +99,10 @@ async def run_explore(run_id: str, target_id: int) -> None:
                         "run_id": run_id,
                         "target_id": target_id,
                         "base_url": base_url,
+                        # EXPL-07/08 safety inputs from the Target row: sandbox lifts the
+                        # destructive deny (D-03); origin_allowlist gates navigation (D-04).
+                        "sandbox": bool(getattr(target, "sandbox", False)),
+                        "origin_allowlist": list(getattr(target, "origin_allowlist", None) or []),
                         "current_url": page.url,
                         "step": 0,
                         "depth": 0,
