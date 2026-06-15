@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-06-15T12:57:51.403Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-06-15T13:35:56.995Z"
 last_activity: 2026-06-15
 progress:
   total_phases: 11
   completed_phases: 3
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 17
   percent: 27
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 04 (explorer-agent) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-15
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [████████░░] 84%
 | Phase 03 P03-03 | 70min | 3 tasks | 5 files |
 | Phase 03 P04 | ~95min | 3 tasks | 15 files |
 | Phase 04 P04-01 | 75min | 2 tasks | 19 files |
+| Phase 04 P04-02 | 15min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,11 @@ Recent decisions affecting current work:
 - [Phase ?]: explorer.py relocated to explorer/driver.py (package/module name collision); run_explore re-exported from __init__.py
 - [Phase ?]: ExploreBudget bound into converge via closure, never in the checkpointed JSON-serializable ExplorerState (H-1)
 - [Phase ?]: Graph discovery test marked graph+live_llm: in-container BackgroundTask drives the real gateway; skipped without a provider key
+- [Phase 04]: 04-02: fingerprint hashing path is import-pure (AST-gated) — structural_fingerprint eats a {role/tag/attrs/children} tree; the live page->tree walk (page_fingerprint/_page_node_tree via page.evaluate) is a separate adapter so no playwright import enters the pure module
+- [Phase 04]: 04-02: page_key is no longer the state dedup key — it now scopes only to the frontier (URL identity); fingerprint(...) is the converge/persist dedup key (EXPL-06)
+- [Phase 04]: 04-02: convergence proof is a run_over_fixtures harness driving the REAL converge+fingerprint+budget over fixtures (not the live StateGraph, which needs a live page per node) — two runs collapse to an identical fingerprint set + stop_reason=saturation, zero spend
+- [Phase 04]: 04-02: Rule-1 fix — the Slice-1 loop detector checked seen_pairs AFTER appending the current pair, so every first-occurrence step self-detected as converged; now check PRIOR pairs then record
+- [Phase 04]: 04-02: mid-run relogin reuses creds cached on a per-run dict (auth._RUN_CREDS) set at first login and cleared in the driver finally — never a second decrypt, never on the serialized state (T-04-07)
 
 ### Pending Todos
 
@@ -127,8 +133,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-15T12:57:51.373Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-06-15T13:35:56.982Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):

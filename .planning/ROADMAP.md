@@ -162,7 +162,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 04-02-PLAN.md — Slice 2: structural-skeleton fingerprint dedup + deterministic two-run convergence + auth (login detection, storageState reuse, relogin) (EXPL-06, EXPL-05 convergence, EXPL-02)
+- [x] 04-02-PLAN.md — Slice 2: structural-skeleton fingerprint dedup + deterministic two-run convergence + auth (login detection, storageState reuse, relogin) (EXPL-06, EXPL-05 convergence, EXPL-02)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -297,7 +297,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Foundation & Dev Environment | 8/8 | Complete   | 2026-06-13 |
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
-| 4. Explorer Agent | 1/4 | In Progress|  |
+| 4. Explorer Agent | 2/4 | In Progress|  |
 | 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |

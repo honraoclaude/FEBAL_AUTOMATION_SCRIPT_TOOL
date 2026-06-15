@@ -20,11 +20,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Explorer Agent
 
 - [ ] **EXPL-01**: User can start an exploration of a registered app and watch live progress (pages found, actions taken, cost so far)
-- [ ] **EXPL-02**: Explorer logs into target apps automatically (login-form detection, credential injection, Playwright storageState reuse, logout recovery)
+- [x] **EXPL-02**: Explorer logs into target apps automatically (login-form detection, credential injection, Playwright storageState reuse, logout recovery)
 - [x] **EXPL-03**: Explorer discovers pages, forms, menus, buttons, links, and tables, capturing DOM metadata and a screenshot per discovered state
 - [ ] **EXPL-04**: Explorer detects multi-step workflows (e.g., create customer → assign product → generate invoice) and form validation rules
 - [x] **EXPL-05**: Exploration is bounded by code-enforced budgets (max steps, depth, revisits, wall-clock, token spend) and a loop detector; it converges and stops on a stable app
-- [ ] **EXPL-06**: Explorer deduplicates visited states via normalized DOM fingerprints (not URLs), distinguishing template states from instance data
+- [x] **EXPL-06**: Explorer deduplicates visited states via normalized DOM fingerprints (not URLs), distinguishing template states from instance data
 - [ ] **EXPL-07**: Explorer enforces an action risk policy: destructive actions (delete, send, pay) are forbidden unless the target is flagged as a restorable sandbox
 - [ ] **EXPL-08**: Page content is treated as untrusted input — observations are delimited and sanitized, and navigation is restricted to an origin allowlist
 - [ ] **EXPL-09**: Every discovered element is captured as a fingerprint with prioritized locator chain (data-testid → aria-label → role → text → xpath) and locator history
@@ -139,11 +139,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAT-06 | Phase 2 | Complete |
 | PLAT-07 | Phase 1 | Complete |
 | EXPL-01 | Phase 4 | Pending |
-| EXPL-02 | Phase 4 | Pending |
+| EXPL-02 | Phase 4 | Complete |
 | EXPL-03 | Phase 4 | Complete |
 | EXPL-04 | Phase 4 | Pending |
 | EXPL-05 | Phase 4 | Complete |
-| EXPL-06 | Phase 4 | Pending |
+| EXPL-06 | Phase 4 | Complete |
 | EXPL-07 | Phase 4 | Pending |
 | EXPL-08 | Phase 4 | Pending |
 | EXPL-09 | Phase 4 | Pending |
