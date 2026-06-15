@@ -72,6 +72,13 @@ class ExplorerState(TypedDict, total=False):
     # EXPL-09: append-only per-element locator history keyed by element key (JSON-safe);
     # a re-observed element APPENDS a step-stamped chain snapshot (Phase 8 healing fallback).
     element_history: dict
+    # EXPL-04: the workflow flag the decide node parsed this step ({flow, order}|absent) and
+    # the accumulated ordered Workflow→STEP→Page chain ([{flow, order, page_key}], JSON-safe).
+    workflow_flag: dict | None
+    workflow_chain: list
+    # EXPL-04: a gated validation-probe result ({form_id, errors:[{field, message}]}|absent)
+    # the act node sets ONLY when the risk gate allowed the submit — persist records the rules.
+    validation_submit_result: dict | None
     events: Annotated[list, add]
     stop_reason: str | None
     # Internal scratch (JSON-safe strings) passed between persist -> converge.

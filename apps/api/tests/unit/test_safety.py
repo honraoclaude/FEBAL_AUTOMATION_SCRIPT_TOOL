@@ -9,9 +9,6 @@ Two guarantees, both deterministic and zero-spend:
      destructive action never executes and a refusal feed entry is recorded.
 """
 
-import pytest
-
-from app.services.explorer import nodes
 from app.services.explorer.nodes import _DECIDE_SYSTEM, act, decide
 
 

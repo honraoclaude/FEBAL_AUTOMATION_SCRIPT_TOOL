@@ -118,6 +118,9 @@ async def run_explore(run_id: str, target_id: int) -> None:
                         "last_snapshot_yaml": "",
                         "current_screenshot": None,
                         "element_history": {},
+                        "workflow_flag": None,
+                        "workflow_chain": [],
+                        "validation_submit_result": None,
                         "events": [],
                         "stop_reason": None,
                     }
