@@ -1,7 +1,8 @@
 ---
 phase: 4
 slug: explorer-agent
-status: draft
+status: approved
+reviewed_at: 2026-06-15
 shadcn_initialized: true
 preset: "new-york style, base color zinc, CSS variables true (inherited from 01-UI-SPEC; apps/web/components.json confirmed)"
 created: 2026-06-15
