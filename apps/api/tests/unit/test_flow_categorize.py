@@ -9,8 +9,6 @@ fallback name so flows + risk still render WITHOUT keys (the semantic name is th
 
 from __future__ import annotations
 
-import pytest
-
 from app.services.kg import flows
 
 
@@ -51,6 +49,24 @@ async def test_kill_switch_active_also_falls_back(monkeypatch) -> None:
         "A -> B", run_id="run-y", start="A", end="B",
     )
     assert result["name"] == "Flow: A → B"
+    assert result["fallback"] is True
+
+
+async def test_no_key_provider_error_returns_deterministic_fallback(monkeypatch) -> None:
+    # With empty keys the gateway's init_chat_model raises a provider AUTH error (a TypeError),
+    # NOT BudgetExceeded. categorize_flow must still degrade to the deterministic name so flows +
+    # risk render WITHOUT keys (the headline no-key guarantee). Regression for the build_flows
+    # smoke that surfaced this.
+    import app.services.llm_gateway as gateway
+
+    async def _raise(*args, **kwargs):  # noqa: ANN002, ANN003
+        raise TypeError("Could not resolve authentication method")
+
+    monkeypatch.setattr(gateway, "complete", _raise)
+    result = await flows.categorize_flow(
+        "Login -> Inventory", run_id="run-z", start="Login", end="Inventory",
+    )
+    assert result["name"] == "Flow: Login → Inventory"
     assert result["fallback"] is True
 
 

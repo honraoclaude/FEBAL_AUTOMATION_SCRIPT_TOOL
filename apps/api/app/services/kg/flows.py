@@ -212,7 +212,16 @@ async def categorize_flow(
                 max_tokens=128,
             )
     except (llm_gateway.BudgetExceeded, llm_gateway.KillSwitchActive) as exc:
+        # Budget/halt: the metered path refused the call — fall back deterministically.
         log.info("flow_categorize_fallback", run_id=run_id, reason=str(exc))
+        return {"name": f"Flow: {start} → {end}", "category": "Uncategorized", "fallback": True}
+    except Exception as exc:  # noqa: BLE001
+        # NO-KEY / provider-config / transient errors: categorization is a SEMANTIC nicety, not
+        # a correctness requirement. The headline guarantee (CONTEXT) is that flows + risk render
+        # WITHOUT provider keys, so ANY gateway failure degrades to the deterministic name rather
+        # than breaking the read path. With empty keys init_chat_model raises a provider auth
+        # error (not BudgetExceeded), so this broad catch is REQUIRED for the no-key path.
+        log.info("flow_categorize_fallback_error", run_id=run_id, error=str(exc))
         return {"name": f"Flow: {start} → {end}", "category": "Uncategorized", "fallback": True}
 
     return _parse_name_category(result.content, start=start, end=end)
