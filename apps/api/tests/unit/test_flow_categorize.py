@@ -30,7 +30,7 @@ async def test_no_key_budget_exceeded_returns_deterministic_fallback(monkeypatch
     import app.services.llm_gateway as gateway
 
     async def _raise(*args, **kwargs):  # noqa: ANN002, ANN003
-        raise gateway.BudgetExceeded("no key / budget")
+        raise gateway.BudgetExceeded("per_day", "usd", "no key / budget")
 
     monkeypatch.setattr(gateway, "complete", _raise)
     result = await flows.categorize_flow(
