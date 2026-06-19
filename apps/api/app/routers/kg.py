@@ -10,10 +10,12 @@ ON-DEMAND computation (RESEARCH Open Q3): flows/coverage/graph are computed at r
 time from the live graph via `kg/reader` + the pure `kg/flows` miner — no write happens
 on a read (the single-write-path grep gate stays green; all writes go through kg/writer).
 
-Coverage: slice 4 wires the real ground-truth metric. Until then this returns the HONEST
-`measured=false` shape so the UI renders "Not yet measured" — never a fabricated percent
-(D-08). `routers/kg.py` + `schemas/kg.py` are created here and EXTENDED by 05-04 (which
-swaps the coverage stub for the real `kg/coverage.py` computation).
+Coverage (QUAL-01 / D-08): the REAL ground-truth metric — `GET /coverage` loads the
+committed ground-truth fixture and computes matched ÷ total via the pure `kg/coverage.py`
+against the discovered pages. When NO graph has been discovered it stays HONEST
+(`measured=false`, zeros) so the UI renders "Not yet measured" — never a fabricated percent
+(D-08 / T-05-14). The live ≥80% proof on a real discovery is the Manual-Only
+`tests/functional/test_coverage_live.py` (keys + a real exploration).
 
 Every query is read-only and parameterized (the reader owns the Cypher; labels/edge types
 are code constants, never interpolated from page-derived text — T-05-08 / V5).
@@ -40,6 +42,7 @@ from app.schemas.kg import (
     PagesResponse,
     PageSchema,
 )
+from app.services.kg import coverage as kg_coverage
 from app.services.kg import flows as kg_flows
 from app.services.kg import reader as kg_reader
 
@@ -118,25 +121,52 @@ async def flow_detail(flow_id: str) -> FlowDetailSchema:
     )
 
 
-# --- Coverage (QUAL-01 / D-08 — honest until slice 4 wires the real metric) ---------------
+# --- Coverage (QUAL-01 / D-08 — the REAL ground-truth metric) -----------------------------
 
 
 @router.get("/coverage", response_model=CoverageResponse)
 async def coverage() -> CoverageResponse:
-    """Coverage vs the ground-truth graph.
+    """Coverage vs the hand-labeled ground-truth graph (QUAL-01 / D-08).
 
-    Slice 4 replaces this body with the real `kg/coverage.py` computation. Until then it
-    returns the HONEST not-yet-measured shape (`measured=false`, zeros) so the UI shows
-    "Not yet measured" rather than a fabricated 0% (D-08). The response MODEL is final —
-    slice 4 only changes the computed values + the `measured` flag.
+    Loads the committed ground-truth fixture (`kg/coverage.load_ground_truth`), gathers the
+    discovered pages (fingerprints + URLs) from the live graph via `kg/reader.list_pages`,
+    and computes matched ÷ total with the pure `kg/coverage.compute_coverage` (fingerprint
+    primary, normalized-URL fallback).
+
+    HONESTY (D-08 / T-05-14): when NO page has been discovered the metric is NOT measurable,
+    so this returns `measured=false` with zero counts and `coverage_percent=0.0` — the UI
+    renders "Not yet measured", NEVER a fabricated 0%-as-measured. When pages exist,
+    `measured=true` carries the real computed percentage. Read-only (no write-Cypher; the
+    single-write-path gate stays green). The live ≥80% PROOF on a real discovery is the
+    Manual-Only `tests/functional/test_coverage_live.py` (needs keys + a real exploration).
     """
+    discovered_rows = await kg_reader.list_pages()
+    discovered = {
+        "pages": [
+            {"url": r.get("url"), "fingerprint": r.get("fingerprint")}
+            for r in discovered_rows
+        ]
+    }
+    # No discovered graph -> not measurable; stay honest (never a fabricated percent).
+    if not discovered["pages"]:
+        return CoverageResponse(
+            screens_total=0,
+            screens_covered=0,
+            flows_total=0,
+            flows_covered=0,
+            coverage_percent=0.0,
+            measured=False,
+        )
+
+    ground_truth = kg_coverage.load_ground_truth()
+    result = kg_coverage.compute_coverage(ground_truth, discovered)
     return CoverageResponse(
-        screens_total=0,
-        screens_covered=0,
-        flows_total=0,
-        flows_covered=0,
-        coverage_percent=0.0,
-        measured=False,
+        screens_total=result["screens_total"],
+        screens_covered=result["screens_covered"],
+        flows_total=result["flows_total"],
+        flows_covered=result["flows_covered"],
+        coverage_percent=result["coverage_percent"],
+        measured=True,
     )
 
 

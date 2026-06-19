@@ -10,7 +10,31 @@ that the metric LOGIC is correct; the live ≥80%-on-a-real-graph gate is the Ma
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from app.services.kg import coverage
+
+# The committed, diffable ground-truth copy (D-07) lives under tests/fixtures; the DEPLOYABLE
+# runtime copy ships in the app package (tests/ is .dockerignore'd). They must stay identical.
+_TESTS_FIXTURE = (
+    Path(__file__).resolve().parents[1] / "fixtures" / "ground_truth" / "saucedemo.json"
+)
+
+
+def test_ground_truth_copies_in_sync() -> None:
+    """The diffable tests/fixtures copy and the deployable app-package copy MUST be identical.
+
+    The runtime GET /coverage handler reads the app-package copy (tests/ is .dockerignore'd);
+    the tests/fixtures copy is the D-07 'committed, diffable' artifact. This pins them in sync
+    so the reviewed diffable file can't silently drift from what the image actually serves.
+    """
+    deployable = coverage.default_ground_truth_path()
+    assert deployable.exists(), f"deployable ground truth missing: {deployable}"
+    assert _TESTS_FIXTURE.exists(), f"diffable ground truth missing: {_TESTS_FIXTURE}"
+    assert json.loads(deployable.read_text(encoding="utf-8")) == json.loads(
+        _TESTS_FIXTURE.read_text(encoding="utf-8")
+    ), "ground-truth copies drifted — re-sync app/services/kg/ground_truth/saucedemo.json"
 
 # --- normalize_url: path-only so cross-host URLs coincide ---------------------------------
 

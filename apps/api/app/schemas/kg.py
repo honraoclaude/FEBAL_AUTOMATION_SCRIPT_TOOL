@@ -67,9 +67,10 @@ class FlowDetailSchema(BaseModel):
 class CoverageResponse(BaseModel):
     """Coverage vs the hand-labeled ground-truth graph.
 
-    `measured` is the HONESTY flag (D-08): when no graph has been discovered (or the
-    metric is not yet wired by slice 4), `measured=false` and the UI renders
-    "Not yet measured" — NEVER a fabricated 0% / percentage.
+    `measured` is the HONESTY flag (D-08 / T-05-14): when no graph has been discovered the
+    metric is not measurable, so `measured=false` and the UI renders "Not yet measured" —
+    NEVER a fabricated 0% / percentage. When a discovered graph exists, `measured=true`
+    carries the real `kg/coverage.compute_coverage` percentage vs the ground-truth fixture.
     """
 
     screens_total: int = Field(ge=0)
