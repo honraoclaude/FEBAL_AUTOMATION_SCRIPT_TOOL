@@ -18,7 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
  (completed 2026-06-13)
 - [x] **Phase 3: Tracer Bullet — Minimal End-to-End Loop** - Thin slice: explore SauceDemo → minimal graph → one scenario → one spec → one execution → result row; full REST API contract in place
  (completed 2026-06-14)
-- [x] **Phase 4: Explorer Agent** - Full autonomous exploration: snapshot-first perception, budgets/loop detection, auth handling, risk policy, sanitized observations, element fingerprints (completed 2026-06-15)
+- [x] **Phase 4: Explorer Agent** - Full autonomous exploration: snapshot-first perception, budgets/loop detection, auth handling, risk policy, sanitized observations, element fingerprints
+ (completed 2026-06-15)
 - [ ] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
 - [ ] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
 - [ ] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch
@@ -186,8 +187,25 @@ Plans:
   4. The KG writer service is the only Neo4j write path, and element fingerprints with locator history are queryable per element from the Element Repository
   5. Exploration coverage measured against the hand-labeled SauceDemo ground-truth graph exceeds 80%
 
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+
+- [ ] 05-01-PLAN.md — Single-writer + canonical schema + idempotent fingerprint-MERGE/freshness + explorer refactor + grep enforcement (KG-01/03/05 core)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 05-02-PLAN.md — Element Repository read + bounded path-mining + pure risk formula + gateway flow categorization with deterministic no-key fallback (KG-04, KG-05 half)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 05-03-PLAN.md — Real GET /flows + /coverage + /graph/pages/elements read API + tabular browse UI (Pages/Flows-risk/Element Repository) + sidebar nav (KG-02)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 05-04-PLAN.md — Committed ground-truth fixture + deterministic coverage metric + real GET /coverage + Manual-Only ≥80% gate (QUAL-01)
 
 ### Phase 6: BDD & Playwright Generation
 
@@ -298,7 +316,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
-| 5. Knowledge Graph & Flow Learning | 0/TBD | Not started | - |
+| 5. Knowledge Graph & Flow Learning | 0/4 | Planned | - |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
