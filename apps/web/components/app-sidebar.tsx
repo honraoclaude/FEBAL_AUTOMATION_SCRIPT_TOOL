@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Crosshair, LogOut, Radar, type LucideIcon } from "lucide-react";
+import { Crosshair, LogOut, Radar, Workflow, type LucideIcon } from "lucide-react";
 
 import { api } from "@/lib/api/client";
 import {
@@ -31,6 +31,9 @@ const NAV_ITEMS: NavItem[] = [
   // /explore (active via pathname.startsWith). A run-less /explore index is out of scope this
   // phase — a thin placeholder page directs the user to start a run from Targets.
   { icon: Radar, label: "Explorations", href: "/explore" },
+  // KG-02 / D-05: the Knowledge Graph browse section (Pages/Flows/Element repository).
+  // Positioned after Explorations (explore → graph). Active via pathname.startsWith("/graph").
+  { icon: Workflow, label: "Knowledge graph", href: "/graph" },
 ];
 
 type Me = { id: number; email: string };
