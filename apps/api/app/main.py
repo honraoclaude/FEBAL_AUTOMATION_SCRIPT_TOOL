@@ -10,7 +10,7 @@ from sqlalchemy import select
 from app.core.checkpointer import close_checkpointer, init_checkpointer
 from app.core.config import settings
 from app.core.logging import configure_logging
-from app.core.neo4j_driver import close_neo4j, init_neo4j
+from app.core.neo4j_driver import close_neo4j, get_neo4j, init_neo4j
 from app.core.redis_client import close_redis, init_redis
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
@@ -26,6 +26,7 @@ from app.routers.generate import router as generate_router
 from app.routers.health import router as health_router
 from app.routers.stubs import router as stubs_router
 from app.routers.targets import router as targets_router
+from app.services.kg.schema import ensure_constraints
 
 log = structlog.get_logger()
 
@@ -56,6 +57,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     init_redis()  # open the single long-lived gateway Redis client (hot-path GET/MGET/pipeline)
     init_neo4j()  # open the single lifespan Neo4j driver/pool (lazy connect — boots even if neo4j is down)
+    # KG-03: create the uniqueness constraints backing the idempotent fingerprint-MERGE.
+    # ensure_constraints is GRACEFUL — it catches an unreachable neo4j and returns without
+    # raising, so the api still boots when the graph profile is down (no depends_on:neo4j).
+    await ensure_constraints(get_neo4j())
     # Open the LangGraph checkpointer pool + run setup() ONCE (creates checkpoint tables
     # OUTSIDE Alembic, idempotent — Pitfall 6). Coexists with the asyncpg SQLAlchemy engine.
     await init_checkpointer()

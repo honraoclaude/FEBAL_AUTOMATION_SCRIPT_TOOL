@@ -27,14 +27,16 @@ from __future__ import annotations
 import json
 import re
 import time
+from datetime import datetime, timezone
 
 import structlog
 
-from app.core.neo4j_driver import get_neo4j
 from app.core.redis_client import get_redis
 from app.db.session import SessionLocal
 from app.services import llm_gateway
 from app.services.explorer import budget as budget_mod
+from app.services.kg import schema as kg_schema
+from app.services.kg import writer as kg_writer
 from app.services.explorer.actions import enumerate_actions, page_key, render_menu
 from app.services.explorer.auth import maybe_relogin
 from app.services.explorer.fingerprint import page_fingerprint
@@ -376,40 +378,20 @@ async def _probe_form_validation(page) -> dict | None:  # noqa: ANN001 -- playwr
     return None
 
 
-def _build_persist_cypher() -> str:
-    """Parameterized Cypher (T-03-05): two Page nodes + an Element + a NavigatesTo edge.
-
-    Writes richer nodes than Phase 3 (adds an :Element + screenshot_path). MERGE on the
-    page key (Slice-1 stand-in for the structural fingerprint, EXPL-06). run_id-tagged so a
-    test can assert per-run. Never f-string page-derived text into the query.
-    """
-    return (
-        "MERGE (a:Page {key:$a_key}) "
-        "ON CREATE SET a.url=$a_url, a.title=$a_title "
-        "SET a.run_id=$run_id, a.fingerprint=$a_key, a.screenshot_path=$a_shot "
-        "MERGE (b:Page {key:$b_key}) "
-        "ON CREATE SET b.url=$b_url, b.title=$b_title "
-        "SET b.run_id=$run_id, b.fingerprint=$b_key "
-        "MERGE (a)-[:NavigatesTo]->(b) "
-        "MERGE (e:Element {key:$el_key}) "
-        "ON CREATE SET e.role=$el_role, e.label=$el_label "
-        # EXPL-09: the FULL prioritized locator chain + append-only history as JSON params
-        # (never f-string page-derived strings into Cypher — T-04-14). Minimal-but-real seam:
-        # Phase 5 owns the canonical Element Repository.
-        "SET e.run_id=$run_id, e.chain_json=$el_chain_json, e.history_json=$el_history_json "
-        "MERGE (a)-[:HAS_ELEMENT]->(e) "
-        "RETURN count(*) AS n"
-    )
-
-
 async def persist_to_neo4j(state: dict) -> dict:
-    """Persist Page/Element nodes + a NavigatesTo edge via managed execute_write + read-back.
+    """Persist Page/Element nodes + a NavigatesTo edge by DELEGATING to the kg_writer (KG-05).
 
-    SC1 lesson: a write that persists nothing FAILS the run (raise) — never report passed on
-    a no-op write. Parameterized Cypher only. Records the FROM page key into seen_keys for
-    the loop/saturation detector handled in converge.
+    D-02: the persist node holds ZERO Cypher — all writes go through the single write path
+    (app/services/kg/writer.py), which owns the idempotent fingerprint-MERGE + freshness +
+    the managed execute_write + read-back guard (SC1 lesson, lifted verbatim). This node only
+    computes the params (the same ones it computed in Phase 4) and calls upsert_*/link_*.
+    A single `now` timestamp is threaded into every upsert so freshness is consistent within
+    a step. Records the FROM page fingerprint into seen_keys for the converge loop detector.
     """
     page = get_handles(state["run_id"]).page
+    now = datetime.now(timezone.utc).isoformat()
+    run_id = state["run_id"]
+
     a_url = state.get("current_url") or page.url
     # EXPL-06: the dedup key is the STRUCTURAL FINGERPRINT computed in perceive (replaces the
     # Slice-1 URL page_key). Fall back to the URL key only if perceive did not run (defensive).
@@ -440,33 +422,25 @@ async def persist_to_neo4j(state: dict) -> dict:
     )
     element_history[el_key] = merged
 
-    cypher = _build_persist_cypher()
-    params = {
-        "a_key": a_key,
-        "a_url": a_url,
-        "a_title": a_title,
-        "a_shot": a_shot,
-        "b_key": b_key,
-        "b_url": b_url,
-        "b_title": b_title,
-        "el_key": el_key,
-        "el_role": el_role,
-        "el_label": el_label,
-        # JSON-serialized chain/history params (never f-string page text into Cypher, T-04-14).
-        "el_chain_json": json.dumps(el_chain),
-        "el_history_json": json.dumps(merged),
-        "run_id": state["run_id"],
-    }
-
-    async def _write(tx) -> int:
-        result = await tx.run(cypher, **params)
-        record = await result.single()
-        return int(record["n"]) if record else 0
-
-    async with get_neo4j().session() as session:
-        written = await session.execute_write(_write)
-    if written < 1:
-        raise RuntimeError("explore persisted nothing to Neo4j")
+    # Upsert the FROM page (fingerprint-keyed) + the TO page (URL stand-in until perceived) +
+    # the chosen Element, then link NavigatesTo + HAS_ELEMENT — all via the single write path.
+    await kg_writer.upsert_page(
+        fingerprint=a_key, url=a_url, title=a_title, run_id=run_id,
+        screenshot_path=a_shot, now=now,
+    )
+    await kg_writer.upsert_page(
+        fingerprint=b_key, url=b_url, title=b_title, run_id=run_id,
+        screenshot_path=None, now=now,
+    )
+    await kg_writer.link_navigates_to(
+        from_fingerprint=a_key, to_fingerprint=b_key, via=el_label, run_id=run_id,
+    )
+    await kg_writer.upsert_element(
+        key=el_key, role=el_role, label=el_label,
+        chain_json=json.dumps(el_chain), history_json=json.dumps(merged),
+        run_id=run_id, now=now,
+    )
+    await kg_writer.link_has_element(page_fingerprint=a_key, element_key=el_key, run_id=run_id)
 
     out: dict = {
         "events": [f"persisted page {a_key}"],
@@ -476,85 +450,50 @@ async def persist_to_neo4j(state: dict) -> dict:
     }
 
     # EXPL-04: if the decide node flagged a multi-step workflow this step, accumulate the
-    # ordered chain and write (:Workflow {name})-[:STEP {order}]->(:Page) via parameterized
-    # Cypher + read-back. Phase 5 owns flow categorization/risk scoring (documented seam).
+    # ordered chain and write (:Workflow {name})-[:STEP {order}]->(:Page) via the writer.
+    # Phase 5 owns flow categorization/risk scoring (this records the ordered journey).
     flag = state.get("workflow_flag")
     workflow_chain = list(state.get("workflow_chain", []))
     if flag is not None:
         workflow_chain.append({"flow": flag["flow"], "order": flag["order"], "page_key": a_key})
-        await _write_workflow_step(state["run_id"], flag["flow"], flag["order"], a_key)
+        await kg_writer.upsert_workflow(name=flag["flow"], run_id=run_id, now=now)
+        await kg_writer.link_step(
+            flow=flag["flow"], order=flag["order"], page_fingerprint=a_key, run_id=run_id,
+        )
         out["events"].append(f"workflow {flag['flow']} step {flag['order']}")
     out["workflow_chain"] = workflow_chain
 
     # EXPL-04: a gated validation-probing submit's result (set by the act node only when the
-    # risk gate ALLOWS the submit — sandbox or non-submit field) records Form.validation_rules.
+    # risk gate ALLOWS the submit — sandbox or non-submit field) records Form.validation_rules
+    # via the writer: (:Page)-[:HAS_FORM]->(:Form) + (:Page)-[:Submits]->(:Form), and — when
+    # the chosen action maps via the deterministic VERB_ENTITY_MAP — the BusinessEntity +
+    # the matching state-change edge (Creates/Updates/Deletes).
     submit_result = state.get("validation_submit_result")
     if submit_result:
         rules = extract_validation_rules(submit_result)
         if rules:
             form_key = f"{a_key}#form:{submit_result.get('form_id', '')}"[:300]
-            await _write_form_validation(state["run_id"], a_key, form_key, rules)
+            await kg_writer.upsert_form(
+                key=form_key, validation_rules=json.dumps(rules), run_id=run_id, now=now,
+            )
+            await kg_writer.link_has_form(page_fingerprint=a_key, form_key=form_key, run_id=run_id)
+            await kg_writer.link_submits(page_fingerprint=a_key, form_key=form_key, run_id=run_id)
             out["events"].append(f"form validation: {len(rules)} rule(s)")
 
+            entity = kg_schema.map_verb_to_entity(el_label)
+            if entity is not None:
+                await kg_writer.upsert_business_entity(
+                    name=entity["name"], kind=entity["kind"], now=now,
+                )
+                link_fn = {
+                    kg_schema.CREATES: kg_writer.link_creates,
+                    kg_schema.UPDATES: kg_writer.link_updates,
+                    kg_schema.DELETES: kg_writer.link_deletes,
+                }[entity["edge"]]
+                await link_fn(form_key=form_key, entity_name=entity["name"], run_id=run_id)
+                out["events"].append(f"entity {entity['name']} {entity['edge'].lower()}")
+
     return out
-
-
-async def _write_workflow_step(run_id: str, flow: str, order: int, page_key_val: str) -> None:
-    """Write (:Workflow {name})-[:STEP {order}]->(:Page) via managed execute_write + read-back.
-
-    Parameterized Cypher ONLY (T-04-14) — the flow name is a JSON-safe param, never f-strung.
-    A 0-count write FAILS the run (SC1 lesson, T-04-15). Phase 5 owns flow mining / risk score.
-    """
-    cypher = (
-        "MERGE (w:Workflow {name:$flow, run_id:$run_id}) "
-        "MERGE (p:Page {key:$page_key}) "
-        "MERGE (w)-[s:STEP {order:$order}]->(p) "
-        "SET s.run_id=$run_id "
-        "RETURN count(*) AS n"
-    )
-    params = {"flow": flow, "order": order, "page_key": page_key_val, "run_id": run_id}
-
-    async def _write(tx) -> int:
-        result = await tx.run(cypher, **params)
-        record = await result.single()
-        return int(record["n"]) if record else 0
-
-    async with get_neo4j().session() as session:
-        written = await session.execute_write(_write)
-    if written < 1:
-        raise RuntimeError("explore persisted no Workflow STEP to Neo4j")
-
-
-async def _write_form_validation(
-    run_id: str, page_key_val: str, form_key: str, rules: list[dict]
-) -> None:
-    """Write (:Page)-[:HAS_FORM]->(:Form {validation_rules}) via execute_write + read-back.
-
-    validation_rules is JSON-serialized as a param (never f-strung — T-04-14). 0-count fails.
-    """
-    cypher = (
-        "MERGE (p:Page {key:$page_key}) "
-        "MERGE (f:Form {key:$form_key}) "
-        "SET f.run_id=$run_id, f.validation_rules=$rules_json "
-        "MERGE (p)-[:HAS_FORM]->(f) "
-        "RETURN count(*) AS n"
-    )
-    params = {
-        "page_key": page_key_val,
-        "form_key": form_key,
-        "rules_json": json.dumps(rules),
-        "run_id": run_id,
-    }
-
-    async def _write(tx) -> int:
-        result = await tx.run(cypher, **params)
-        record = await result.single()
-        return int(record["n"]) if record else 0
-
-    async with get_neo4j().session() as session:
-        written = await session.execute_write(_write)
-    if written < 1:
-        raise RuntimeError("explore persisted no Form validation to Neo4j")
 
 
 async def converge(state: dict) -> dict:
