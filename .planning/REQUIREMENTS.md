@@ -32,7 +32,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Knowledge Graph
 
 - [x] **KG-01**: Discovered structure persists in Neo4j as Page/Form/Workflow/Button/BusinessEntity nodes with NavigatesTo/Submits/Creates/Updates/Deletes edges
-- [ ] **KG-02**: User can query and visually browse the knowledge graph (pages, flows, entities) from the UI
+- [x] **KG-02**: User can query and visually browse the knowledge graph (pages, flows, entities) from the UI
 - [x] **KG-03**: Re-exploring an unchanged app is idempotent (fingerprint-based MERGE, ~0 duplicate nodes); every node carries first_seen/last_verified freshness fields
 - [x] **KG-04**: Flow Learning Engine derives user journeys from the graph, categorizes business workflows, and assigns each flow a risk score
 - [x] **KG-05**: A single writer service is the only Neo4j write path; element fingerprints and locator history are queryable per element
@@ -148,7 +148,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXPL-08 | Phase 4 | Complete |
 | EXPL-09 | Phase 4 | Complete |
 | KG-01 | Phase 5 | Complete |
-| KG-02 | Phase 5 | Pending |
+| KG-02 | Phase 5 | Complete |
 | KG-03 | Phase 5 | Complete |
 | KG-04 | Phase 5 | Complete |
 | KG-05 | Phase 5 | Complete |

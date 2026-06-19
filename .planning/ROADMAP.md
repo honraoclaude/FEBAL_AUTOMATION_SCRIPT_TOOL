@@ -201,7 +201,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 05-03-PLAN.md — Real GET /flows + /coverage + /graph/pages/elements read API + tabular browse UI (Pages/Flows-risk/Element Repository) + sidebar nav (KG-02)
+- [x] 05-03-PLAN.md — Real GET /flows + /coverage + /graph/pages/elements read API + tabular browse UI (Pages/Flows-risk/Element Repository) + sidebar nav (KG-02)
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -316,7 +316,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
-| 5. Knowledge Graph & Flow Learning | 2/4 | In Progress|  |
+| 5. Knowledge Graph & Flow Learning | 3/4 | In Progress|  |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
