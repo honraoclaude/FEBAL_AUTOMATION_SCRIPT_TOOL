@@ -1,0 +1,17 @@
+{
+  "_comment": "Hand-authored SauceDemo ground truth (QUAL-01 / D-07). Committed + diffable; the coverage metric reads this as the reference. Pages keyed by public URL; normalize_url strips scheme+host to path-only so the in-cluster host (http://saucedemo:80) the explorer sees still matches. No live deps, no keys, no fingerprints (humans author from URLs; fingerprint matching is the primary path when the graph supplies one).",
+  "app": "SauceDemo",
+  "pages": [
+    {"name": "Login",             "url": "https://www.saucedemo.com/"},
+    {"name": "Inventory",         "url": "https://www.saucedemo.com/inventory.html"},
+    {"name": "Item Detail",       "url": "https://www.saucedemo.com/inventory-item.html"},
+    {"name": "Cart",              "url": "https://www.saucedemo.com/cart.html"},
+    {"name": "Checkout: Info",     "url": "https://www.saucedemo.com/checkout-step-one.html"},
+    {"name": "Checkout: Overview", "url": "https://www.saucedemo.com/checkout-step-two.html"},
+    {"name": "Checkout: Complete", "url": "https://www.saucedemo.com/checkout-complete.html"}
+  ],
+  "flows": [
+    {"name": "Login",                  "pages": ["Login", "Inventory"]},
+    {"name": "Add to Cart & Checkout", "pages": ["Inventory", "Cart", "Checkout: Info", "Checkout: Overview", "Checkout: Complete"]}
+  ]
+}
