@@ -1,7 +1,8 @@
-"""The 5 honest 501 PLAT-02 stub endpoints — heal, create-defect, flows, coverage, dashboard.
+"""The remaining honest 501 PLAT-02 stub endpoints — heal, create-defect, dashboard.
 
-These complete the 10-endpoint PLAT-02 surface (5 real from Plans 02-03 + /execute, plus
-these 5). Each endpoint:
+These are the not-yet-built PLAT-02 endpoints. (`/flows` + `/coverage` were Phase-3 501
+stubs here too; Phase 5 / slice 03 made them REAL read-only endpoints in `routers/kg.py`,
+so they no longer live in this module.) Each endpoint:
   - is behind the router-level auth gate (Depends(get_current_user) — T-03-17),
   - documents its EVENTUAL request/response contract via schemas/stub.py + `responses=`
     (so the OpenAPI schema is COMPLETE), and
@@ -17,11 +18,9 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.security import get_current_user
 from app.schemas.stub import (
-    CoverageResponse,
     CreateDefectRequest,
     CreateDefectResponse,
     DashboardResponse,
-    FlowsResponse,
     HealRequest,
     HealResponse,
 )
@@ -61,30 +60,6 @@ async def create_defect(body: CreateDefectRequest) -> CreateDefectResponse:
     raise HTTPException(
         status_code=501, detail="create-defect: not implemented (Phase 9)"
     )
-
-
-@router.get(
-    "/flows",
-    status_code=501,
-    summary="List learned business flows from the knowledge graph (Phase 5)",
-    response_model=FlowsResponse,
-    responses=_NOT_IMPLEMENTED,
-)
-async def flows() -> FlowsResponse:
-    """Learned flows — implemented in Phase 5. Returns 501 (never a fabricated flow list)."""
-    raise HTTPException(status_code=501, detail="flows: not implemented (Phase 5)")
-
-
-@router.get(
-    "/coverage",
-    status_code=501,
-    summary="Aggregate coverage metrics (Phase 10)",
-    response_model=CoverageResponse,
-    responses=_NOT_IMPLEMENTED,
-)
-async def coverage() -> CoverageResponse:
-    """Coverage metrics — implemented in Phase 10. Returns 501 (never fabricated numbers)."""
-    raise HTTPException(status_code=501, detail="coverage: not implemented (Phase 10)")
 
 
 @router.get(

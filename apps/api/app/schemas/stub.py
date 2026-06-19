@@ -53,34 +53,9 @@ class CreateDefectResponse(BaseModel):
     draft: bool
 
 
-# --- GET /api/flows (Phase 5 — learned business flows from the KG) ------------------------
-
-
-class FlowSummary(BaseModel):
-    """One learned business flow (Phase 5 shape)."""
-
-    flow_id: str
-    name: str
-    step_count: int
-
-
-class FlowsResponse(BaseModel):
-    """The list of learned flows discovered in the knowledge graph (Phase 5 shape)."""
-
-    flows: list[FlowSummary]
-
-
-# --- GET /api/coverage (Phase 10 — coverage metrics) -------------------------------------
-
-
-class CoverageResponse(BaseModel):
-    """Aggregate coverage metrics for the dashboard (Phase 10 shape)."""
-
-    screens_total: int
-    screens_covered: int
-    flows_total: int
-    flows_covered: int
-    coverage_percent: float = Field(ge=0.0, le=100.0)
+# NOTE: GET /api/flows + GET /api/coverage are no longer stubs — Phase 5 / slice 03 made
+# them REAL read-only endpoints in routers/kg.py with richer response models in schemas/kg.py
+# (FlowSchema/FlowsResponse, CoverageResponse). Their seed shapes were removed from this module.
 
 
 # --- GET /api/dashboard (Phase 10 — role-based dashboard rollup) --------------------------
