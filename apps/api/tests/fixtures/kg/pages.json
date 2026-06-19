@@ -1,0 +1,76 @@
+{
+  "_comment": "Hand-built KG snapshot for deterministic writer/MERGE/freshness/idempotency/schema tests. No browser, no LLM. Fingerprints are stable opaque strings (NOT recomputed) standing in for the Phase-4 structural fingerprint. Distinct from the slice-4 ground-truth fixture.",
+  "pages": [
+    {
+      "fingerprint": "fp-login-0001",
+      "url": "http://saucedemo:80/",
+      "title": "Swag Labs",
+      "screenshot_path": "workspaces/fix/login.png",
+      "run_id": "fixture-run"
+    },
+    {
+      "fingerprint": "fp-inventory-0002",
+      "url": "http://saucedemo:80/inventory.html",
+      "title": "Swag Labs - Inventory",
+      "screenshot_path": "workspaces/fix/inventory.png",
+      "run_id": "fixture-run"
+    },
+    {
+      "fingerprint": "fp-cart-0003",
+      "url": "http://saucedemo:80/cart.html",
+      "title": "Swag Labs - Your Cart",
+      "screenshot_path": "workspaces/fix/cart.png",
+      "run_id": "fixture-run"
+    },
+    {
+      "fingerprint": "fp-checkout-0004",
+      "url": "http://saucedemo:80/checkout-step-one.html",
+      "title": "Swag Labs - Checkout: Your Information",
+      "screenshot_path": "workspaces/fix/checkout.png",
+      "run_id": "fixture-run"
+    }
+  ],
+  "navigates_to": [
+    {"from_fp": "fp-login-0001", "to_fp": "fp-inventory-0002", "via": "Login", "run_id": "fixture-run"},
+    {"from_fp": "fp-inventory-0002", "to_fp": "fp-cart-0003", "via": "Shopping cart", "run_id": "fixture-run"},
+    {"from_fp": "fp-cart-0003", "to_fp": "fp-checkout-0004", "via": "Checkout", "run_id": "fixture-run"}
+  ],
+  "elements": [
+    {
+      "key": "fp-inventory-0002#button:Add to cart",
+      "role": "button",
+      "label": "Add to cart",
+      "chain_json": "[{\"strategy\": \"data-test\", \"value\": \"add-to-cart-sauce-labs-backpack\"}]",
+      "history_json": "[{\"step\": 1, \"chain\": [{\"strategy\": \"data-test\", \"value\": \"add-to-cart-sauce-labs-backpack\"}]}]",
+      "page_fp": "fp-inventory-0002",
+      "run_id": "fixture-run"
+    }
+  ],
+  "buttons": [
+    {
+      "key": "fp-inventory-0002#button:Add to cart",
+      "label": "Add to cart",
+      "role": "button",
+      "page_fp": "fp-inventory-0002",
+      "run_id": "fixture-run"
+    }
+  ],
+  "forms": [
+    {
+      "key": "fp-checkout-0004#form:checkout_info",
+      "validation_rules": "[{\"field\": \"firstName\", \"message\": \"Error: First Name is required\"}]",
+      "page_fp": "fp-checkout-0004",
+      "run_id": "fixture-run"
+    }
+  ],
+  "business_entities": [
+    {"name": "Cart", "kind": "collection"},
+    {"name": "Order", "kind": "transaction"}
+  ],
+  "submits": [
+    {"page_fp": "fp-checkout-0004", "form_key": "fp-checkout-0004#form:checkout_info", "run_id": "fixture-run"}
+  ],
+  "creates": [
+    {"form_key": "fp-checkout-0004#form:checkout_info", "entity_name": "Order", "run_id": "fixture-run"}
+  ]
+}
