@@ -1,9 +1,14 @@
-"""SC4 proof (03-04 Task 3) — the complete + honest 10-endpoint PLAT-02 surface.
+"""SC4 proof (03-04 Task 3, UPDATED 05-03) — the complete + honest PLAT-02 surface.
 
-Every one of the 10 PLAT-02 endpoints EXISTS (no route-level 404): the 5 REAL endpoints
-reject an unauthenticated client with 401 (the auth gate is present — T-03-17), and the 5
+Every PLAT-02 endpoint EXISTS (no route-level 404): the REAL endpoints reject an
+unauthenticated client with 401 (the auth gate is present — T-03-17), and the remaining
 STUB endpoints return 501 when authenticated (documented contract, never a fabricated
 result — T-03-19). Also asserts the shared/events schemas import (SC4: schemas present).
+
+UPDATE (Phase 5 / slice 03 — D-06): GET /flows and GET /coverage were Phase-3 501 stubs;
+they are now REAL read-only auth-gated endpoints (routers/kg.py), so they moved from the
+STUB list (authed→501) to the REAL list (unauth→401). The remaining honest stubs are
+heal (Phase 8) / create-defect (Phase 9) / dashboard (Phase 10).
 
 Default-gate test (functional, no graph/live_llm) — stays in the canonical green suite.
 """
@@ -12,16 +17,22 @@ import pytest
 
 pytestmark = [pytest.mark.functional]
 
-# The 5 REAL endpoints (Plans 02-03 + /execute): unauth -> 401 (auth gate present, exists).
+# The REAL endpoints (Plans 02-03 + /execute + the Phase-5 KG reads): unauth -> 401
+# (auth gate present, route exists). /flows + /coverage joined here when they became real.
 REAL_ENDPOINTS = [
     ("POST", "/api/explore"),
     ("GET", "/api/executions"),
     ("POST", "/api/generate-bdd"),
     ("POST", "/api/generate-scripts"),
     ("POST", "/api/execute"),
+    ("GET", "/api/flows"),
+    ("GET", "/api/coverage"),
+    ("GET", "/api/graph"),
+    ("GET", "/api/pages"),
+    ("GET", "/api/elements"),
 ]
 
-# The 5 STUB endpoints (this plan): authed -> 501 (documented contract, never fabricated).
+# The remaining STUB endpoints: authed -> 501 (documented contract, never fabricated).
 # Each carries a minimal VALID body so the request passes schema validation and reaches the
 # handler (which raises 501) — an invalid body would 422 before the stub's 501 fires.
 STUB_ENDPOINTS = [
@@ -31,8 +42,6 @@ STUB_ENDPOINTS = [
         "/api/create-defect",
         {"run_id": "x", "summary": "x", "description": "x", "classification": "x"},
     ),
-    ("GET", "/api/flows", None),
-    ("GET", "/api/coverage", None),
     ("GET", "/api/dashboard", None),
 ]
 
@@ -70,10 +79,15 @@ async def test_stub_endpoints_are_auth_gated(client, method, path, body):
     )
 
 
-def test_full_plat02_surface_is_ten_endpoints():
-    """The PLAT-02 surface is exactly the 5 real + 5 stub endpoints (complete)."""
-    assert len(REAL_ENDPOINTS) == 5
-    assert len(STUB_ENDPOINTS) == 5
+def test_full_plat02_surface_is_complete():
+    """The PLAT-02 surface is complete: the original 10 endpoints all exist + auth-gated.
+
+    Phase 5 promoted /flows + /coverage from stub→real and added /graph /pages /elements
+    (KG reads), so the split is now 10 real + 3 stub (the original 10-endpoint surface is a
+    subset of these; every endpoint exists and is auth-gated).
+    """
+    assert len(REAL_ENDPOINTS) == 10
+    assert len(STUB_ENDPOINTS) == 3
 
 
 def test_shared_events_schemas_present():
