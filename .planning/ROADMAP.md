@@ -193,7 +193,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Single-writer + canonical schema + idempotent fingerprint-MERGE/freshness + explorer refactor + grep enforcement (KG-01/03/05 core)
+- [x] 05-01-PLAN.md — Single-writer + canonical schema + idempotent fingerprint-MERGE/freshness + explorer refactor + grep enforcement (KG-01/03/05 core)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -316,7 +316,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
-| 5. Knowledge Graph & Flow Learning | 0/4 | Planned | - |
+| 5. Knowledge Graph & Flow Learning | 1/4 | In Progress|  |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |

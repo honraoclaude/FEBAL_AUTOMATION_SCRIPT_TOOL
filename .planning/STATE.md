@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: executing
 stopped_at: Phase 5 planned (4 slices, checker PASS clean); ready to execute
-last_updated: "2026-06-19T16:14:21.073Z"
-last_activity: 2026-06-15 -- Phase 04 complete (EXPL-01..09)
+last_updated: "2026-06-19T16:31:41.315Z"
+last_activity: 2026-06-19
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 23
-  completed_plans: 19
+  completed_plans: 20
   percent: 36
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 05 — Knowledge Graph & Flow Learning — next up (or live-demo the Explorer with a provider key first)
+**Current focus:** Phase 05 — knowledge-graph-flow-learning
 
 ## Current Position
 
-Phase: 04 (Explorer Agent) — ✅ CODE-COMPLETE + deterministically verified (2026-06-15); live LLM exploration pending provider keys (Manual-Only gate)
-Plan: 4 of 4 complete
-Status: Phase 04 done (logic verified); ready for Phase 05
-Last activity: 2026-06-15 -- Phase 04 complete (EXPL-01..09)
+Phase: 05 (knowledge-graph-flow-learning) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-19
 
-Progress: [████░░░░░░] 36% (4 of 11 phases)
+Progress: [█████████░] 87%
 
 ## ⚠ Project-wide note (from Phase 04)
 
@@ -71,6 +71,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 04 P04-02 | 15min | 3 tasks | 11 files |
 | Phase 04 P04-03 | 10min | 3 tasks | 10 files |
 | Phase 04 P04 | 60 | 3 tasks | 22 files |
+| Phase 05 P05-01 | 12min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase ?]: EXPL-01 live view: SSE via sse-starlette EventSourceResponse over Redis pub/sub (explore:{run_id}); snapshot-on-subscribe reconciles reconnects without replay
 - [Phase ?]: Cooperative Stop (L-3) is a Redis cancel flag checked at the LangGraph loop top; durable/forceful cancel deferred to Phase 7
 - [Phase ?]: First apps/web Playwright e2e harness added (@playwright/test 1.60.0); explore-live e2e is self-contained (mocks all /api + SSE), no backend/keys
+- [Phase 05]: 05-01: kg/writer.py is the SINGLE Neo4j write path (KG-05) — explorer persist node delegates, holds zero Cypher; a Cypher-syntax-scoped grep gate enforces it without false-positiving docstring prose
+- [Phase 05]: 05-01: idempotent fingerprint-MERGE backed by REQUIRE p.fingerprint IS UNIQUE; ON CREATE first_seen / ON MATCH last_verified + coalesce; first_seen immutable; ensure_constraints GRACEFUL (no-raise when neo4j down)
+- [Phase 05]: 05-01: writer fns take optional driver kwarg (defaults to get_neo4j singleton) for host-driver test injection; KG-05 element-repository read half deferred to 05-02 (not marked complete)
 
 ### Pending Todos
 
@@ -142,9 +146,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-19T16:14:20.813Z
+Last session: 2026-06-19T16:28:58.454Z
 Stopped at: Phase 5 planned (4 slices, checker PASS clean); ready to execute
-Resume file: .planning/phases/05-knowledge-graph-flow-learning/05-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 
