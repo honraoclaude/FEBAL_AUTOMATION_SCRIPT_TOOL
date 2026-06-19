@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5 planned (4 slices, checker PASS clean); ready to execute
-last_updated: "2026-06-19T16:31:41.315Z"
+last_updated: "2026-06-19T16:51:01.918Z"
 last_activity: 2026-06-19
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 23
-  completed_plans: 20
+  completed_plans: 21
   percent: 36
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 05 (knowledge-graph-flow-learning) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-19
 
-Progress: [█████████░] 87%
+Progress: [█████████░] 91%
 
 ## ⚠ Project-wide note (from Phase 04)
 
@@ -72,6 +72,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 04 P04-03 | 10min | 3 tasks | 10 files |
 | Phase 04 P04 | 60 | 3 tasks | 22 files |
 | Phase 05 P05-01 | 12min | 3 tasks | 9 files |
+| Phase 05 P05-02 | ~15min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,9 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-01: kg/writer.py is the SINGLE Neo4j write path (KG-05) — explorer persist node delegates, holds zero Cypher; a Cypher-syntax-scoped grep gate enforces it without false-positiving docstring prose
 - [Phase 05]: 05-01: idempotent fingerprint-MERGE backed by REQUIRE p.fingerprint IS UNIQUE; ON CREATE first_seen / ON MATCH last_verified + coalesce; first_seen immutable; ensure_constraints GRACEFUL (no-raise when neo4j down)
 - [Phase 05]: 05-01: writer fns take optional driver kwarg (defaults to get_neo4j singleton) for host-driver test injection; KG-05 element-repository read half deferred to 05-02 (not marked complete)
+- [Phase ?]: KG risk lives in kg/risk.py (pure frozen tunable weights, no LLM); new test at tests/unit/test_kg_risk.py to not clobber explorer test_risk.py
+- [Phase ?]: Flow categorization degrades to a deterministic name on ANY gateway failure (incl. no-key provider auth error) so flows + risk render without provider keys
+- [Phase ?]: Flow mining bounds enforced in Python over reader.flows_source (no variable-length Cypher), so the A4 path-range caveat is moot
 
 ### Pending Todos
 
@@ -146,7 +150,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-19T16:28:58.454Z
+Last session: 2026-06-19T16:50:31.642Z
 Stopped at: Phase 5 planned (4 slices, checker PASS clean); ready to execute
 Resume file: None
 

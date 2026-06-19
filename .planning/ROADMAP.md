@@ -197,7 +197,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 05-02-PLAN.md — Element Repository read + bounded path-mining + pure risk formula + gateway flow categorization with deterministic no-key fallback (KG-04, KG-05 half)
+- [x] 05-02-PLAN.md — Element Repository read + bounded path-mining + pure risk formula + gateway flow categorization with deterministic no-key fallback (KG-04, KG-05 half)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -316,7 +316,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. LLM Gateway | 3/3 | Complete   | 2026-06-13 |
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
-| 5. Knowledge Graph & Flow Learning | 1/4 | In Progress|  |
+| 5. Knowledge Graph & Flow Learning | 2/4 | In Progress|  |
 | 6. BDD & Playwright Generation | 0/TBD | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
