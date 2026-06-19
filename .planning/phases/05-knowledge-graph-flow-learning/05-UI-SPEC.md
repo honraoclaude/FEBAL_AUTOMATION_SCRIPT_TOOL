@@ -1,7 +1,8 @@
 ---
 phase: 5
 slug: knowledge-graph-flow-learning
-status: draft
+status: approved
+reviewed_at: 2026-06-19
 shadcn_initialized: true
 preset: "new-york style, base color zinc, CSS variables true (inherited from 01-UI-SPEC; apps/web/components.json confirmed on disk this session)"
 created: 2026-06-19
