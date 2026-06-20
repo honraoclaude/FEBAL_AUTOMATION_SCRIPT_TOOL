@@ -1,10 +1,15 @@
-"""POST /generate-bdd, /generate-scripts (PLAT-02, D-07) — every route behind auth.
+"""POST /generate-bdd, /generate-scripts, /generate-scenarios (PLAT-02 / GEN-01, D-07).
 
 These are the metered generation endpoints: each takes the explore run_id, delegates to
 the generation service (which routes through the LLM gateway, validates Gherkin, and
 renders the spec from a Jinja2 skeleton), and returns the run_id-keyed artifact path.
 
-Mirrors targets.py: router-level Depends(get_current_user) (T-03-13) and typed-exception
+`/generate-scenarios` (GEN-01 / Slice 2) is the review-queue feeder: it generates quality-gated
+DRAFT scenario rows for every mined flow of the run_id (validate-before-persist; only approved
+rows later feed codegen — D-01). The generate-scripts CODEGEN wiring (approved-only → Playwright
+project) lands in Slice 3; this slice adds the scenarios entrypoint + its request schema only.
+
+Mirrors targets.py: router-level Depends(get_current_user) (T-03-13 / T-06-07) and typed-exception
 translation (GenerationError -> 422; an unknown/unexplored run_id -> 404).
 """
 
@@ -14,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.run import GenerateRequest
+from app.schemas.scenario import GenerateScenariosRequest
 from app.services import generation, run_service
 
 router = APIRouter(
@@ -56,3 +62,21 @@ async def generate_scripts(
     except generation.GenerationError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     return {"run_id": body.run_id, "spec_path": spec_path}
+
+
+@router.post("/generate-scenarios")
+async def generate_scenarios(
+    body: GenerateScenariosRequest, db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Generate quality-gated DRAFT scenarios for every mined flow of the run_id (GEN-01).
+
+    Routes one metered gateway call per flow (with a deterministic no-key fallback), validates
+    lint + no-vacuous BEFORE persisting each draft row, and returns the created scenario ids.
+    The review queue (GET /api/scenarios) lists these drafts; only approved rows feed codegen.
+    """
+    await _require_run(db, body.run_id)
+    try:
+        scenario_ids = await generation.generate_scenarios(db, body.run_id)
+    except generation.GenerationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"run_id": body.run_id, "scenario_ids": scenario_ids}
