@@ -29,4 +29,20 @@ RUN npm ci && npm run build
 FROM nginx:alpine
 COPY --from=build /src/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Seeded-bug toggle (GEN-05 / D-08, Phase 6 plan 06-04). SEED_BUG defaults to 0 so the
+# DEFAULT build is BYTE-IDENTICAL to the standard target (T-06-21 — no drift). When
+# SEED_BUG=1 (only the profile-gated saucedemo-bug compose service sets it), one
+# DETERMINISTIC DOM mutation is applied to the served bundle: the post-login success
+# element class `.inventory_list` is renamed to `.inventory_list_BROKEN` across every
+# served file. The post-login success assertion (`.inventory_list` visible) then FAILS
+# vs this build — proving real-breakage detection. This is COMPOSE INFRA (a build-arg),
+# NOT a package (T-06-SC: zero new packages). Paired with the planted spec in 06-04 Task 2,
+# which asserts `.inventory_list` so it passes vs the default build and fails vs this one.
+ARG SEED_BUG=0
+RUN if [ "$SEED_BUG" = "1" ]; then \
+      grep -rl 'inventory_list' /usr/share/nginx/html \
+        | xargs -r sed -i 's/inventory_list/inventory_list_BROKEN/g'; \
+    fi
+
 EXPOSE 80

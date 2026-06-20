@@ -86,6 +86,16 @@ class Settings(BaseSettings):
     workspaces_dir: str | None = None  # env WORKSPACES_DIR
     execution_cwd: str | None = None  # env EXECUTION_CWD
 
+    # --- Stability + seeded-bug acceptance harness (Phase 6, plan 06-04; GEN-05 / D-07/D-08) ---
+    # STABILITY_RUNS: a generated spec is ACCEPTED only if it passes N consecutive subprocess
+    #   runs (any flaky/non-green run rejects it). Env-configurable, default 3.
+    # SEEDED_BUG_BASE_URL: the in-cluster URL of the profile-gated saucedemo-bug build. The
+    #   harness re-runs the SAME accepted spec against it (via the TARGET_BASE_URL override the
+    #   generated conftest reads) and the run MUST FAIL — proving real-breakage detection.
+    #   Optional so the api boots without it (the planted-spec proof passes it explicitly).
+    stability_runs: int = 3  # env STABILITY_RUNS
+    seeded_bug_base_url: str | None = None  # env SEEDED_BUG_BASE_URL
+
     # --- Explorer budget caps (Phase 4, plan 04-01; EXPL-05, D-05/D-06) ---
     # Code-enforced EXPLORATION caps (NOT token/USD — the Phase-2 gateway owns spend,
     # D-06). Per-run overrides come from Target.budget_overrides, clamped TIGHTEN-ONLY

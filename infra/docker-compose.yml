@@ -74,6 +74,12 @@ services:
       # uv project root (pyproject.toml lives at /app) — the `uv run pytest` cwd.
       WORKSPACES_DIR: /app/workspaces
       EXECUTION_CWD: /app
+      # Stability + seeded-bug acceptance harness (Phase 6, plan 06-04; GEN-05 / D-07/D-08).
+      # STABILITY_RUNS: N consecutive green runs required to accept a generated spec.
+      # SEEDED_BUG_BASE_URL: the in-cluster URL of the profile-gated saucedemo-bug build
+      # the harness re-runs the SAME spec against (it must FAIL — real-breakage detection).
+      STABILITY_RUNS: ${STABILITY_RUNS:-3}
+      SEEDED_BUG_BASE_URL: ${SEEDED_BUG_BASE_URL:-http://saucedemo-bug:80}
       WATCHFILES_FORCE_POLLING: "true" # uvicorn --reload over a Windows bind mount needs polling
     volumes:
       - ../apps/api/app:/app/app # hot-reload mount
@@ -141,6 +147,32 @@ services:
       start_period: 10s
     ports:
       - "8080:80" # host 8080 verified free before adoption
+
+  # Seeded-bug SauceDemo build (GEN-05 / D-08, Phase 6 plan 06-04). The SAME multi-stage
+  # build as saucedemo but with the SEED_BUG=1 build-arg, which renames the post-login
+  # success class `.inventory_list` -> `.inventory_list_BROKEN` so an accepted spec FAILS
+  # against it (real-breakage detection). Profile-gated `bugbuild` so a plain `up` NEVER
+  # starts it (mirrors neo4j's profiles:[graph]) — it is up ONLY during the acceptance
+  # harness (OOM safety: it must not run concurrently with neo4j + both targets + Chromium;
+  # the harness sequences codegen under graph_mode then stops neo4j before the run phase).
+  # Distinct host port 8081 (8080 is the default target). The DEFAULT saucedemo build is
+  # unchanged. This is compose INFRA (a build-arg), NOT a package (T-06-SC).
+  saucedemo-bug:
+    build:
+      context: ./targets/saucedemo
+      args:
+        SEED_BUG: "1"
+    profiles: [bugbuild] # Phase 6 acceptance harness only — OFF by default
+    mem_limit: 128m
+    healthcheck:
+      # Same wget shape as saucedemo (127.0.0.1, not localhost — IPv4-only nginx).
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8081:80" # distinct host port (8080 is the default target)
 
   # --- Dormant: defined now, activated by later phases (D-08) ---
   # Trimmed to fit the 3GB WSL cap (D-01/02/03): heap 512m + pagecache 256m +
