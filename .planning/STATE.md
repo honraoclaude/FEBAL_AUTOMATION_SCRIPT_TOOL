@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 6 planned (4 slices, checker PASS after alembic-path fix); ready to execute
-last_updated: "2026-06-20T15:00:10.814Z"
+last_updated: "2026-06-20T15:34:04.966Z"
 last_activity: 2026-06-20
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 27
-  completed_plans: 24
+  completed_plans: 25
   percent: 45
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 06 (bdd-playwright-generation) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-20
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 93%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -80,6 +80,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 05 P05-03 | 23min | 2 tasks | 21 files |
 | Phase 05 P05-04 | 30min | 2 tasks | 7 files |
 | Phase 06 P06-01 | 45min | 3 tasks | 16 files |
+| Phase 06 P02 | ~55min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06]: 06-01: GenerationError lives in gates/gherkin_lint.py and is re-imported by generation.py so generation AND the future edit/approve router share ONE linter + ONE exception (D-04)
 - [Phase ?]: [Phase 06]: 06-01: structured Then->KG no-vacuous gate validates edge_type against kg/schema allow-list BEFORE building Cypher and injects the CONSTANT (never the LLM string); unknown kind / disallowed edge_type run NO query (injection-safe, T-06-01)
 - [Phase ?]: [Phase 06]: 06-01: generate_scenarios is gateway-only (generate.bdd) with a deterministic no-key fallback whose single Then asserts the flow terminal page (resolvable); validate-before-persist (lint THEN no-vacuous) before any draft row write
+- [Phase ?]: [Phase 06]: 06-02: review router re-runs BOTH gates on edit AND approve (422+no-save on fail, D-02/D-04); per-Then results honest server-authoritative (never fabricated green, D-03); risk+resolution best-effort/asyncio.wait_for-bounded so a down graph never hangs a mutation
+- [Phase ?]: [Phase 06]: 06-02: ScenarioDetail exposes raw then_refs so edit-save re-validates the row's own refs server-side; Gherkin editor is a token-styled NATIVE textarea (zero shadcn add, zero new frontend dep)
 
 ### Pending Todos
 
@@ -163,7 +166,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-20T14:58:18.362Z
+Last session: 2026-06-20T15:33:33.947Z
 Stopped at: Phase 6 planned (4 slices, checker PASS after alembic-path fix); ready to execute
 Resume file: None
 

@@ -232,7 +232,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 06-02-PLAN.md — Review queue: auth-gated router (list/get/edit/approve/reject, both gates re-run on edit/approve) + review-queue UI to 06-UI-SPEC, only approved feed codegen (GEN-02)
+- [x] 06-02-PLAN.md — Review queue: auth-gated router (list/get/edit/approve/reject, both gates re-run on edit/approve) + review-queue UI to 06-UI-SPEC, only approved feed codegen (GEN-02)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -335,7 +335,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
-| 6. BDD & Playwright Generation | 1/4 | In Progress|  |
+| 6. BDD & Playwright Generation | 2/4 | In Progress|  |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
