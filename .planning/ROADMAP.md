@@ -22,7 +22,8 @@ Decimal phases appear between their surrounding integers in numeric order.
  (completed 2026-06-15)
 - [x] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
  (completed 2026-06-19)
-- [x] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance (completed 2026-06-20)
+- [x] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
+ (completed 2026-06-20)
 - [ ] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch
 - [ ] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate
 - [ ] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision
@@ -256,7 +257,25 @@ Plans:
   4. Every run captures per-step screenshots, video, and console/network logs stored on the filesystem with paths in PostgreSQL, and execution history shows pass/fail trends, durations, and flaky-test detection (retries distinguish infra flake from product failure)
   5. User watches a live execution view with per-test progress and can kill a run mid-flight; two consecutive runs against a reset target produce identical results
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 07-01-PLAN.md — Foundation: aio-pika (gated) + history models/migration 0007 + worker container (queue profile) + enqueue→consume→subprocess→result on a planted spec + SC3 NO-LLM gate (EXEC-03)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 07-02-PLAN.md — Tiers: tag tier→pytest-bdd marker selector + risk-based dynamic ranking (frozen weights, cold-start safe) + generated-project marker registration (EXEC-01)
+- [ ] 07-05-PLAN.md — CI parity + determinism: GitHub Actions trigger (scoped token, start+poll) + two-runs-identical harness vs a reset target (planted spec, keyless) (EXEC-02)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 07-03-PLAN.md — Artifacts + history + flaky: per-step capture (screens/trace always, video on fail) + 2x retry loop + pure flaky classifier + history queries + auth-gated POST /executions tier round-trip (EXEC-04, EXEC-05)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 07-04-PLAN.md — Live view + kill: per-test Redis→SSE + graceful kill drain/purge + recharts (gated) + executions launcher/live/terminal UI to the UI-SPEC (EXEC-06)
 **UI hint**: yes
 
 ### Phase 8: Self-Healing Engine
@@ -336,7 +355,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
-| 7. Execution Engine & Workers | 0/TBD | Not started | - |
+| 7. Execution Engine & Workers | 0/5 | Planned | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |
