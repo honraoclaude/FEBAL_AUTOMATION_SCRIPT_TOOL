@@ -1,0 +1,26 @@
+{# Test data models (GEN-04 / D-06). The LLM NEVER emits this file — this Jinja2 template owns ALL
+   structure. A dataclass is generated whose FIELDS are the scenario-outline Examples columns
+   (derived deterministically from the KG by codegen.examples — the LLM never invents Example
+   data). NO selectors here.
+
+   Slots (codegen.project-sourced):
+     model_name  -- deterministic PascalCase model name
+     columns     -- the Examples columns (field names) #}
+"""Test data models (AUTO-GENERATED — do not edit by hand).
+
+Fields are the scenario-outline Examples columns derived from the KG (codegen.examples).
+Regenerate via POST /api/generate-scripts.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class {{ model_name }}:
+    """One Examples row — the KG-derived outline data for a scenario run."""
+
+{% for col in columns %}    {{ col }}: str = ""
+{% endfor %}{% if not columns %}    placeholder: str = ""
+{% endif %}

@@ -59,14 +59,22 @@ async def test_run_id_threads_explore_generate_execute_result(authed_client, neo
     assert final["status"] == "passed", f"explore not passed: {final}"
 
     try:
-        # 2) generate-bdd + generate-scripts for the SAME run_id (real LLM spend).
+        # 2) generate-bdd for the SAME run_id (real LLM spend).
         rb = await authed_client.post("/api/generate-bdd", json={"run_id": run_id})
         assert rb.status_code == 200, f"generate-bdd failed: {rb.text}"
         assert rb.json()["run_id"] == run_id
 
-        rs = await authed_client.post("/api/generate-scripts", json={"run_id": run_id})
-        assert rs.status_code == 200, f"generate-scripts failed: {rs.text}"
-        assert rs.json()["run_id"] == run_id
+        # Slice 3 rewired POST /generate-scripts to the approved-scenario PROJECT codegen
+        # (a tree, not a single test_login.py). The /execute leg below still runs the Phase-3
+        # plain-spec convention (workspaces/<run_id>/test_login.py — its execution-engine
+        # integration with the codegen tree is Phase 7), so this thread renders that retained
+        # plain spec directly via the generation service for the execute leg.
+        from app.db.session import SessionLocal
+        from app.services import generation
+
+        async with SessionLocal() as gdb:
+            spec_path = await generation.generate_scripts(gdb, run_id)
+        assert spec_path.endswith("test_login.py")
 
         # 3) execute the LLM-generated spec for the SAME run_id.
         re = await authed_client.post("/api/execute", json={"run_id": run_id})

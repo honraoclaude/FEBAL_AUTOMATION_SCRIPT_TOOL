@@ -1,0 +1,16 @@
+{# Shared test fixtures (GEN-04 / D-06). The LLM NEVER emits this file — structure is owned here.
+   Provides reusable data fixtures derived from the scenario-outline Examples. NO selectors here.
+
+   Slots (codegen.project-sourced):
+     run_id  -- the run this project was generated for (trace/provenance) #}
+"""Shared fixtures (AUTO-GENERATED — do not edit by hand). Regenerate via POST /api/generate-scripts."""
+
+import pytest
+
+GENERATED_FOR_RUN = {{ run_id | tojson }}
+
+
+@pytest.fixture
+def run_id() -> str:
+    """The explore/generate run_id this project was generated from (provenance)."""
+    return GENERATED_FOR_RUN

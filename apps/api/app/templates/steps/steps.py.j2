@@ -1,0 +1,50 @@
+{# pytest-bdd step-defs bound to the approved .feature (GEN-04 / D-06). The LLM NEVER emits this
+   file — this Jinja2 template owns ALL structure. Selectors NEVER appear here: every @then calls
+   a PAGE-OBJECT assertion method (the repo-sourced locator home), so the freehand-selector gate
+   finds NO literal in this spec/step module. Scenario Outline Examples auto-parametrize via
+   pytest-bdd: the Examples columns arrive as step parameters (parsers.parse).
+
+   Slots (all KG/approved-scenario-sourced by codegen.project, never free-hand LLM text):
+     feature_rel   -- the relative path to the bound .feature
+     page_module   -- the page-object module name (under pages/)
+     page_class    -- the page-object class name
+     base_url_env  -- the env var name conftest reads for the base URL #}
+"""pytest-bdd step-defs (AUTO-GENERATED — do not edit by hand).
+
+Binds the approved .feature via scenarios("{{ feature_rel }}"); each @then calls a page-object
+assertion method (the 1:1 home for the scenario's KG reference). Regenerate via
+POST /api/generate-scripts.
+"""
+
+import os
+
+import pytest
+from pytest_bdd import given, parsers, scenarios, then, when
+
+from pages.{{ page_module }} import {{ page_class }}
+
+# Bind every Scenario / Scenario Outline in the approved feature (Examples auto-parametrize).
+scenarios({{ feature_rel | tojson }})
+
+
+@pytest.fixture
+def page_obj({{ "page" }}) -> {{ page_class }}:
+    """The repo-sourced page object — the ONLY place a locator lives."""
+    return {{ page_class }}(page)
+
+
+@given("the application entry page")
+def _entry(page_obj: {{ page_class }}) -> None:
+    page_obj.goto()
+
+
+@when(parsers.parse("the user proceeds through the flow"))
+def _proceed(page_obj: {{ page_class }}) -> None:
+    # Step wiring only — interactions go through the page object's repo-sourced locators.
+    pass
+
+
+@then("the destination page is reached")
+def _assert_destination(page_obj: {{ page_class }}) -> None:
+    # The kg_ref's 1:1 home: a page-object assertion (no literal selector here).
+    page_obj.assert_loaded()

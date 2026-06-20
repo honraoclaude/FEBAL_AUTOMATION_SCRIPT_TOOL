@@ -79,15 +79,27 @@ async def test_generate_bdd_and_scripts_end_to_end(authed_client):
     feature_path = r_bdd.json()["feature_path"]
     assert feature_path.endswith("login.feature")
 
+    # Slice 3 supersedes the Phase-3 plain-spec generate-scripts with the approved-scenario
+    # codegen (D-01): codegen reads status=approved only, so generate scenarios then approve
+    # them before generate-scripts.
+    r_gen = await authed_client.post("/api/generate-scenarios", json={"run_id": run_id})
+    assert r_gen.status_code == 200, f"generate-scenarios failed: {r_gen.text}"
+    scenario_ids = r_gen.json()["scenario_ids"]
+    assert scenario_ids, "expected at least one draft scenario"
+    for sid in scenario_ids:
+        r_appr = await authed_client.post(f"/api/scenarios/{sid}/approve")
+        assert r_appr.status_code == 200, f"approve {sid} failed: {r_appr.text}"
+
     r_scripts = await authed_client.post("/api/generate-scripts", json={"run_id": run_id})
     assert r_scripts.status_code == 200, (
         f"generate-scripts failed: {r_scripts.status_code} {r_scripts.text}"
     )
-    spec_path = r_scripts.json()["spec_path"]
-    assert spec_path.endswith("test_login.py")
+    project_root = r_scripts.json()["project_root"]
+    assert project_root.endswith("/target") or project_root.endswith("\\target")
 
-    # The generation runs in the api container; assert the rendered spec is ast-parseable
-    # by reading it from inside that container (artifacts live under workspaces/<run_id>/).
+    # The codegen runs in the api container; assert the generated project tree exists and every
+    # generated .py is ast-parseable (read from inside that container; artifacts live under
+    # workspaces/<run_id>/target/).
     import subprocess
 
     check = subprocess.run(
@@ -102,14 +114,16 @@ async def test_generate_bdd_and_scripts_end_to_end(authed_client):
             "python",
             "-c",
             (
-                "import ast,sys;"
-                f"src=open('/app/workspaces/{run_id}/test_login.py').read();"
-                "ast.parse(src);"
-                "print('ast ok' if '.inventory_list' in src else 'missing selector')"
+                "import ast,pathlib;"
+                f"root=pathlib.Path('/app/workspaces/{run_id}/target');"
+                "subs=['pages','steps','features','conftest.py'];"
+                "ok=all((root/s).exists() for s in subs);"
+                "[ast.parse((p).read_text()) for p in root.rglob('*.py')];"
+                "print('tree ok' if ok else 'missing tree')"
             ),
         ],
         capture_output=True,
         text=True,
     )
-    assert check.returncode == 0, f"spec ast-parse failed: {check.stderr}"
-    assert "ast ok" in check.stdout, f"spec missing observed selector: {check.stdout}"
+    assert check.returncode == 0, f"project ast-parse failed: {check.stderr}"
+    assert "tree ok" in check.stdout, f"project tree incomplete: {check.stdout}"

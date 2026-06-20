@@ -1,0 +1,31 @@
+{# pytest-playwright conftest (GEN-04 / D-06). The LLM NEVER emits this file. Owns the base-url
+   fixture wiring (read from an ENV VAR so Slice 4 can override it for the seeded-bug run) and the
+   pytest-playwright browser-context defaults. NO selectors here.
+
+   Slots (codegen.project-sourced, never free-hand LLM text):
+     base_url_env  -- the env var name the base URL is read from
+     default_base_url -- the standard target base URL (the discovered app) #}
+"""pytest-playwright conftest (AUTO-GENERATED — do not edit by hand).
+
+The base URL is read from the {{ base_url_env }} env var so the stability/seeded-bug harness
+(Slice 4) can point the SAME spec at the standard target or the seeded-bug build without
+regenerating. Regenerate via POST /api/generate-scripts.
+"""
+
+import os
+
+import pytest
+
+DEFAULT_BASE_URL = {{ default_base_url | tojson }}
+
+
+@pytest.fixture(scope="session")
+def base_url() -> str:
+    """The target base URL — {{ base_url_env }} override else the discovered default."""
+    return os.environ.get({{ base_url_env | tojson }}, DEFAULT_BASE_URL)
+
+
+@pytest.fixture
+def browser_context_args(browser_context_args: dict, base_url: str) -> dict:
+    """Inject the base URL into every browser context (pytest-playwright fixture override)."""
+    return {**browser_context_args, "base_url": base_url}

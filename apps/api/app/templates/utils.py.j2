@@ -1,0 +1,10 @@
+{# Generated test utilities (GEN-04 / D-06). The LLM NEVER emits this file. Small deterministic
+   helpers used by steps; NO selectors here (locators live in page objects only). #}
+"""Test utilities (AUTO-GENERATED — do not edit by hand). Regenerate via POST /api/generate-scripts."""
+
+from __future__ import annotations
+
+
+def normalize(text: str | None) -> str:
+    """Trim + collapse whitespace for stable text comparisons in @then steps."""
+    return " ".join((text or "").split())

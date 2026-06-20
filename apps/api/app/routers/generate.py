@@ -19,8 +19,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.run import GenerateRequest
-from app.schemas.scenario import GenerateScenariosRequest
+from app.schemas.scenario import GenerateScenariosRequest, GenerateScriptsRequest
 from app.services import generation, run_service
+from app.services.codegen import project as codegen_project
+from app.services.gates.selector_gate import SelectorGateError
 
 router = APIRouter(
     prefix="/api",
@@ -53,15 +55,23 @@ async def generate_bdd(
 
 @router.post("/generate-scripts")
 async def generate_scripts(
-    body: GenerateRequest, db: AsyncSession = Depends(get_db)
+    body: GenerateScriptsRequest, db: AsyncSession = Depends(get_db)
 ) -> dict:
-    """Render a runnable pytest-playwright spec for the run_id; return its spec_path."""
+    """Codegen the full Playwright project from the run's APPROVED scenarios (GEN-04 / D-01/D-06).
+
+    Reads scenario_service.list_approved (approved-only) and renders the Element-Repository-sourced
+    project tree (pages/steps/features/conftest/fixtures/utils/data/reports) under
+    workspaces/<run_id>/<target>/. Every rendered .py is ast-parsed + freehand-selector-gated
+    BEFORE any write; a parse failure or an inline selector literal aborts with 422 (no partial
+    write). Returns the project root path. (Supersedes the Phase-3 plain-spec generate-scripts;
+    templates/test_login.py.j2 is retained for the planted-spec proof.)
+    """
     await _require_run(db, body.run_id)
     try:
-        spec_path = await generation.generate_scripts(db, body.run_id)
-    except generation.GenerationError as exc:
+        project_root = await codegen_project.generate_project(db, body.run_id)
+    except (generation.GenerationError, SelectorGateError) as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    return {"run_id": body.run_id, "spec_path": spec_path}
+    return {"run_id": body.run_id, "project_root": project_root}
 
 
 @router.post("/generate-scenarios")

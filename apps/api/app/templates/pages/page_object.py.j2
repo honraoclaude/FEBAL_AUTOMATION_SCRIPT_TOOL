@@ -1,0 +1,39 @@
+{# Page Object skeleton (GEN-04 / D-05/D-06). The LLM NEVER emits this file — this Jinja2
+   template owns ALL structure (imports, the class, the assertion methods) and every selector
+   is a TEMPLATE LOOKUP from the Phase-5 Element Repository (codegen.locators.page_object_locators),
+   NEVER an LLM slot. Page objects are the SINGLE sanctioned home for a literal locator, and each
+   literal is repo-traceable by construction (asserted by selector_gate.assert_page_object_literals_are_repo_sourced).
+
+   Slots (all repo/KG-sourced by codegen.project, never free-hand LLM text):
+     class_name  -- deterministic PascalCase page name (from the KG page)
+     page_url    -- the KG page url (for goto())
+     locators    -- {attr_name: top_priority_repo_chain_entry} from the Element Repository #}
+"""Page Object: {{ class_name }} (AUTO-GENERATED — do not edit by hand).
+
+Every locator below is sourced from the Phase-5 Element Repository by element key (the only
+sanctioned literal home). Regenerate via POST /api/generate-scripts.
+"""
+
+from playwright.sync_api import Page, expect
+
+PAGE_URL = {{ page_url | tojson }}
+
+
+class {{ class_name }}:
+    """Page object for {{ class_name }} — repo-sourced locators + @then assertion helpers."""
+
+    def __init__(self, page: Page) -> None:
+        self.page = page
+{% for attr, selector in locators.items() %}        self.{{ attr }} = page.locator({{ selector | tojson }})
+{% endfor %}
+    def goto(self) -> None:
+        """Navigate to this page's URL."""
+        self.page.goto(PAGE_URL)
+
+{% for attr, selector in locators.items() %}    def assert_{{ attr }}_visible(self) -> None:
+        """Assert the {{ attr }} element is visible (a @then home for a kg_ref)."""
+        expect(self.{{ attr }}).to_be_visible()
+
+{% endfor %}    def assert_loaded(self) -> None:
+        """Assert this page reached its expected URL (a page-state @then home)."""
+        expect(self.page).to_have_url({{ page_url | tojson }})
