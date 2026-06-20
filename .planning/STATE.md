@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 05-04-PLAN.md (ground-truth coverage metric + real GET /coverage + QUAL-01 Manual-Only gate)
-last_updated: "2026-06-19T22:31:27.043Z"
-last_activity: 2026-06-19
+status: phase-complete
+stopped_at: Phase 05 COMPLETE — code + deterministic verification green (238 unit + 16 graph + frontend e2e; 3 fixes during verify); live ≥80% coverage + live flow naming pending keys (Manual-Only). Next: Phase 06 (BDD & Playwright Generation).
+last_updated: "2026-06-20T00:35:00.000Z"
+last_activity: 2026-06-20 -- Phase 05 complete (KG-01..05, QUAL-01; KG + flow learning verified deterministically)
 progress:
   total_phases: 11
   completed_phases: 5
@@ -21,16 +21,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 05 — knowledge-graph-flow-learning
+**Current focus:** Phase 06 — BDD & Playwright Generation — next up
 
 ## Current Position
 
-Phase: 05 (knowledge-graph-flow-learning) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-06-19
+Phase: 05 (Knowledge Graph & Flow Learning) — ✅ COMPLETE (code + deterministic verification, 2026-06-20); live ≥80% coverage + live flow naming pending keys (Manual-Only)
+Plan: 4 of 4 complete
+Status: Phase 05 done; ready for Phase 06
+Last activity: 2026-06-20 -- Phase 05 complete (KG-01..05, QUAL-01)
 
-Progress: [██████████] 100%
+Progress: [█████░░░░░] 45% (5 of 11 phases)
+
+## ⚠ REMEMBER for Phase 06 (BDD generation)
+gherkin-official is 29.x TRANSITIVE via pytest-bdd 8.1 (hard-pins <30); a direct gherkin-official==40.* pin is INCOMPATIBLE (CLAUDE.md stack table is WRONG). Phase 3 already validates Gherkin with `from gherkin.parser import Parser` (the 29.x parser pytest-bdd uses). See memory gherkin-pytest-bdd-conflict.
 
 ## ⚠ Project-wide note (from Phase 04)
 
@@ -155,8 +158,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-19T22:31:27.018Z
-Stopped at: Completed 05-04-PLAN.md (ground-truth coverage metric + real GET /coverage + QUAL-01 Manual-Only gate)
+Last session: 2026-06-20 (opus)
+Stopped at: Phase 05 COMPLETE — verified deterministically (238 unit + 16 graph + frontend e2e green; fixed coverage fixture path, KG-reads-503-when-neo4j-down, live_llm test markers). Live ≥80% coverage + flow naming pending keys. Next: /gsd-discuss-phase 6.
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
