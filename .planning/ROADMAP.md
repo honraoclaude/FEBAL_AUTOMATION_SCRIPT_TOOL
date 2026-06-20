@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
  (completed 2026-06-15)
 - [x] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
  (completed 2026-06-19)
-- [ ] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
+- [x] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance (completed 2026-06-20)
 - [ ] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch
 - [ ] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate
 - [ ] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision
@@ -240,7 +240,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 06-04-PLAN.md — Stability + seeded-bug: N-run stability (Phase-3 subprocess runner) + SEED_BUG build-arg/saucedemo-bug service + breakage-detection, planted-spec deterministic proof, OOM sequencing (GEN-05 stability half)
+- [x] 06-04-PLAN.md — Stability + seeded-bug: N-run stability (Phase-3 subprocess runner) + SEED_BUG build-arg/saucedemo-bug service + breakage-detection, planted-spec deterministic proof, OOM sequencing (GEN-05 stability half)
 
 ### Phase 7: Execution Engine & Workers
 
@@ -335,7 +335,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
-| 6. BDD & Playwright Generation | 3/4 | In Progress|  |
+| 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
