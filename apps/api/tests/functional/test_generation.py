@@ -13,11 +13,16 @@ Two surfaces here:
 """
 
 import ast
+import os
 import uuid
 
 import pytest
 
 SAUCEDEMO_INCLUSTER_URL = "http://saucedemo:80"
+
+
+def _has_provider_key() -> bool:
+    return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY"))
 
 
 def _unique_name(prefix: str = "gen-target") -> str:
@@ -51,6 +56,7 @@ async def test_generate_requires_auth(client):
 @pytest.mark.functional
 @pytest.mark.live_llm
 @pytest.mark.graph
+@pytest.mark.skipif(not _has_provider_key(), reason="no provider key — live generation proof (SC2 Manual-Only)")
 async def test_generate_bdd_and_scripts_end_to_end(authed_client):
     """live_llm: explore -> generate-bdd -> generate-scripts -> both artifacts exist (SC2).
 

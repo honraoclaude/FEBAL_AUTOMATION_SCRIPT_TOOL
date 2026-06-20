@@ -15,11 +15,16 @@ Flow proven here (SC1):
 Pitfall 8: unique target name per test; assert only nodes for THIS run_id, never globals.
 """
 
+import os
 import uuid
 
 import pytest
 
 pytestmark = [pytest.mark.functional, pytest.mark.graph]
+
+
+def _has_provider_key() -> bool:
+    return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY"))
 
 # In-cluster SauceDemo host — the crawl runs in the api container and reaches the demo
 # target by its compose service name, not the host-published localhost:8080.
@@ -41,6 +46,12 @@ async def _register_saucedemo_target(authed_client) -> int:
     return r.json()["id"]
 
 
+# LLM-driven since Phase 4 (the explorer decides via the gateway) — needs a provider key.
+# live_llm + skipif so it skips cleanly without keys; the deterministic + canonical live proof
+# is test_explore_discovery.py (also live_llm). Was a Phase-3-era graph-only test that began
+# falsely failing once the explorer became LLM-driven.
+@pytest.mark.live_llm
+@pytest.mark.skipif(not _has_provider_key(), reason="no provider key — live explore proof (see test_explore_discovery.py)")
 async def test_explore_writes_page_navigatesto_for_run_id(authed_client, neo4j_session):
     """POST /explore → poll to passed → >= 1 NavigatesTo edge in Neo4j for the run_id."""
     target_id = await _register_saucedemo_target(authed_client)
