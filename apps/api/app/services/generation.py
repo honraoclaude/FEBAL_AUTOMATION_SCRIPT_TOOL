@@ -27,7 +27,6 @@ import ast
 from pathlib import Path
 
 import structlog
-from gherkin.parser import Parser
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from neo4j import AsyncDriver
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,6 +37,8 @@ from app.core.workspaces import (  # noqa: F401 -- re-exported for 03-03 unit te
     workspaces_root as _workspaces_root,
 )
 from app.services import llm_gateway
+# D-04: ONE shared lint gate + exception type for generation AND the edit/approve router.
+from app.services.gates.gherkin_lint import GenerationError, validate_gherkin  # noqa: F401
 
 log = structlog.get_logger()
 
@@ -67,14 +68,6 @@ _jinja_env = Environment(
 )
 
 
-class GenerationError(Exception):
-    """Raised when generation fails (malformed Gherkin, unrenderable spec, etc.).
-
-    On a Gherkin validation failure NO .feature is written — the file write happens only
-    AFTER the parser accepts the text (T-03-12).
-    """
-
-
 def _run_dir(run_id: str) -> Path:
     """workspaces/<run_id>/ — created on demand; both artifacts land here, keyed by run_id.
 
@@ -82,19 +75,6 @@ def _run_dir(run_id: str) -> Path:
     DISCOVERS from (settings.workspaces_dir in the container, repo-root on the host).
     """
     return _ws_run_dir(run_id, create=True)
-
-
-def validate_gherkin(text: str) -> None:
-    """Validate Gherkin with gherkin-official BEFORE writing (Pattern 5, T-03-12).
-
-    `Parser().parse(...)` raises (CompositeParserException / token errors) on malformed
-    input. We wrap any parser failure as GenerationError so the caller can decide WITHOUT
-    a file ever being written.
-    """
-    try:
-        Parser().parse(text)
-    except Exception as exc:  # noqa: BLE001 -- any parse failure => reject before write
-        raise GenerationError(f"invalid Gherkin: {exc}") from exc
 
 
 async def _read_observed_pages(driver: AsyncDriver, run_id: str) -> list[dict]:
