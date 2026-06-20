@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 6 planned (4 slices, checker PASS after alembic-path fix); ready to execute
-last_updated: "2026-06-20T15:34:04.966Z"
+stopped_at: Completed 06-03-PLAN.md (codegen + freehand-selector gate); ready for 06-04 stability + seeded-bug
+last_updated: "2026-06-20T15:50:57.853Z"
 last_activity: 2026-06-20
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 27
-  completed_plans: 25
+  completed_plans: 26
   percent: 45
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 06 (bdd-playwright-generation) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-06-20
 
-Progress: [█████████░] 93%
+Progress: [██████████] 96%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -81,6 +81,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 05 P05-04 | 30min | 2 tasks | 7 files |
 | Phase 06 P06-01 | 45min | 3 tasks | 16 files |
 | Phase 06 P02 | ~55min | 2 tasks | 14 files |
+| Phase 06 P03 | ~12min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -142,6 +143,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06]: 06-01: generate_scenarios is gateway-only (generate.bdd) with a deterministic no-key fallback whose single Then asserts the flow terminal page (resolvable); validate-before-persist (lint THEN no-vacuous) before any draft row write
 - [Phase ?]: [Phase 06]: 06-02: review router re-runs BOTH gates on edit AND approve (422+no-save on fail, D-02/D-04); per-Then results honest server-authoritative (never fabricated green, D-03); risk+resolution best-effort/asyncio.wait_for-bounded so a down graph never hangs a mutation
 - [Phase ?]: [Phase 06]: 06-02: ScenarioDetail exposes raw then_refs so edit-save re-validates the row's own refs server-side; Gherkin editor is a token-styled NATIVE textarea (zero shadcn add, zero new frontend dep)
+- [Phase ?]: [Phase 06]: 06-03: freehand-selector AST gate walks Call nodes for selector sinks (page.locator/get_by_* with a Constant str first arg) + a raw CSS/XPath regex fallback; page-object modules are the single sanctioned literal home (allowlist) and each literal is asserted equal to a repo chain entry
+- [Phase ?]: [Phase 06]: 06-03: codegen.generate_project renders the WHOLE tree in memory, ast.parse + selector-gates EVERY .py, writes only after all pass (no partial write); locators are TEMPLATE LOOKUPS from the Element Repository top chain entry, never LLM slots; reads list_approved only (D-01)
+- [Phase ?]: [Phase 06]: 06-03: POST /generate-scripts rewired from the Phase-3 plain-spec to the approved-scenario PROJECT codegen; test_login.py.j2 + generation.generate_scripts retained for planted-spec/execute proofs (codegen-tree execution integration is Phase 7)
 
 ### Pending Todos
 
@@ -166,8 +170,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-20T15:33:33.947Z
-Stopped at: Phase 6 planned (4 slices, checker PASS after alembic-path fix); ready to execute
+Last session: 2026-06-20T15:50:57.826Z
+Stopped at: Completed 06-03-PLAN.md (codegen + freehand-selector gate); ready for 06-04 stability + seeded-bug
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):

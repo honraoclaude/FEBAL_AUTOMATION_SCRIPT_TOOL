@@ -236,7 +236,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 06-03-PLAN.md — Element-Repo codegen: Jinja2 project tree (pages/steps/features/fixtures/utils/data/reports), pytest-bdd bound to .feature, repo-sourced locators + freehand-selector AST gate (GEN-04, GEN-05 locator half)
+- [x] 06-03-PLAN.md — Element-Repo codegen: Jinja2 project tree (pages/steps/features/fixtures/utils/data/reports), pytest-bdd bound to .feature, repo-sourced locators + freehand-selector AST gate (GEN-04, GEN-05 locator half)
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -335,7 +335,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
-| 6. BDD & Playwright Generation | 2/4 | In Progress|  |
+| 6. BDD & Playwright Generation | 3/4 | In Progress|  |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
