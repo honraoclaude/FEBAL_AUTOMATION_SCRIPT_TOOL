@@ -20,6 +20,12 @@ metric is unit-testable against a fixture KG to a KNOWN percentage. It NEVER fab
 figure: when the discovered graph is empty there are zero matches and the caller reads
 `screens_covered == 0` as "not yet measured" (the router maps that to `measured=false`).
 
+DEPLOYABILITY: the fixture the runtime `GET /coverage` handler reads MUST ship inside the
+api image. `tests/` is `.dockerignore`'d (and the api container has no source mount), so the
+canonical runtime copy lives IN the app package at `kg/ground_truth/saucedemo.json`. A
+byte-identical diffable copy is kept at `tests/fixtures/ground_truth/saucedemo.json` (D-07
+"committed, diffable") and the two are pinned in sync by a unit test.
+
 No write-Cypher lives here (the single-write-path grep gate stays green).
 """
 
@@ -29,15 +35,10 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
-# The committed ground-truth fixture (D-07). apps/api/app/services/kg/coverage.py
-# -> parents[3] = apps/api, then tests/fixtures/ground_truth/saucedemo.json.
-_GROUND_TRUTH_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "tests"
-    / "fixtures"
-    / "ground_truth"
-    / "saucedemo.json"
-)
+# The DEPLOYABLE ground-truth fixture (D-07) — inside the app package so it ships in the api
+# image (tests/ is .dockerignore'd). apps/api/app/services/kg/coverage.py is alongside the
+# ground_truth/ dir.
+_GROUND_TRUTH_PATH = Path(__file__).resolve().parent / "ground_truth" / "saucedemo.json"
 
 
 def default_ground_truth_path() -> Path:
