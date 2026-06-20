@@ -39,9 +39,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Test Generation
 
-- [ ] **GEN-01**: User can generate BDD Gherkin features/scenarios (including scenario outlines with data-driven examples) from discovered flows
+- [x] **GEN-01**: User can generate BDD Gherkin features/scenarios (including scenario outlines with data-driven examples) from discovered flows
 - [ ] **GEN-02**: Generated scenarios enter an approve/edit review queue; only approved scenarios feed automation generation
-- [ ] **GEN-03**: Generated Gherkin passes a syntax lint gate, and every Then step asserts an outcome recorded in the knowledge graph (no vacuous assertions)
+- [x] **GEN-03**: Generated Gherkin passes a syntax lint gate, and every Then step asserts an outcome recorded in the knowledge graph (no vacuous assertions)
 - [ ] **GEN-04**: User can generate Playwright automation (page objects, test specs, fixtures, utilities, test data models) in the spec folder structure (tests/ pages/ fixtures/ utils/ data/ reports/)
 - [ ] **GEN-05**: Generated code uses only locators from the element repository (never freehand LLM selectors) and passes an N-run stability check before acceptance
 
@@ -152,9 +152,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | KG-03 | Phase 5 | Complete |
 | KG-04 | Phase 5 | Complete |
 | KG-05 | Phase 5 | Complete |
-| GEN-01 | Phase 6 | Pending |
+| GEN-01 | Phase 6 | Complete |
 | GEN-02 | Phase 6 | Pending |
-| GEN-03 | Phase 6 | Pending |
+| GEN-03 | Phase 6 | Complete |
 | GEN-04 | Phase 6 | Pending |
 | GEN-05 | Phase 6 | Pending |
 | EXEC-01 | Phase 7 | Pending |

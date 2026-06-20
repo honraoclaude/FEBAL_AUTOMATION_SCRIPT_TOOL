@@ -228,7 +228,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — Scenario generation + gates + model: scenarios table/migration 0006, structured Then→KG no-vacuous gate + gherkin lint, KG→Examples outlines, gateway+no-key fallback (GEN-01, GEN-03)
+- [x] 06-01-PLAN.md — Scenario generation + gates + model: scenarios table/migration 0006, structured Then→KG no-vacuous gate + gherkin lint, KG→Examples outlines, gateway+no-key fallback (GEN-01, GEN-03)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -335,7 +335,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
-| 6. BDD & Playwright Generation | 0/4 | Not started | - |
+| 6. BDD & Playwright Generation | 1/4 | In Progress|  |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |

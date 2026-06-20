@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
+status: executing
 stopped_at: Phase 6 planned (4 slices, checker PASS after alembic-path fix); ready to execute
-last_updated: "2026-06-20T10:05:49.094Z"
-last_activity: 2026-06-20 -- Phase 05 complete (KG-01..05, QUAL-01)
+last_updated: "2026-06-20T15:00:10.814Z"
+last_activity: 2026-06-20
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 27
-  completed_plans: 23
+  completed_plans: 24
   percent: 45
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 06 — BDD & Playwright Generation — next up
+**Current focus:** Phase 06 — bdd-playwright-generation
 
 ## Current Position
 
-Phase: 05 (Knowledge Graph & Flow Learning) — ✅ COMPLETE (code + deterministic verification, 2026-06-20); live ≥80% coverage + live flow naming pending keys (Manual-Only)
-Plan: 4 of 4 complete
-Status: Phase 05 done; ready for Phase 06
-Last activity: 2026-06-20 -- Phase 05 complete (KG-01..05, QUAL-01)
+Phase: 06 (bdd-playwright-generation) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-20
 
-Progress: [█████░░░░░] 45% (5 of 11 phases)
+Progress: [█████████░] 89%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -79,6 +79,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 05 P05-02 | ~15min | 3 tasks | 7 files |
 | Phase 05 P05-03 | 23min | 2 tasks | 21 files |
 | Phase 05 P05-04 | 30min | 2 tasks | 7 files |
+| Phase 06 P06-01 | 45min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 05-03: KG read API real (D-06) + tabular browse UI (D-05) built to 05-UI-SPEC; coverage honest measured=false until slice 04; routers/kg.py+schemas/kg.py extensible by 05-04; element keys percent-encoded over {key:path}; zero new frontend deps
 - [Phase ?]: [Phase 05]: 05-04: ground-truth coverage fixture DEPLOYED inside the app package (kg/ground_truth/saucedemo.json) because tests/ is .dockerignore'd + api has no source mount; byte-identical diffable copy under tests/fixtures, pinned in sync by a unit test (D-07)
 - [Phase ?]: [Phase 05]: 05-04: PURE coverage metric (matched/total, fp-primary + normalized-URL path-only fallback so in-cluster vs public hosts match); GET /coverage real + honest measured=false when no graph; live >=80% Manual-Only [graph,live_llm] (QUAL-01)
+- [Phase ?]: [Phase 06]: 06-01: GenerationError lives in gates/gherkin_lint.py and is re-imported by generation.py so generation AND the future edit/approve router share ONE linter + ONE exception (D-04)
+- [Phase ?]: [Phase 06]: 06-01: structured Then->KG no-vacuous gate validates edge_type against kg/schema allow-list BEFORE building Cypher and injects the CONSTANT (never the LLM string); unknown kind / disallowed edge_type run NO query (injection-safe, T-06-01)
+- [Phase ?]: [Phase 06]: 06-01: generate_scenarios is gateway-only (generate.bdd) with a deterministic no-key fallback whose single Then asserts the flow terminal page (resolvable); validate-before-persist (lint THEN no-vacuous) before any draft row write
 
 ### Pending Todos
 
@@ -159,9 +163,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-20T10:05:49.065Z
+Last session: 2026-06-20T14:58:18.362Z
 Stopped at: Phase 6 planned (4 slices, checker PASS after alembic-path fix); ready to execute
-Resume file: .planning/phases/06-bdd-playwright-generation/06-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 

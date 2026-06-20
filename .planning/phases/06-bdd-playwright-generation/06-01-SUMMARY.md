@@ -142,6 +142,10 @@ None - no external service configuration required. Live generation needs ANTHROP
 - Ready for Slice 2 (review queue API + UI): the shared `validate_gherkin` + `assert_non_vacuous` are reusable by the edit/approve router (D-02/D-04); `scenario_service` already exposes set_status/update_gherkin/list_approved.
 - Graph functional + live generation remain Manual-Only (keys/neo4j).
 
+## Self-Check: PASSED
+
+All 7 spot-checked created files exist on disk; all 4 commits (ff1442c, 757827d, d0572e1, dde77a2) are present in git history.
+
 ---
 *Phase: 06-bdd-playwright-generation*
 *Completed: 2026-06-20*
