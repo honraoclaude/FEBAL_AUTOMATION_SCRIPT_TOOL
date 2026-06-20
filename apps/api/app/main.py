@@ -4,7 +4,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from neo4j.exceptions import ServiceUnavailable
 from sqlalchemy import select
 
 from app.core.checkpointer import close_checkpointer, init_checkpointer
@@ -74,6 +76,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Autonomous QA Engineer Platform API", lifespan=lifespan)
+
+
+@app.exception_handler(ServiceUnavailable)
+async def _neo4j_unavailable_handler(request: Request, exc: ServiceUnavailable) -> JSONResponse:
+    """KG read endpoints need Neo4j; the graph profile is optional (api boots without it).
+
+    When Neo4j is unreachable, return a clean 503 the browse UI renders as its
+    'graph unavailable' state — never leak an unhandled 500/stack trace. Consistent
+    with the graceful-without-neo4j contract (lazy driver, graceful ensure_constraints).
+    """
+    log.warning("neo4j_unavailable", path=str(request.url.path))
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Knowledge graph is unavailable — start the graph profile to browse it."},
+    )
+
 
 # /health at root (NOT under /api) — container healthcheck and verify_stack use it
 app.include_router(health_router)
