@@ -51,9 +51,16 @@ class ScenarioSummary(BaseModel):
 
 
 class ScenarioDetail(ScenarioSummary):
-    """A single scenario for review — the summary fields + the Gherkin + per-Then gate results."""
+    """A single scenario for review — the summary fields + the Gherkin + per-Then gate results.
+
+    `then_refs` is the RAW structured sidecar (kind/ref per Then) the no-vacuous gate consumes;
+    it is exposed so the edit-in-place save can forward the SAME refs alongside the edited
+    Gherkin (D-02 — the gate re-validates the row's own refs). `then_results` is the server's
+    HONEST resolution of those refs for display (D-03).
+    """
 
     gherkin_text: str
+    then_refs: list = Field(default_factory=list)
     then_results: list[ThenRefResult] = Field(default_factory=list)
 
 

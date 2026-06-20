@@ -203,6 +203,7 @@ async def get_scenario(
     return ScenarioDetail(
         **summary.model_dump(),
         gherkin_text=row.gherkin_text,
+        then_refs=row.then_refs or [],
         then_results=await _then_results(row.then_refs or []),
     )
 
@@ -212,6 +213,7 @@ def _detail(row: Scenario, risk: dict[str, dict], then_results: list[ThenRefResu
     return ScenarioDetail(
         **summary.model_dump(),
         gherkin_text=row.gherkin_text,
+        then_refs=row.then_refs or [],
         then_results=then_results,
     )
 

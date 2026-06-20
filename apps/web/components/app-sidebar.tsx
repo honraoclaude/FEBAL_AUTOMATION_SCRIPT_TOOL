@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Crosshair, LogOut, Radar, Workflow, type LucideIcon } from "lucide-react";
+import {
+  Crosshair,
+  ListChecks,
+  LogOut,
+  Radar,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 
 import { api } from "@/lib/api/client";
 import {
@@ -34,6 +41,9 @@ const NAV_ITEMS: NavItem[] = [
   // KG-02 / D-05: the Knowledge Graph browse section (Pages/Flows/Element repository).
   // Positioned after Explorations (explore → graph). Active via pathname.startsWith("/graph").
   { icon: Workflow, label: "Knowledge graph", href: "/graph" },
+  // GEN-02 / 06-UI-SPEC: the Scenario Review Queue. Positioned after Knowledge graph
+  // (explore → graph → scenarios). Active via pathname.startsWith("/scenarios").
+  { icon: ListChecks, label: "Scenarios", href: "/scenarios" },
 ];
 
 type Me = { id: number; email: string };
