@@ -1,8 +1,8 @@
 ---
 phase: 6
 slug: bdd-playwright-generation
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-20
 ---
@@ -45,7 +45,16 @@ created: 2026-06-20
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| _planner fills_ | | | GEN-0x | | | unit/graph/live_llm | | ✅ / ❌ W0 | ⬜ pending |
+| 06-01-T1 | 01 | 1 | GEN-01/03 | T-06-SC | scenarios model + migration 0006 + scenario_service (list_approved) + Wave-0 fixtures | unit/setup | `uv run alembic upgrade head && uv run pytest tests/unit/test_single_write_path.py -q` | ❌ W0 | ⬜ pending |
+| 06-01-T2 | 01 | 1 | GEN-03 | T-06-01,02,06 | lint gate (shared) + structured Then→KG no-vacuous gate (edge_type allow-list, read-only Cypher) | unit (fake driver) + graph | `uv run pytest tests/unit/test_gherkin_lint.py tests/unit/test_assertion_gate.py -x -q` | ❌ W0 | ⬜ pending |
+| 06-01-T3 | 01 | 1 | GEN-01/03 | T-06-03,04,05 | KG→Examples derivation + generate_scenarios (gateway + no-key fallback + validate-before-persist) | unit (mocked gateway) | `uv run pytest tests/unit/test_examples_derivation.py tests/unit/test_generate_scenarios.py -x -q` | ❌ W0 | ⬜ pending |
+| 06-02-T1 | 02 | 2 | GEN-02 | T-06-07,08,09,11 | auth-gated review router; edit/approve re-run both gates; only approved feed codegen | functional | `uv run pytest tests/functional/test_scenarios_router.py -m "not graph" -q` | ❌ W0 | ⬜ pending |
+| 06-02-T2 | 02 | 2 | GEN-02 | T-06-10,SC | review-queue UI (honest per-Then indicators, styled-native textarea, zero new shadcn/deps) | e2e (mocked API) | `cd apps/web && npx playwright test tests/e2e/scenarios.spec.ts` | ❌ W0 | ⬜ pending |
+| 06-03-T1 | 03 | 3 | GEN-05 | T-06-12,17 | freehand-selector AST gate (page-object allowlist) + Element-Repo locator lookup | unit (rendered fixtures) | `uv run pytest tests/unit/test_selector_gate.py -x -q` | ❌ W0 | ⬜ pending |
+| 06-03-T2 | 03 | 3 | GEN-04/05 | T-06-13,14,15,16 | Jinja2 project codegen (repo locators, pytest-bdd bound to .feature, approved-only) + selector gate enforced | functional (graph) | `uv run pytest tests/functional/test_codegen.py -m graph -q` | ❌ W0 | ⬜ pending |
+| 06-04-T1 | 04 | 4 | GEN-05 | T-06-20,21,SC | SEED_BUG build-arg + saucedemo-bug compose service (distinct port, bugbuild profile) + STABILITY_RUNS/SEEDED_BUG_BASE_URL | infra/build | `cd infra && docker compose --profile bugbuild build saucedemo-bug` | ❌ W0 | ⬜ pending |
+| 06-04-T2 | 04 | 4 | GEN-05 | T-06-18,19,20,23 | N-run stability + seeded-bug acceptance (planted spec, subprocess, OOM sequencing) | functional (graph/bugbuild, planted) | `uv run pytest tests/functional/test_stability.py tests/functional/test_seeded_bug.py -m graph -q` | ❌ W0 | ⬜ pending |
+| LIVE | 01-04 | — | GEN-01..05 | — | live generate→review→approve→codegen→stabilize→seeded-bug | live_llm/manual | `uv run pytest -m live_llm` (needs key) | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

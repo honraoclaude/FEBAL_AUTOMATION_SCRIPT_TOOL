@@ -20,7 +20,8 @@ Decimal phases appear between their surrounding integers in numeric order.
  (completed 2026-06-14)
 - [x] **Phase 4: Explorer Agent** - Full autonomous exploration: snapshot-first perception, budgets/loop detection, auth handling, risk policy, sanitized observations, element fingerprints
  (completed 2026-06-15)
-- [x] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement (completed 2026-06-19)
+- [x] **Phase 5: Knowledge Graph & Flow Learning** - Neo4j single-writer KG with idempotent MERGE and freshness, Element Repository, flow mining with risk scores, ground-truth coverage measurement
+ (completed 2026-06-19)
 - [ ] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
 - [ ] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch
 - [ ] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate
@@ -221,8 +222,25 @@ Plans:
   4. User generates Playwright page objects, specs, fixtures, utilities, and test data models in the spec folder structure (tests/ pages/ fixtures/ utils/ data/ reports/), with every locator sourced from the Element Repository — never freehand LLM selectors
   5. Generated tests pass an N-consecutive-run stability check before acceptance, and a seeded-bug build of the target makes them fail (they detect real breakage)
 
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — Scenario generation + gates + model: scenarios table/migration 0006, structured Then→KG no-vacuous gate + gherkin lint, KG→Examples outlines, gateway+no-key fallback (GEN-01, GEN-03)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 06-02-PLAN.md — Review queue: auth-gated router (list/get/edit/approve/reject, both gates re-run on edit/approve) + review-queue UI to 06-UI-SPEC, only approved feed codegen (GEN-02)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 06-03-PLAN.md — Element-Repo codegen: Jinja2 project tree (pages/steps/features/fixtures/utils/data/reports), pytest-bdd bound to .feature, repo-sourced locators + freehand-selector AST gate (GEN-04, GEN-05 locator half)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 06-04-PLAN.md — Stability + seeded-bug: N-run stability (Phase-3 subprocess runner) + SEED_BUG build-arg/saucedemo-bug service + breakage-detection, planted-spec deterministic proof, OOM sequencing (GEN-05 stability half)
 
 ### Phase 7: Execution Engine & Workers
 
@@ -317,7 +335,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Tracer Bullet — Minimal End-to-End Loop | 4/4 | Complete   | 2026-06-14 |
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
-| 6. BDD & Playwright Generation | 0/TBD | Not started | - |
+| 6. BDD & Playwright Generation | 0/4 | Not started | - |
 | 7. Execution Engine & Workers | 0/TBD | Not started | - |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
