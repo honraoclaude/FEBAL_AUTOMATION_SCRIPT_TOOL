@@ -29,6 +29,7 @@ import app.services.kg.flows as kg_flows
 import app.services.kg.reader as kg_reader
 from app.core.config import settings
 from app.models.execution_history import TestResult, TestRun
+from app.models.scenario import Scenario
 
 log = structlog.get_logger()
 
@@ -200,6 +201,40 @@ async def rank_risk_flows(
         )
     ranked.sort(key=lambda e: e["combined"], reverse=True)
     return ranked[: weights.top_n]
+
+
+async def resolve_flows_for_tier(
+    db: AsyncSession, tier: str, *, weights: RiskRankWeights = RiskRankWeights()
+) -> list[dict]:
+    """Resolve the per-flow job list to enqueue for a tier (B1, RESEARCH "per-flow enqueue").
+
+    The uniform engine path is per-flow enqueue for ALL tiers (RESEARCH Open Q3) — one job per
+    chosen flow, each `{flow_id}`:
+
+      - tag tiers (smoke/sanity/regression) and `full`: one job per DISTINCT approved-scenario
+        flow_id (the tag selector is carried on the run's `selector` for the in-spec `-m` filter;
+        per-flow granularity gives the live view + retry/kill their natural scope). Reads
+        Postgres only — NO graph, so tag tiers stay keyless.
+      - `risk-based` (D-02/D-03b): one job per top-N ranked flow from rank_risk_flows (this runs
+        while neo4j is UP, BEFORE the run phase — the caller sequences neo4j off afterwards).
+
+    Returns a list of job dicts (possibly empty when nothing is approved/ranked — the run is
+    still created; an empty enqueue is a valid no-flow run, not an error).
+    """
+    if tier == "risk-based":
+        ranked = await rank_risk_flows(db, weights=weights)
+        return [{"flow_id": r["id"]} for r in ranked]
+
+    # Tag tiers + full: one job per distinct approved-scenario flow_id (Postgres-only, keyless).
+    flow_ids = (
+        await db.execute(
+            select(Scenario.flow_id)
+            .where(Scenario.status == "approved")
+            .group_by(Scenario.flow_id)
+            .order_by(Scenario.flow_id)
+        )
+    ).scalars().all()
+    return [{"flow_id": fid} for fid in flow_ids]
 
 
 async def create_test_run(
