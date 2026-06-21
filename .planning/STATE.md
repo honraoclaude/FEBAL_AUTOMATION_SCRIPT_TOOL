@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
-last_updated: "2026-06-21T16:04:39.216Z"
+stopped_at: Completed 07-03 (evidenced+historied tier runs; /api/executions single owner; EXEC-04/05)
+last_updated: "2026-06-21T17:12:00.553Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 32
-  completed_plans: 30
+  completed_plans: 31
   percent: 55
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 07 (execution-engine-workers) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-06-21
 
-Progress: [█████████░] 94%
+Progress: [██████████] 97%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -85,6 +85,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 07 P01 | ~1h | 3 tasks | 19 files |
 | Phase 07 P02 | 45m | 2 tasks | 5 files |
 | Phase 07 P05 | ~25min | 2 tasks | 4 files |
+| Phase 07 P03 | ~2h | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 07-02: resolve_tier validates against allow-list, returns a COPY of constant tokens (T-07-05); unknown->ValueError->422
 - [Phase ?]: 07-05: CI parity is same-engine start-then-poll (D-08) — run-suite.yml POSTs /api/executions + polls GET /api/executions/{run_id}, passed->0 failed/killed->1, never pytest in CI; scoped CI_TOKEN bearer from secrets, never echoed (route-level check is 07-03)
 - [Phase ?]: 07-05: determinism (SC5) = planted spec run twice via _run_spec_once with reset_target.py between runs; compare exit_code/passed/verdict only, exclude timing (result surface=={passed,exit_code,output}); keyless + neo4j off
+- [Phase ?]: 07-03: worker 2x retry loop + per-step capture under run_dir(run_id)/<flow_id>/; TestArtifact.path run-relative multi-segment (kind screenshot|trace|video only, W4 (a)); pure classify_retry (passes-on-retry->flaky, all-fail->product)
+- [Phase ?]: 07-03: /api/executions is the SINGLE owner (B1) — POST 202 tier round-trip + GET history/status; legacy RunStatus namespaced at /{run_id}/legacy-status so exactly one handler per (method,path) (T-07-18); I1 router gate accepts cookie OR scoped ci_token bearer (hmac.compare_digest, never logged)
+- [Phase ?]: 07-03: api container image was stale (built before 07-01 added aio-pika); rebuilt via uv sync --frozen since exec_service now imports at app startup via the registered executions router (Rule 3 blocking, no new package)
 
 ### Pending Todos
 
@@ -179,8 +183,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-21T16:04:24.528Z
-Stopped at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
+Last session: 2026-06-21T17:12:00.511Z
+Stopped at: Completed 07-03 (evidenced+historied tier runs; /api/executions single owner; EXEC-04/05)
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):

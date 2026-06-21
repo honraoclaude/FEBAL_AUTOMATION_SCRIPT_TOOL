@@ -271,7 +271,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 07-03-PLAN.md — Artifacts + history + flaky: per-step capture (screens/trace always, video on fail) + 2x retry loop + pure flaky classifier + history queries + auth-gated POST /executions tier round-trip (EXEC-04, EXEC-05)
+- [x] 07-03-PLAN.md — Artifacts + history + flaky: per-step capture (screens/trace always, video on fail) + 2x retry loop + pure flaky classifier + history queries + auth-gated POST /executions tier round-trip (EXEC-04, EXEC-05)
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -355,7 +355,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
-| 7. Execution Engine & Workers | 3/5 | In Progress|  |
+| 7. Execution Engine & Workers | 4/5 | In Progress|  |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |
