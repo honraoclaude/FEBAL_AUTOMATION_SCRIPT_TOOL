@@ -39,7 +39,11 @@ import pytest
 # Reuse the planted-spec renderer + plant helper from the stability proof (same planted spec).
 from tests.functional.test_stability import _WORKSPACES_ROOT, _plant
 
-pytestmark = [pytest.mark.functional]
+# Share ONE module-scoped event loop across both tests: run_flow_job (invoked by the consumer)
+# writes through the module-level SQLAlchemy engine whose asyncpg pool binds to the running loop.
+# pytest-asyncio's per-function loop would tear a pooled connection down against a closed loop
+# ("Event loop is closed") once OTHER functional tests run before this module in the same process.
+pytestmark = [pytest.mark.functional, pytest.mark.asyncio(loop_scope="module")]
 
 # The queue-profile broker is reached on the host at the published 5672 (compose name in-cluster).
 _HOST_AMQP_URL = os.environ.get("AMQP_URL_HOST", "amqp://guest:guest@localhost:5672/")
@@ -71,8 +75,18 @@ async def _fetch_result(run_id: str) -> dict | None:
 
 async def test_enqueue_consume_subprocess_lands_result_row() -> None:
     """A queued AMQP job is consumed by the REAL worker and lands a passed test_results row."""
+    import app.core.redis_client as redis_client
+    from app.db.session import engine
     from app.services import exec_service
     from app.services.worker.consumer import run_consumer
+
+    # Release the loop-bound shared clients inherited from a PRIOR test module — the engine pool
+    # AND the Redis client both bind to a now-closed loop; run_flow_job (via the consumer) writes
+    # through the engine and publishes through Redis, so a stale handle would raise "Event loop is
+    # closed" on this module's fresh loop. Dispose the engine; drop the Redis ref (NOT aclose,
+    # which would touch the dead loop) so get_redis() re-opens fresh on the current loop.
+    await engine.dispose()
+    redis_client._client = None
 
     run_id = f"exec-rt-{uuid.uuid4().hex}"
     flow_id = "flow-rt-0"
@@ -120,6 +134,13 @@ async def test_enqueue_consume_subprocess_lands_result_row() -> None:
         assert result["verdict"] == "passed", f"expected passed verdict, got {result}"
         assert result["attempts"] == 1
     finally:
+        # Release the loop-bound shared clients (engine pool + Redis) so a later module's loop
+        # never reuses a handle from this now-closing loop ("Event loop is closed").
+        import app.core.redis_client as redis_client
+        from app.db.session import engine
+
+        await engine.dispose()
+        redis_client._client = None
         shutil.rmtree(_WORKSPACES_ROOT / run_id, ignore_errors=True)
 
 

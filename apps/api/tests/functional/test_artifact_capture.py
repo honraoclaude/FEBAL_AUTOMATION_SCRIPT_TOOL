@@ -68,18 +68,21 @@ async def _fetch_artifacts(run_id: str) -> list[dict]:
         await conn.close()
 
 
-async def _dispose_engine() -> None:
-    """Release the module-level SQLAlchemy pool bound to THIS test's event loop.
+async def _reset_loop_bound_clients() -> None:
+    """Release the loop-bound shared clients run_flow_job touches (engine pool + Redis client).
 
-    run_flow_job writes via the shared module-level SessionLocal engine, whose asyncpg pool
-    binds to the running loop. pytest-asyncio (auto mode) opens a FRESH loop per test, so a
-    pooled connection from a prior test would be torn down against a closed loop ("Event loop
-    is closed"). Disposing the engine at the end of each test that drives run_flow_job releases
-    the pool cleanly within the same loop (the api process owns its own engine in production).
+    run_flow_job writes via the module-level SessionLocal engine (asyncpg pool) and publishes via
+    the module-level Redis client — BOTH bind to the running loop. pytest-asyncio (auto mode) opens
+    a FRESH loop per test, so a connection/client from a prior test would be torn down against a
+    closed loop ("Event loop is closed"). Dispose the engine pool cleanly here; for Redis, drop the
+    module reference (NOT aclose — aclose would touch the dead loop) so the next test re-opens fresh.
+    The api process owns its own long-lived engine/client in production (this is a test concern).
     """
+    import app.core.redis_client as redis_client
     from app.db.session import engine
 
     await engine.dispose()
+    redis_client._client = None
 
 
 async def test_passing_run_captures_screenshot_and_trace_no_video() -> None:
@@ -115,7 +118,7 @@ async def test_passing_run_captures_screenshot_and_trace_no_video() -> None:
             assert (base / rel).is_file(), f"recorded path is not on disk: {base / rel}"
             assert isinstance(rel, str)  # DB stores only the String path, no binary bytes
     finally:
-        await _dispose_engine()
+        await _reset_loop_bound_clients()
         shutil.rmtree(_WORKSPACES_ROOT / run_id, ignore_errors=True)
 
 
@@ -142,5 +145,5 @@ async def test_failing_run_captures_video() -> None:
             assert rel.startswith(f"{flow_id}/"), f"missing <flow_id>/ segment: {rel}"
             assert not rel.startswith("/") and ":" not in rel, f"not run-relative: {rel}"
     finally:
-        await _dispose_engine()
+        await _reset_loop_bound_clients()
         shutil.rmtree(_WORKSPACES_ROOT / run_id, ignore_errors=True)
