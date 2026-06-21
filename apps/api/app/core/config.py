@@ -118,6 +118,17 @@ class Settings(BaseSettings):
     amqp_url: str | None = None  # env AMQP_URL
     exec_prefetch_count: int = 2  # env EXEC_PREFETCH_COUNT
 
+    # --- CI trigger scoped credential (Phase 7, plan 07-05; EXEC-02 / D-08) ---
+    # CI_TOKEN: the SCOPED start+poll credential the GitHub Actions workflow
+    #   (.github/workflows/run-suite.yml) presents as a Bearer to start a tier run and
+    #   poll its status — the SAME engine code path as local/Docker (D-08), never a
+    #   separate pytest path in CI. It is scoped to start-run + read-status ONLY (Pitfall
+    #   7 / T-07-08); the route-level bearer enforcement on the executions start/poll
+    #   routes lives in plan 07-03 (routers/executions.py, I1). Default None so the api
+    #   boots without it (mirrors the optional anthropic_api_key / amqp_url contract), and
+    #   it is NEVER echoed/logged (T-07-07).
+    ci_token: str | None = None  # env CI_TOKEN
+
     @property
     def checkpoint_dsn(self) -> str:
         """Plain psycopg3 conninfo for AsyncPostgresSaver (Pitfall 1: NOT the SQLAlchemy DSN).

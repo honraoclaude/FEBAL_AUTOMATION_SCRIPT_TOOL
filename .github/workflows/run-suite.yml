@@ -1,0 +1,71 @@
+# run-suite — CI trigger for the platform execution engine (EXEC-02 / D-08).
+#
+# SAME-ENGINE PARITY (D-08): CI does NOT run pytest directly. This workflow calls the
+# platform API to START a tier run and POLLS run status back — the identical engine code
+# path used locally and in Docker — so local/Docker/CI cannot diverge. There is no second
+# test path here.
+#
+# REACHABILITY ASSUMPTION (RESEARCH A5): the platform API host port is 8001 and is LOCAL
+# to the dev box; GitHub-hosted runners cannot reach it. For this workflow to actually run
+# against the engine you MUST either:
+#   (a) register a SELF-HOSTED GitHub Actions runner on the dev box
+#       (GitHub repo -> Settings -> Actions -> Runners), or
+#   (b) expose the API via a tunnel (ngrok/cloudflared) and set PLATFORM_API_URL to it.
+# This is a deployment detail, not engine code — the live trigger is Manual-Only until a
+# self-hosted runner / tunnel exists (documented in the plan user_setup).
+#
+# SCOPED, NEVER-ECHOED TOKEN (Pitfall 7 / T-07-07 / T-07-08): CI_TOKEN is a SCOPED service
+# credential that can ONLY start runs + read status (the route-level Bearer enforcement on
+# the executions start/poll routes lives in plan 07-03, routers/executions.py). It is passed
+# via a GitHub Actions SECRET and is NEVER printed into the logs. Do NOT print the token or
+# the Authorization header anywhere (no log-emitting command should reference the token).
+
+name: run-suite
+
+on:
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "Execution tier to run (smoke|sanity|regression|full|risk-based)"
+        required: false
+        default: smoke
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      PLATFORM_API_URL: ${{ secrets.PLATFORM_API_URL }}
+      CI_TOKEN: ${{ secrets.CI_TOKEN }}
+    steps:
+      - name: Start tier run
+        id: start
+        run: |
+          # POST {"tier": <input>} to start a run via the SAME engine the API exposes.
+          # The Bearer is the scoped CI_TOKEN secret — never printed. jq extracts run_id.
+          run_id=$(curl -fsS -X POST "$PLATFORM_API_URL/api/executions" \
+            -H "Authorization: Bearer $CI_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tier\":\"${{ inputs.tier }}\"}" | jq -r .run_id)
+          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+            echo "failed to start run (no run_id returned)"
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Poll until terminal
+        run: |
+          # Poll GET /api/executions/{run_id} until the status is terminal.
+          # Status -> exit-code mapping (D-08): passed -> 0 (check conclusion success),
+          # failed/killed -> 1 (check conclusion failure), timeout -> 1.
+          run_id="${{ steps.start.outputs.run_id }}"
+          for i in $(seq 1 120); do
+            status=$(curl -fsS "$PLATFORM_API_URL/api/executions/$run_id" \
+              -H "Authorization: Bearer $CI_TOKEN" | jq -r .status)
+            case "$status" in
+              passed) echo "run $run_id passed"; exit 0 ;;
+              failed|killed) echo "run $run_id $status"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "timed out waiting for run $run_id to reach a terminal status"
+          exit 1
