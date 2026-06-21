@@ -67,4 +67,50 @@ class ExploreProgressEvent(BaseModel):
     stop_reason: str | None = None
 
 
-__all__ = ["ExploreJob", "ExecuteJob", "RunStatusEvent", "ExploreProgressEvent"]
+class ExecutionProgressEvent(BaseModel):
+    """A per-test live-progress event the worker publishes to Redis pub/sub (EXEC-06, D-06/D-07).
+
+    The execution-plane analogue of ExploreProgressEvent: the worker publishes
+    `model_dump_json()` to the channel `exec:{run_id}`; the SSE endpoint
+    (`GET /api/executions/{run_id}/events`) re-emits it to the browser, which renders the
+    Live Execution View (07-UI-SPEC). The zod `executionProgressEventSchema` in
+    `lib/api/executions.ts` mirrors this model 1:1.
+
+    The RUN counters (completed/total/passed/failed/flaky) are ABSOLUTE values (not deltas) so
+    the live view takes the latest event's values directly — mirroring the explorer's contract.
+    `status` is the RUN status (queued|running|stopping|passed|failed|killed). The per-TEST
+    delta describes the single test this event is about: `flow_id` (the kg/flows id), `test_id`
+    (the spec/test identifier shown mono), `test_name` (the display name), `test_status` (the
+    per-test verdict: queued|running|passed|flaky|product_failure|aborted), `attempt` (the
+    1-based attempt count), and `duration_ms` (the resolved test duration, or None while
+    in-flight). A snapshot frame (reconnect) carries the current run counters with the per-test
+    delta fields null/empty.
+    """
+
+    run_id: str
+    # Absolute run counters (the live view reads the latest frame directly — never deltas).
+    completed: int
+    total: int
+    passed: int
+    failed: int
+    flaky: int
+    elapsed_s: float
+    # The run status (queued | running | stopping | passed | failed | killed).
+    status: str
+    # The per-test delta this event is about (null/empty on a counters-only snapshot frame).
+    flow_id: str | None = None
+    test_id: str | None = None
+    test_name: str | None = None
+    # queued | running | passed | flaky | product_failure | aborted.
+    test_status: str | None = None
+    attempt: int = 0
+    duration_ms: int | None = None
+
+
+__all__ = [
+    "ExploreJob",
+    "ExecuteJob",
+    "RunStatusEvent",
+    "ExploreProgressEvent",
+    "ExecutionProgressEvent",
+]

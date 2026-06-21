@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.services.kg.flows as kg_flows
 import app.services.kg.reader as kg_reader
 from app.core.config import settings
+from app.core.redis_client import get_redis
 from app.models.execution_history import TestResult, TestRun
 from app.models.scenario import Scenario
 
@@ -271,3 +272,31 @@ async def enqueue_jobs(run_id: str, jobs: list[dict]) -> None:
                 routing_key=QUEUE_NAME,
             )
     log.info("enqueue_jobs", run_id=run_id, count=len(jobs))
+
+
+async def kill_run(run_id: str) -> None:
+    """Graceful cooperative kill (D-07, RESEARCH Pattern 3): set the flag + purge the queue.
+
+    Two cooperative steps, NO forceful process termination:
+      1. Set the Redis kill flag `run:{run_id}:kill` (via the SHARED get_redis() client). The
+         worker checks this BETWEEN tests and DRAINS — it finishes/aborts the in-flight test and
+         pulls no new work for the run; remaining flows resolve to `aborted` (not product_failure).
+      2. Purge the WHOLE durable exec.jobs queue of pending jobs so no enqueued-but-unstarted
+         flow is consumed after the kill.
+
+    A6/I2 (single-worker, one-run-at-a-time assumption): queue.purge() clears the ENTIRE
+    exec.jobs queue, which is safe ONLY because runs are one-at-a-time in Phase 7. Per-run queues
+    (`exec.jobs.{run_id}`) are the forward design note for concurrent runs — NOT Phase-7 scope.
+    """
+    await get_redis().set(f"run:{run_id}:kill", "1")
+    if settings.amqp_url is None:
+        # The flag is set (the worker drains); without the queue profile up there is nothing to
+        # purge — a no-flow run or a host without the broker. Not an error.
+        log.info("kill_run", run_id=run_id, purged=False)
+        return
+    connection = await aio_pika.connect_robust(settings.amqp_url)
+    async with connection:
+        channel = await connection.channel()
+        queue = await channel.declare_queue(QUEUE_NAME, durable=True)
+        await queue.purge()
+    log.info("kill_run", run_id=run_id, purged=True)

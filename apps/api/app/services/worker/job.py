@@ -25,11 +25,16 @@ spec_path is run_id-DERIVED via workspaces.spec_path(run_id) and the output dir 
 run_dir(run_id)/<flow_id> (run_id-derived, flow_id from the trusted job message) — NEVER taken
 raw from the message body (T-07-01/T-07-11 carry-forward of T-03-15).
 
-Kill flag: the live `run:{run_id}:kill` drain + the "aborted" verdict land in Plan 04 (the real
-drain). This slice keeps the no-op hook shape only — NO placeholder kill behavior is added.
+Kill flag (D-07, Plan 04): BEFORE pulling/running each attempt the worker reads
+`run:{run_id}:kill` from the SHARED Redis client. If the flag is set, the flow is DRAINED — the
+runner publishes an `aborted` per-test event, records an `aborted` TestResult (NOT
+product_failure — the test never ran to a product verdict), and returns WITHOUT pulling new
+work. The in-flight subprocess (if one already started) is allowed to finish — there is NO
+forceful process termination anywhere (cooperative cancel only), so no orphaned Chromium is left.
 
 SC3: imports ONLY the subprocess primitive, the DB session, the execution-history models,
-workspaces, the pure classifier, and the worker progress publish — no LLM/gateway/explorer.
+workspaces, the pure classifier, the worker progress publish, and the shared Redis client — no
+LLM/gateway/explorer.
 """
 
 from __future__ import annotations
@@ -39,6 +44,7 @@ from pathlib import Path
 
 import structlog
 
+from app.core.redis_client import get_redis
 from app.core.workspaces import run_dir, spec_path
 from app.db.session import SessionLocal
 from app.models.execution_history import TestArtifact, TestResult
@@ -50,6 +56,20 @@ log = structlog.get_logger()
 
 # Original attempt + up to 2 retries (D-05). Stop early on a clean exit 0.
 MAX_ATTEMPTS = 3
+
+
+def _kill_flag_key(run_id: str) -> str:
+    """The cooperative kill flag the worker checks between tests (D-07)."""
+    return f"run:{run_id}:kill"
+
+
+async def _is_killed(run_id: str) -> bool:
+    """True iff the run's cooperative kill flag is set (D-07 — checked between tests).
+
+    Reads the SHARED lifespan get_redis() client (never a second client). A set flag means the
+    run is being drained: the worker pulls no new work and remaining flows resolve to `aborted`.
+    """
+    return bool(await get_redis().get(_kill_flag_key(run_id)))
 
 
 def _capture_args(out_dir: Path) -> list[str]:
@@ -119,6 +139,12 @@ async def run_flow_job(job: dict) -> dict:
     flow_id = job["flow_id"]
     base_url = job.get("base_url")  # optional override (the determinism proof points the spec)
 
+    # D-07 DRAIN: if the run's kill flag is already set, this flow is aborted BEFORE any
+    # subprocess starts — pull no new work, record an `aborted` verdict (never product_failure),
+    # publish an `aborted` per-test event. No forceful termination (cooperative cancel only).
+    if await _is_killed(run_id):
+        return await _abort_flow(run_id, flow_id)
+
     spec = str(spec_path(run_id))
     out_dir = run_dir(run_id, create=True) / flow_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -127,16 +153,19 @@ async def run_flow_job(job: dict) -> dict:
     exit_codes: list[int] = []
     started = time.monotonic()
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        # Kill-flag hook (no-op in this slice; the live drain + 'aborted' land in Plan 04).
+        # Cooperative kill check BETWEEN attempts (D-07): a kill set mid-retry stops further
+        # attempts. If no attempt has run yet, drain to `aborted`; otherwise classify what ran.
+        if attempt > 1 and await _is_killed(run_id):
+            break
         result = await _run_spec_once(spec, base_url=base_url, extra_args=capture_args)
         exit_code = result["exit_code"] if result["exit_code"] is not None else 1
         exit_codes.append(exit_code)
         if exit_code == 0:
             break  # passed -> stop retrying
     duration_s = time.monotonic() - started
+    duration_ms = int(duration_s * 1000)
 
     verdict = classify_retry(exit_codes)  # pure classifier (D-05)
-    status = "passed" if verdict["passed"] else "failed"
     artifacts = _discover_artifacts(run_id, out_dir)
 
     # FRESH session (Pitfall 2): the worker owns its own session, never a request's.
@@ -148,7 +177,7 @@ async def run_flow_job(job: dict) -> dict:
                 verdict=verdict["verdict"],
                 attempts=verdict["attempts"],
                 exit_codes=exit_codes,
-                duration_ms=int(duration_s * 1000),
+                duration_ms=duration_ms,
             )
         )
         for kind, rel_path in artifacts:
@@ -156,10 +185,17 @@ async def run_flow_job(job: dict) -> dict:
                 TestArtifact(run_id=run_id, flow_id=flow_id, kind=kind, path=rel_path)
             )
         await db.commit()
-
-    await progress.publish_test_event(
-        run_id, flow_id, status=status, attempt=verdict["attempts"], duration_s=duration_s
-    )
+        # Publish the per-test event with the verdict + the CURRENT absolute run counters,
+        # built from the test_run row + the test_results aggregate this session just wrote.
+        await progress.publish_test_event(
+            db,
+            run_id,
+            flow_id=flow_id,
+            test_status=verdict["verdict"],
+            attempt=verdict["attempts"],
+            duration_ms=duration_ms,
+            elapsed_s=duration_s,
+        )
     log.info(
         "run_flow_job_finished",
         run_id=run_id,
@@ -169,4 +205,37 @@ async def run_flow_job(job: dict) -> dict:
         exit_codes=exit_codes,
         artifacts=len(artifacts),
     )
+    return verdict
+
+
+async def _abort_flow(run_id: str, flow_id: str) -> dict:
+    """Drain a flow killed before it ran: record an `aborted` TestResult + publish the event.
+
+    D-07: a flow drained by the kill switch never ran to a product verdict, so its verdict is
+    `aborted` (distinct from `product_failure`). Writes ONE TestResult (attempts=0, no exit
+    codes, no duration) in a FRESH session and publishes an `aborted` per-test event with the
+    current absolute run counters. NO subprocess is started — there is nothing to force-terminate.
+    """
+    verdict = {"verdict": "aborted", "attempts": 0, "passed": False, "exit_codes": []}
+    async with SessionLocal() as db:
+        db.add(
+            TestResult(
+                run_id=run_id,
+                flow_id=flow_id,
+                verdict="aborted",
+                attempts=0,
+                exit_codes=[],
+                duration_ms=None,
+            )
+        )
+        await db.commit()
+        await progress.publish_test_event(
+            db,
+            run_id,
+            flow_id=flow_id,
+            test_status="aborted",
+            attempt=0,
+            duration_ms=None,
+        )
+    log.info("run_flow_job_aborted", run_id=run_id, flow_id=flow_id)
     return verdict
