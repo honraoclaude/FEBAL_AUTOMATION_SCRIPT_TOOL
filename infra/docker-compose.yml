@@ -80,6 +80,10 @@ services:
       # the harness re-runs the SAME spec against (it must FAIL — real-breakage detection).
       STABILITY_RUNS: ${STABILITY_RUNS:-3}
       SEEDED_BUG_BASE_URL: ${SEEDED_BUG_BASE_URL:-http://saucedemo-bug:80}
+      # Execution engine (Phase 7, plan 07-01) — the api is the AMQP PRODUCER (enqueue jobs).
+      # Optional under the queue profile: the api boots without rabbitmq up (only an enqueue
+      # would then error); when the queue profile is up the broker is reached in-cluster.
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
       WATCHFILES_FORCE_POLLING: "true" # uvicorn --reload over a Windows bind mount needs polling
     volumes:
       - ../apps/api/app:/app/app # hot-reload mount
@@ -208,6 +212,54 @@ services:
     image: rabbitmq:4-management
     profiles: [queue] # Phase 7
     mem_limit: 512m
+    healthcheck:
+      # rabbitmq-diagnostics ping is the canonical readiness probe; the worker + host
+      # functional tests depend_on this being healthy before consuming/enqueuing.
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    ports:
+      - "5672:5672" # AMQP — host functional tests reach the queue-profile broker here
+      - "15672:15672" # management UI
+
+  # Execution worker (Phase 7, plan 07-01; EXEC-03). The SAME image as api with a different
+  # command (the aio-pika consumer entrypoint) — reuse, not a second build. profiles:[queue]
+  # so it joins rabbitmq's profile and is OFF by default. prefetch=2 hard-bounds concurrent
+  # Chromium contexts under the 3GB WSL cap; mem_limit 768m covers ~2 contexts. It does NOT
+  # init neo4j (off during runs) or the checkpointer, and imports no LLM/explorer path (SC3).
+  worker:
+    build: ../apps/api # SAME image as api
+    profiles: [queue] # Phase 7 — joins rabbitmq's profile, OFF by default
+    mem_limit: 768m
+    command: ["python", "-m", "app.worker_main"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      TARGET_CREDENTIAL_KEY: ${TARGET_CREDENTIAL_KEY}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      LLM_DEFAULT_MODEL: ${LLM_DEFAULT_MODEL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-please-change}
+      # The worker is the AMQP CONSUMER + the subprocess runner.
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      WORKSPACES_DIR: /app/workspaces
+      EXECUTION_CWD: /app
+      EXEC_PREFETCH_COUNT: "2"
+    volumes:
+      - ../apps/api/app:/app/app
+      - ../apps/api/alembic:/app/alembic
+      - ../shared:/app/shared
+      - ../workspaces:/app/workspaces
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   elasticsearch:
     image: elasticsearch:9.4.1

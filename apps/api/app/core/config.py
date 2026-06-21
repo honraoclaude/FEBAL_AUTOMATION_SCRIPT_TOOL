@@ -108,6 +108,16 @@ class Settings(BaseSettings):
     explore_wall_clock_seconds: int = 600  # env EXPLORE_WALL_CLOCK_SECONDS — hard time cap
     explore_saturation_window: int = 8  # env EXPLORE_SATURATION_WINDOW — steps w/o new fp -> stop
 
+    # --- Execution engine + RabbitMQ workers (Phase 7, plan 07-01; EXEC-03) ---
+    # AMQP_URL: the RabbitMQ broker the producer (api) publishes execution jobs to and the
+    #   worker container consumes from (in-cluster amqp://guest:guest@rabbitmq:5672/; host
+    #   tests reach the queue-profile broker at amqp://guest:guest@localhost:5672/). Optional
+    #   so the api boots without the queue profile up (only an enqueue would then error).
+    # EXEC_PREFETCH_COUNT: the worker's QoS prefetch — the HARD bound on concurrent in-flight
+    #   jobs = parallel Chromium contexts under the 3GB WSL cap. Default 2 (safe; 3 ceiling).
+    amqp_url: str | None = None  # env AMQP_URL
+    exec_prefetch_count: int = 2  # env EXEC_PREFETCH_COUNT
+
     @property
     def checkpoint_dsn(self) -> str:
         """Plain psycopg3 conninfo for AsyncPostgresSaver (Pitfall 1: NOT the SQLAlchemy DSN).
