@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
-last_updated: "2026-06-21T15:47:21.665Z"
+last_updated: "2026-06-21T16:04:39.216Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 32
-  completed_plans: 29
+  completed_plans: 30
   percent: 55
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 07 (execution-engine-workers) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-06-21
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 94%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -84,6 +84,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 06 P03 | ~12min | 2 tasks | 14 files |
 | Phase 07 P01 | ~1h | 3 tasks | 19 files |
 | Phase 07 P02 | 45m | 2 tasks | 5 files |
+| Phase 07 P05 | ~25min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 07-02: tier-marker registration lives in conftest.py.j2 pytest_configure (no new template; rides _render_checked_py gate)
 - [Phase ?]: 07-02: risk-based ranks build_flows per-flow records (real graph risk_score), never a direct risk_score() call; bounded by asyncio.wait_for(3.0s) honest-empty
 - [Phase ?]: 07-02: resolve_tier validates against allow-list, returns a COPY of constant tokens (T-07-05); unknown->ValueError->422
+- [Phase ?]: 07-05: CI parity is same-engine start-then-poll (D-08) — run-suite.yml POSTs /api/executions + polls GET /api/executions/{run_id}, passed->0 failed/killed->1, never pytest in CI; scoped CI_TOKEN bearer from secrets, never echoed (route-level check is 07-03)
+- [Phase ?]: 07-05: determinism (SC5) = planted spec run twice via _run_spec_once with reset_target.py between runs; compare exit_code/passed/verdict only, exclude timing (result surface=={passed,exit_code,output}); keyless + neo4j off
 
 ### Pending Todos
 
@@ -176,7 +179,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-21T15:47:09.061Z
+Last session: 2026-06-21T16:04:24.528Z
 Stopped at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
 Resume file: None
 

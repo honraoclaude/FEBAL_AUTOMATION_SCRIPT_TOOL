@@ -48,7 +48,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Execution Engine
 
 - [x] **EXEC-01**: User can run suites by tier — smoke, sanity, regression, full regression, and risk-based (selected from flow risk scores + failure history)
-- [ ] **EXEC-02**: Suites execute locally, in Docker, and from CI/CD (GitHub Actions trigger + status reporting)
+- [x] **EXEC-02**: Suites execute locally, in Docker, and from CI/CD (GitHub Actions trigger + status reporting)
 - [x] **EXEC-03**: Executions run in parallel at browser level and flow level (RabbitMQ-distributed workers)
 - [ ] **EXEC-04**: Every test run captures screenshots, video, and console/network logs per step, stored with paths recorded in PostgreSQL
 - [ ] **EXEC-05**: Execution history persists with pass/fail trends, durations, and flaky-test detection (retry policy distinguishes infra flake from product failure)
@@ -158,7 +158,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-04 | Phase 6 | Complete |
 | GEN-05 | Phase 6 | Complete |
 | EXEC-01 | Phase 7 | Complete |
-| EXEC-02 | Phase 7 | Pending |
+| EXEC-02 | Phase 7 | Complete |
 | EXEC-03 | Phase 7 | Complete |
 | EXEC-04 | Phase 7 | Pending |
 | EXEC-05 | Phase 7 | Pending |

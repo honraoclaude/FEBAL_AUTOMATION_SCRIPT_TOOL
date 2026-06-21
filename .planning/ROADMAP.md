@@ -267,7 +267,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1)*
 
 - [x] 07-02-PLAN.md — Tiers: tag tier→pytest-bdd marker selector + risk-based dynamic ranking (frozen weights, cold-start safe) + generated-project marker registration (EXEC-01)
-- [ ] 07-05-PLAN.md — CI parity + determinism: GitHub Actions trigger (scoped token, start+poll) + two-runs-identical harness vs a reset target (planted spec, keyless) (EXEC-02)
+- [x] 07-05-PLAN.md — CI parity + determinism: GitHub Actions trigger (scoped token, start+poll) + two-runs-identical harness vs a reset target (planted spec, keyless) (EXEC-02)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -355,7 +355,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
-| 7. Execution Engine & Workers | 2/5 | In Progress|  |
+| 7. Execution Engine & Workers | 3/5 | In Progress|  |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |
