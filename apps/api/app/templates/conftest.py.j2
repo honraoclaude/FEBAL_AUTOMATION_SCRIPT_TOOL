@@ -19,6 +19,18 @@ import pytest
 DEFAULT_BASE_URL = {{ default_base_url | tojson }}
 
 
+def pytest_configure(config) -> None:
+    """Register the tier markers so `-m smoke|sanity|regression` SELECT (no PytestUnknownMarkWarning).
+
+    EXEC-01 / D-01: tag tiers are native Gherkin @tags carried onto the generated pytest-bdd
+    scenarios; without registration `-m smoke` warns and selects nothing (RESEARCH Pitfall 3).
+    Mirrors the api's own [tool.pytest.ini_options] markers block.
+    """
+    config.addinivalue_line("markers", "smoke: tier — the smallest fast-feedback subset (@smoke)")
+    config.addinivalue_line("markers", "sanity: tier — the mid sanity subset (@sanity)")
+    config.addinivalue_line("markers", "regression: tier — the broad regression subset (@regression)")
+
+
 @pytest.fixture(scope="session")
 def base_url() -> str:
     """The target base URL — {{ base_url_env }} override else the discovered default."""
