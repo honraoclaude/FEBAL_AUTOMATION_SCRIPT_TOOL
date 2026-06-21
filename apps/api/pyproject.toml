@@ -34,6 +34,7 @@ dependencies = [
     "langgraph-checkpoint-postgres==3.1.*",
     "psycopg[binary]==3.3.*",
     "sse-starlette==3.4.*",
+    "aio-pika==9.6.*",
 ]
 
 [dependency-groups]
