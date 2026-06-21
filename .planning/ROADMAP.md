@@ -262,7 +262,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — Foundation: aio-pika (gated) + history models/migration 0007 + worker container (queue profile) + enqueue→consume→subprocess→result on a planted spec + SC3 NO-LLM gate (EXEC-03)
+- [x] 07-01-PLAN.md — Foundation: aio-pika (gated) + history models/migration 0007 + worker container (queue profile) + enqueue→consume→subprocess→result on a planted spec + SC3 NO-LLM gate (EXEC-03)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -355,7 +355,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
-| 7. Execution Engine & Workers | 0/5 | Planned | - |
+| 7. Execution Engine & Workers | 1/5 | In Progress|  |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |

@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
-last_updated: "2026-06-21T10:47:43.910Z"
-last_activity: 2026-06-20
+last_updated: "2026-06-21T11:12:57.946Z"
+last_activity: 2026-06-21
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 32
-  completed_plans: 27
+  completed_plans: 28
   percent: 55
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 06 — bdd-playwright-generation
+**Current focus:** Phase 07 — execution-engine-workers
 
 ## Current Position
 
-Phase: 06 (bdd-playwright-generation) — EXECUTING
-Plan: 4 of 4
+Phase: 07 (execution-engine-workers) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-20
+Last activity: 2026-06-21
 
-Progress: [██████████] 96%
+Progress: [█████████░] 88%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -82,6 +82,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 06 P06-01 | 45min | 3 tasks | 16 files |
 | Phase 06 P02 | ~55min | 2 tasks | 14 files |
 | Phase 06 P03 | ~12min | 2 tasks | 14 files |
+| Phase 07 P01 | ~1h | 3 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06]: 06-03: freehand-selector AST gate walks Call nodes for selector sinks (page.locator/get_by_* with a Constant str first arg) + a raw CSS/XPath regex fallback; page-object modules are the single sanctioned literal home (allowlist) and each literal is asserted equal to a repo chain entry
 - [Phase ?]: [Phase 06]: 06-03: codegen.generate_project renders the WHOLE tree in memory, ast.parse + selector-gates EVERY .py, writes only after all pass (no partial write); locators are TEMPLATE LOOKUPS from the Element Repository top chain entry, never LLM slots; reads list_approved only (D-01)
 - [Phase ?]: [Phase 06]: 06-03: POST /generate-scripts rewired from the Phase-3 plain-spec to the approved-scenario PROJECT codegen; test_login.py.j2 + generation.generate_scripts retained for planted-spec/execute proofs (codegen-tree execution integration is Phase 7)
+- [Phase ?]: 07-01: Execution worker reuses stability._run_spec_once VERBATIM for the subprocess runner; spec_path is run_id-derived, never from the AMQP body (T-07-01); prefetch_count=2 hard-bounds Chromium under the 3GB cap
 
 ### Pending Todos
 
@@ -170,9 +172,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-21T10:47:43.854Z
+Last session: 2026-06-21T11:12:46.675Z
 Stopped at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
-Resume file: .planning/phases/07-execution-engine-workers/07-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 
