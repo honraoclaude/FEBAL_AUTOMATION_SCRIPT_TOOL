@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
-last_updated: "2026-06-21T11:12:57.946Z"
+last_updated: "2026-06-21T15:47:21.665Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 32
-  completed_plans: 28
+  completed_plans: 29
   percent: 55
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 07 (execution-engine-workers) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-06-21
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 91%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -83,6 +83,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 06 P02 | ~55min | 2 tasks | 14 files |
 | Phase 06 P03 | ~12min | 2 tasks | 14 files |
 | Phase 07 P01 | ~1h | 3 tasks | 19 files |
+| Phase 07 P02 | 45m | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 06]: 06-03: codegen.generate_project renders the WHOLE tree in memory, ast.parse + selector-gates EVERY .py, writes only after all pass (no partial write); locators are TEMPLATE LOOKUPS from the Element Repository top chain entry, never LLM slots; reads list_approved only (D-01)
 - [Phase ?]: [Phase 06]: 06-03: POST /generate-scripts rewired from the Phase-3 plain-spec to the approved-scenario PROJECT codegen; test_login.py.j2 + generation.generate_scripts retained for planted-spec/execute proofs (codegen-tree execution integration is Phase 7)
 - [Phase ?]: 07-01: Execution worker reuses stability._run_spec_once VERBATIM for the subprocess runner; spec_path is run_id-derived, never from the AMQP body (T-07-01); prefetch_count=2 hard-bounds Chromium under the 3GB cap
+- [Phase ?]: 07-02: tier-marker registration lives in conftest.py.j2 pytest_configure (no new template; rides _render_checked_py gate)
+- [Phase ?]: 07-02: risk-based ranks build_flows per-flow records (real graph risk_score), never a direct risk_score() call; bounded by asyncio.wait_for(3.0s) honest-empty
+- [Phase ?]: 07-02: resolve_tier validates against allow-list, returns a COPY of constant tokens (T-07-05); unknown->ValueError->422
 
 ### Pending Todos
 
@@ -172,7 +176,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-21T11:12:46.675Z
+Last session: 2026-06-21T15:47:09.061Z
 Stopped at: Phase 7 planned (5 MVP slices, checker PASS after 1 revision); ready to execute
 Resume file: None
 
