@@ -81,6 +81,17 @@ async def test_enqueue_consume_subprocess_lands_result_row() -> None:
     _plant(run_id)
 
     try:
+        # 0) PURGE the durable exec.jobs queue first — it is shared and persistent, so stale
+        #    messages from prior runs/tests would otherwise be consumed ahead of ours (each
+        #    spinning a ~12s Chromium subprocess against prefetch=2), starving this run's
+        #    message past the poll window. Isolating to our run_id on the result fetch is not
+        #    enough; the consumer reads the shared queue. (Mirrors the D-07 purge semantics.)
+        purge_conn = await aio_pika.connect_robust(_HOST_AMQP_URL)
+        async with purge_conn:
+            purge_channel = await purge_conn.channel()
+            purge_queue = await purge_channel.declare_queue("exec.jobs", durable=True)
+            await purge_queue.purge()
+
         # 1) Enqueue one job against the REAL broker. The worker resolves spec_path from run_id;
         #    base_url repoints the planted spec at the host-published SauceDemo (TARGET_BASE_URL).
         await exec_service.enqueue_jobs(
