@@ -7,6 +7,7 @@ import {
   Crosshair,
   ListChecks,
   LogOut,
+  PlayCircle,
   Radar,
   Workflow,
   type LucideIcon,
@@ -44,6 +45,9 @@ const NAV_ITEMS: NavItem[] = [
   // GEN-02 / 06-UI-SPEC: the Scenario Review Queue. Positioned after Knowledge graph
   // (explore → graph → scenarios). Active via pathname.startsWith("/scenarios").
   { icon: ListChecks, label: "Scenarios", href: "/scenarios" },
+  // EXEC-06 / 07-UI-SPEC: the Executions section (launcher + history + live view). Positioned
+  // after Scenarios (explore → graph → scenarios → executions). Active via startsWith("/executions").
+  { icon: PlayCircle, label: "Executions", href: "/executions" },
 ];
 
 type Me = { id: number; email: string };
