@@ -16,6 +16,11 @@ from app.core.neo4j_driver import close_neo4j, get_neo4j, init_neo4j
 from app.core.redis_client import close_redis, init_redis
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
+from app.models.execution_history import (  # noqa: F401 -- Base.metadata/Alembic discovery
+    TestArtifact,
+    TestResult,
+    TestRun,
+)
 from app.models.llm_usage import LLMUsage  # noqa: F401 -- Base.metadata/Alembic discovery
 from app.models.run import Execution, Run  # noqa: F401 -- Base.metadata/Alembic discovery
 from app.models.scenario import Scenario  # noqa: F401 -- Base.metadata/Alembic discovery

@@ -15,6 +15,7 @@ from app.db.base import Base
 import app.models.user  # noqa: F401  (plan 01-03)
 import app.models.target  # noqa: F401  (plan 01-05)
 import app.models.run  # noqa: F401  (plan 03-02 — runs/executions)
+import app.models.execution_history  # noqa: F401  (plan 07-01 — test_runs/test_results/test_artifacts)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
