@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
  (completed 2026-06-19)
 - [x] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
  (completed 2026-06-20)
-- [ ] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch
+- [x] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch (completed 2026-06-21)
 - [ ] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate
 - [ ] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision
 - [ ] **Phase 10: Dashboards, RBAC & Coverage/Traceability** - Executive/QA/developer dashboards, role enforcement, graph-derived coverage, full traceability chain, Elasticsearch-backed search
@@ -275,7 +275,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 07-04-PLAN.md — Live view + kill: per-test Redis→SSE + graceful kill drain/purge + recharts (gated) + executions launcher/live/terminal UI to the UI-SPEC (EXEC-06)
+- [x] 07-04-PLAN.md — Live view + kill: per-test Redis→SSE + graceful kill drain/purge + recharts (gated) + executions launcher/live/terminal UI to the UI-SPEC (EXEC-06)
 **UI hint**: yes
 
 ### Phase 8: Self-Healing Engine
@@ -355,7 +355,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Explorer Agent | 4/4 | Complete   | 2026-06-15 |
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
-| 7. Execution Engine & Workers | 4/5 | In Progress|  |
+| 7. Execution Engine & Workers | 5/5 | Complete   | 2026-06-21 |
 | 8. Self-Healing Engine | 0/TBD | Not started | - |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |

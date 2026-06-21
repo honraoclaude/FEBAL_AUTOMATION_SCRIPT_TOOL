@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
+status: verifying
 stopped_at: Completed 07-03 (evidenced+historied tier runs; /api/executions single owner; EXEC-04/05)
-last_updated: "2026-06-21T17:12:00.553Z"
+last_updated: "2026-06-21T23:15:38.825Z"
 last_activity: 2026-06-21
 progress:
   total_phases: 11
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 32
-  completed_plans: 31
-  percent: 55
+  completed_plans: 32
+  percent: 64
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 Phase: 07 (execution-engine-workers) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-21
 
-Progress: [██████████] 97%
+Progress: [██████████] 100%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -86,6 +86,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 07 P02 | 45m | 2 tasks | 5 files |
 | Phase 07 P05 | ~25min | 2 tasks | 4 files |
 | Phase 07 P03 | ~2h | 2 tasks | 11 files |
+| Phase 07 P04 | continuation | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 07-03: worker 2x retry loop + per-step capture under run_dir(run_id)/<flow_id>/; TestArtifact.path run-relative multi-segment (kind screenshot|trace|video only, W4 (a)); pure classify_retry (passes-on-retry->flaky, all-fail->product)
 - [Phase ?]: 07-03: /api/executions is the SINGLE owner (B1) — POST 202 tier round-trip + GET history/status; legacy RunStatus namespaced at /{run_id}/legacy-status so exactly one handler per (method,path) (T-07-18); I1 router gate accepts cookie OR scoped ci_token bearer (hmac.compare_digest, never logged)
 - [Phase ?]: 07-03: api container image was stale (built before 07-01 added aio-pika); rebuilt via uv sync --frozen since exec_service now imports at app startup via the registered executions router (Rule 3 blocking, no new package)
+- [Phase 07]: 07-04: Executions trends derived client-side from the server runs list (no backend trends route); recharts is the one sanctioned frontend dep
 
 ### Pending Todos
 
@@ -183,7 +185,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-21T17:12:00.511Z
+Last session: 2026-06-21T23:13:38.993Z
 Stopped at: Completed 07-03 (evidenced+historied tier runs; /api/executions single owner; EXEC-04/05)
 Resume file: None
 

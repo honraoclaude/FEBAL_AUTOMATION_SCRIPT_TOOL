@@ -52,7 +52,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **EXEC-03**: Executions run in parallel at browser level and flow level (RabbitMQ-distributed workers)
 - [x] **EXEC-04**: Every test run captures screenshots, video, and console/network logs per step, stored with paths recorded in PostgreSQL
 - [x] **EXEC-05**: Execution history persists with pass/fail trends, durations, and flaky-test detection (retry policy distinguishes infra flake from product failure)
-- [ ] **EXEC-06**: User can watch a live execution view with per-test progress and a kill switch
+- [x] **EXEC-06**: User can watch a live execution view with per-test progress and a kill switch
 
 ### Self-Healing
 
@@ -162,7 +162,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXEC-03 | Phase 7 | Complete |
 | EXEC-04 | Phase 7 | Complete |
 | EXEC-05 | Phase 7 | Complete |
-| EXEC-06 | Phase 7 | Pending |
+| EXEC-06 | Phase 7 | Complete |
 | HEAL-01 | Phase 8 | Pending |
 | HEAL-02 | Phase 8 | Pending |
 | HEAL-03 | Phase 8 | Pending |
