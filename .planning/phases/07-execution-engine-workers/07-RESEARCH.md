@@ -196,7 +196,7 @@ apps/api/app/
 │   ├── exec_service.py         # tier resolution, risk ranking, enqueue, kill+purge
 │   └── exec_history.py         # trends / durations / flaky queries
 ├── routers/
-│   └── execute.py             # POST /execute, GET status, GET .../events (SSE), POST .../kill
+│   └── executions.py          # SINGLE owner of /api/executions: POST {tier} start, GET history/status, GET .../events (SSE), POST .../kill, GET .../artifacts (B1 — NOT execute.py; execute.py keeps only legacy POST /api/execute)
 ├── models/
 │   └── execution_history.py   # TestRun / TestResult / TestArtifact ORM
 └── alembic/versions/

@@ -1,6 +1,7 @@
 # Phase 7: Execution Engine & Workers - Pattern Map
 
 **Mapped:** 2026-06-20
+**Revised:** 2026-06-21 (checker fixes B1/B2/B3/W4 — route owner = executions.py; multi-segment artifact guard; risk seam = routers/scenarios.py over build_flows; console/network live in trace)
 **Files analyzed:** 28 (new + modified)
 **Analogs found:** 24 / 28 (4 are NET-NEW mechanisms with no close analog)
 
@@ -24,7 +25,7 @@
 | `app/services/worker/progress.py` | service (publish) | pub-sub | `app/services/explorer/progress.py` | exact |
 | `app/services/exec_service.py` | service (tier resolve + enqueue + kill) | CRUD + pub-sub (AMQP produce) | `app/services/run_service.py` + producer is NET-NEW | role-match (producer NET-NEW) |
 | `app/services/exec_history.py` | service (history queries) | CRUD | `app/services/run_service.py` | role-match |
-| `app/routers/execute.py` (extend) OR new `app/routers/executions_v2.py` | router | request-response + streaming (SSE) | `app/routers/explore.py` (SSE + stop + screenshot guard) | exact |
+| `app/routers/executions.py` (extend — THE single owner of `/api/executions`) | router | request-response + streaming (SSE) | `app/routers/explore.py` (SSE + stop + screenshot guard) | exact (B1: NOT execute.py, NOT executions_v2) |
 | `app/models/execution_history.py` | model | CRUD | `app/models/run.py` + `app/models/scenario.py` | exact |
 | `alembic/versions/0007_execution_history.py` | migration | — | `alembic/versions/0006_scenarios.py` | exact |
 | `app/schemas/execution.py` | schema | — | `app/schemas/run.py` | exact |
@@ -79,15 +80,17 @@ exit_code = proc.returncode
 output = (out.decode(errors="replace") if out else "")[-_OUTPUT_TAIL_CHARS:]
 ```
 
-**Phase-7 EXTENSION** (per RESEARCH Pattern 4 — capture flags appended to the SAME argv list, no shell):
+**Phase-7 EXTENSION + concrete on-disk layout** (per RESEARCH Pattern 4 — capture flags appended to the SAME argv list, no shell; B2 layout): `--output` points at a PER-FLOW subdir `run_dir(run_id, create=True) / flow_id`. pytest-playwright then writes its own per-test SUBDIRECTORIES under it (e.g. `<flow_id>/<test-slug>/trace.zip`). After the run, walk that dir and record each artifact's path RELATIVE to `run_dir(run_id)` (preserving the `<flow_id>/...` segments) in `TestArtifact.path` — never a bare basename, never absolute.
 ```python
+out_dir = run_dir(run_id, create=True) / flow_id     # B2: per-flow subdir under the run root
 argv = [
     "uv", "run", "pytest", spec_path, "-q",
     "--screenshot=on",            # ALWAYS (D-04)
-    "--tracing=on",               # ALWAYS — trace carries console+network (D-04)
+    "--tracing=on",               # ALWAYS — trace carries console+network (D-04 / W4)
     "--video=retain-on-failure",  # video ON FAILURE ONLY (D-04)
-    "--output", str(run_artifacts_dir),   # under workspaces/<run_id>/ (run_id-derived)
+    "--output", str(out_dir),     # per-test subdirs land UNDER <run_id>/<flow_id>/
 ]
+# record run-relative paths: file.relative_to(run_dir(run_id)) -> "<flow_id>/<sub>/<name>"
 ```
 
 **Fresh-session-finish to copy** (`execution.py` lines 85-92 — Pitfall 2): the worker opens its OWN `SessionLocal` after the retry loop, never a request session.
@@ -139,21 +142,27 @@ async def publish_test_event(run_id: str, flow_id: str, *, status: str, attempt:
 
 ---
 
-### `app/routers/execute.py` (extend) — router, request-response + streaming — DIRECT-REUSE
+### `app/routers/executions.py` (extend — THE single owner of `/api/executions`) — router, request-response + streaming — DIRECT-REUSE
+
+> **B1 (route ownership):** `app/routers/executions.py` ALREADY EXISTS and registers `APIRouter(prefix="/api/executions", dependencies=[Depends(get_current_user)])` with two Phase-3 handlers (`GET ""` returning a `{runs, executions}` dict and `GET "/{run_id}"` returning `RunStatus`). ALL new Phase-7 routes (POST tier-start, reshaped GET history/status, SSE events, kill, artifacts) go INTO executions.py — NOT into `execute.py` (which keeps only the legacy `POST /api/execute` single-spec path under `prefix="/api"`), and NOT a new `executions_v2.py`. Reconcile the two legacy GET handlers to the test_runs shape (or namespace the old ones) so there is EXACTLY ONE handler per `(method, path)` under `/api/executions` — FastAPI silently resolves duplicate registrations by order, which would shadow a handler with a different schema. The auth gate is already on the router.
 
 **Analog:** `app/routers/explore.py` — the canonical SSE + stop-flag + path-guarded-artifact router. This is the EXACT template for the execution router's `events` (SSE), `kill` (flag), and `artifacts` (containment-guarded FileResponse) endpoints.
 
-**Router auth gate** (`explore.py` lines 35-40 — router-level `Depends(get_current_user)`; EventSource can't set headers, so the httpOnly cookie is the only auth):
+**Router auth gate** (executions.py already has it — `Depends(get_current_user)`; EventSource can't set headers, so the httpOnly cookie is the only auth):
 ```python
-router = APIRouter(prefix="/api", tags=["execute"],
+# already present in executions.py:
+router = APIRouter(prefix="/api/executions", tags=["executions"],
                    dependencies=[Depends(get_current_user)])   # every route auth-gated
 ```
 
-**SSE endpoint to copy** (`explore.py` lines 90-122 — snapshot-first reconnect, forward loop, `finally` unsubscribe):
+**SSE endpoint to copy** (`explore.py` lines 90-122 — snapshot-first reconnect, forward loop, `finally` unsubscribe). NOTE the path is RELATIVE to the `/api/executions` prefix, so it is `"/{run_id}/events"`:
 ```python
-@router.get("/executions/{run_id}/events")
+@router.get("/{run_id}/events")    # → /api/executions/{run_id}/events
 async def execution_events(run_id, request, db=Depends(get_db)) -> EventSourceResponse:
-    snapshot = await _snapshot_event(db, run_id)   # terminal state on (re)connect, no replay
+    snapshot = await _exec_snapshot_event(db, run_id)   # W3: CURRENT counters from the
+                                                        # test_run row + test_results aggregate
+                                                        # (NOT terminal-only — mid-run reconnect
+                                                        # must see current passed/failed/flaky)
     async def event_generator():
         pubsub = get_redis().pubsub()
         await pubsub.subscribe(f"exec:{run_id}")
@@ -169,27 +178,33 @@ async def execution_events(run_id, request, db=Depends(get_db)) -> EventSourceRe
     return EventSourceResponse(event_generator())
 ```
 
-**Artifact path-traversal guard to copy VERBATIM** (`explore.py` lines 125-144 — the screenshot route; RESEARCH Security Domain mandates reuse for artifact serving):
+**Artifact path-traversal guard — ADAPT (do NOT copy verbatim) for MULTI-SEGMENT paths** (`explore.py` lines 125-144 is the analog, but it only serves a BARE filename and REJECTS any `/`; B2 artifacts live in per-test subdirs, so the bare-filename guard would 404 every real artifact). Use a `{name:path}` converter so the segment can carry subdirs, validate per-segment, and prove containment via realpath. The `{flow_id}` segment ACTUALLY participates in resolution:
 ```python
-# Reject anything that is not a bare filename BEFORE touching the filesystem.
-if not name or "/" in name or "\\" in name or os.sep in name or ".." in name:
-    raise HTTPException(status_code=400, detail="invalid artifact name")
-base = run_dir(run_id).resolve()
-target = (base / name).resolve()
-if target != base and base not in target.parents:    # containment guard
-    raise HTTPException(status_code=400, detail="invalid artifact path")
+@router.get("/{run_id}/artifacts/{flow_id}/{name:path}")   # name:path carries subdirs
+async def execution_artifact(run_id: str, flow_id: str, name: str) -> FileResponse:
+    base = run_dir(run_id).resolve()
+    # reject empty/'.'/'..'/backslash PER SEGMENT before touching the FS
+    segments = [flow_id, *name.split("/")]
+    if any(s in ("", ".", "..") or "\\" in s for s in segments):
+        raise HTTPException(status_code=400, detail="invalid artifact path")
+    target = (base / flow_id / name).resolve()              # flow_id participates
+    if target != base and base not in target.parents:       # realpath containment
+        raise HTTPException(status_code=400, detail="invalid artifact path")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="artifact not found")
+    return FileResponse(str(target))   # media type by suffix: png/zip/webm
 ```
 
-**Kill endpoint** (`explore.py` lines 147-156 — the cooperative stop flag; Phase-7 ADDS the aio-pika `queue.purge()` per RESEARCH Pattern 3):
+**Kill endpoint** (`explore.py` lines 147-156 — the cooperative stop flag; Phase-7 ADDS the aio-pika `queue.purge()` per RESEARCH Pattern 3). Path relative to prefix:
 ```python
-@router.post("/executions/{run_id}/kill")
+@router.post("/{run_id}/kill")     # → /api/executions/{run_id}/kill
 async def kill_run(run_id: str) -> dict:
     await get_redis().set(f"run:{run_id}:kill", "1")    # worker checks between tests (D-07)
-    # NET-NEW: also purge the queue of this run's pending jobs (aio-pika — RESEARCH Pattern 3)
+    # NET-NEW: also purge the WHOLE exec.jobs queue (safe one-run-at-a-time, A6/I2)
     return {"stopping": True}
 ```
 
-**POST start endpoint** (`execute.py` lines 34-55 — 202 + run_id, create row, enqueue): the Phase-7 `POST /executions {tier}` replaces the BackgroundTask `bg.add_task(run_execution, ...)` with an aio-pika enqueue (NET-NEW producer), but keeps the 202-shape and the `run_service.create_*` row creation.
+**POST start endpoint** (mirror `explore.py` lines 43-53 — 202 + run_id, create row, enqueue). The Phase-7 `POST ""` (→ `POST /api/executions {tier}`) resolves the tier, creates a `test_run` row via `exec_service.create_test_run`, and replaces a BackgroundTask with an aio-pika enqueue (`exec_service.enqueue_jobs`, NET-NEW producer), keeping the 202 shape. The start + poll routes also accept the scoped `settings.ci_token` bearer (I1) in addition to the cookie gate.
 
 ---
 
@@ -208,7 +223,9 @@ class TestRun(Base):                       # one row per tier run (RESEARCH data
     total: Mapped[int] = mapped_column(Integer, server_default="0")
     # ... passed / failed / flaky / started_at / finished_at(nullable) / created_at
 # TestResult (run_id, flow_id indexed; verdict; attempts; exit_codes JSON; duration_ms),
-# TestArtifact (run_id, flow_id indexed; kind; path String(1024)) — PATHS only, no binaries.
+# TestArtifact (run_id, flow_id indexed; kind String(16) = screenshot|trace|video ONLY
+#   — W4: console+network live INSIDE the trace, no separate kinds; path String(1024) is a
+#   RUN-RELATIVE multi-segment path "<flow_id>/<sub>/<name>") — PATHS only, no binaries.
 ```
 **Registration carry-over:** add the new models to `main.py`'s `# noqa: F401` import block (lines 19-21) for Base.metadata/Alembic discovery, exactly like `Scenario` was added.
 
@@ -253,11 +270,19 @@ class TestRunResponse(BaseModel):
 
 ### `app/services/exec_service.py` (service) — role-match (producer half NET-NEW)
 
-**Analog:** `app/services/run_service.py` (status machine + `create_run` + `VALID` guard + `list_*`) for the row-management half; `app/services/scenarios.py` `_flow_risk_index` + `app/services/kg/risk.py` for the risk-based tier resolution.
+**Analog:** `app/services/run_service.py` (status machine + `create_run` + `VALID` guard + `list_*`) for the row-management half; `app/routers/scenarios.py` `_flow_risk_index` + `app/services/kg/flows.py` `build_flows` for the risk-based tier resolution.
 
 **Row/status pattern to copy** (`run_service.py` lines 24-64): the `VALID` set guard (`_validate_status`), `create_run` with a fresh `uuid.uuid4().hex` run_id, `set_status` guarded transitions, `list_runs`.
 
-**Risk-based tier resolution to copy** (`scenarios.py` lines 66-83 `_flow_risk_index` — the timeout-bounded graph read that degrades gracefully when neo4j is down): risk-based reads `kg/flows` + `kg/risk.risk_score` BEFORE the run phase (D-03b sequencing), then materializes the top-N spec list. Reuse the `asyncio.wait_for(..., timeout=_RISK_TIMEOUT_S)` graceful-degrade shape.
+**Risk-based tier resolution — RANK OVER `build_flows` OUTPUT (B3):** the REAL risk seam is `app/routers/scenarios.py::_flow_risk_index` (lines 66-83) — NOT `app/services/scenarios.py` (which has no such helper). It does `graph = await asyncio.wait_for(kg_reader.flows_source(), timeout=_RISK_TIMEOUT_S)` then `records = await asyncio.wait_for(kg_flows.build_flows(graph, _READ_RUN_ID), timeout=_RISK_TIMEOUT_S)`, inside ONE try/except returning `{}`/`[]` on ANY error (graph down/slow/not-discovered). Each `build_flows` RECORD already carries `id` / `risk_score` / `risk_tier` — `kg_risk.risk_score(signals, w)` is invoked INSIDE `build_flows` (flows.py line ~252) over a per-path signals dict, so you CANNOT call `risk_score()` on a flow list. RANK the build_flows records (read each record's `risk_score`), combined with the recent failure_rate; cap at TOP_N. `_RISK_TIMEOUT_S = 3.0`. Risk-based resolves BEFORE the run phase (D-03b sequencing), then materializes the top-N spec list.
+```python
+# do NOT call kg_risk.risk_score() directly — the score is already on each build_flows record.
+records = await _load_flow_risk()    # = the wait_for(flows_source)+wait_for(build_flows) shape
+                                     # from routers/scenarios._flow_risk_index, returns [] on down
+ranked = sorted(records, key=lambda r:
+    weights.risk_weight * r["risk_score"]
+    + weights.failure_weight * failure_rate.get(r["id"], 0.0) * 100, reverse=True)[: weights.top_n]
+```
 
 **Tier→selector map** (RESEARCH Pattern 5 — a plain dict, no analog needed):
 ```python
@@ -265,21 +290,22 @@ TIER_SELECTOR = {"smoke": ["-m","smoke"], "sanity": ["-m","sanity"],
                  "regression": ["-m","regression"], "full": []}   # risk-based: explicit spec paths
 ```
 
-**The enqueue half is NET-NEW** — see "Shared Patterns → AMQP producer" below.
+**The enqueue half is NET-NEW** — see "Shared Patterns → AMQP producer" below. `kill_run(run_id)` (set `run:{run_id}:kill` + `queue.purge()`) also lives here.
 
 ---
 
 ### `app/services/exec_history.py` (service, CRUD) — role-match
 
-**Analog:** `app/services/run_service.py` `list_*` + `app/routers/scenarios.py` query helpers. The trend/duration/flaky SQL is spelled out in RESEARCH §"Execution-History Data Model" (pass-rate trend, durations, flaky leaderboard, failure-history-for-risk). Use SQLAlchemy 2.0 `select(...)` + `db.scalars(...)` exactly as `run_service.list_runs` (lines 133-138).
+**Analog:** `app/services/run_service.py` `list_*` + `app/routers/scenarios.py` query helpers. The trend/duration/flaky SQL is spelled out in RESEARCH §"Execution-History Data Model" (pass-rate trend, durations, flaky leaderboard, failure-history-for-risk). Use SQLAlchemy 2.0 `select(...)` + `db.scalars(...)` exactly as `run_service.list_runs` (lines 133-138). `get_run_status(db, run_id)` returns the test_run row + its test_results summary — this is what the SSE `_exec_snapshot_event` reads to build the current-counter reconnect snapshot (W3).
 
 ---
 
 ### `app/templates/conftest.py.j2` (extend) — UPGRADE-IN-PLACE
 
-**Analog:** itself. The generated conftest ALREADY reads `TARGET_BASE_URL` (lines 22-31) — the env-repointable base URL gives Docker/CI parity for free (D-08) and is the SAME override the determinism harness uses. Phase-7 EXTENSIONS:
+**Analog:** itself. The generated conftest ALREADY reads the base URL env (lines 22-31) — the env-repointable base URL gives Docker/CI parity for free (D-08) and is the SAME override the determinism harness uses. Phase-7 EXTENSION:
 1. Register the pytest-bdd tier markers (`smoke`/`sanity`/`regression`) so `-m smoke` selects (RESEARCH Pitfall 3 — unregistered markers warn/select-nothing). Either here or in the generated project's `pyproject.toml [tool.pytest.ini_options] markers` (mirror the api's own marker block, pyproject.toml lines 56-61).
-2. OPTIONAL plain-text console/network log hooks (`page.on("console", ...)`) if `--tracing=on` is deemed insufficient (RESEARCH Pattern 4 / A3) — extend the existing fixture, do not add a new template.
+
+> **W4 decision (a) — NO console/network log hooks:** console + network are captured INSIDE the Playwright trace via `--tracing=on` (A3). The model has NO `console_log`/`network_log` artifact kinds and the UI renders NO separate console/network links. Do NOT add `page.on("console", ...)` / `page.on("requestfinished", ...)` hooks — the trace is the single source for console+network.
 
 > This template is rendered through `_render_checked_py` (`codegen/project.py` line 234) which ast-parses every `.py` — keep the Jinja output valid Python.
 
@@ -314,7 +340,7 @@ TIER_SELECTOR = {"smoke": ["-m","smoke"], "sanity": ["-m","sanity"],
 - The destructive Kill button + confirmation `Dialog` (lines 282-289, 405-432) — copy the focus-trapped dialog; D-07 ADDS the amber "Stopping…" draining state (07-UI-SPEC) which has no Phase-4 analog but reuses the StatusPill amber token.
 - The `connecting | running | reconnecting | terminal | stream-lost | not-found` state machine (lines 52-59) — extend with `stopping` (draining).
 
-> 07-UI-SPEC: the SAME route renders the terminal run-detail layout once terminal (no separate route) — the explore page already does this freeze (`conn === "terminal"`).
+> 07-UI-SPEC: the SAME route renders the terminal run-detail layout once terminal (no separate route) — the explore page already does this freeze (`conn === "terminal"`). Artifact links are Screenshot/Trace/Video ONLY (W4 — render a single Trace link + a "console + network captured in the trace" note; NO separate Console log / Network log links).
 
 ---
 
@@ -338,7 +364,7 @@ TIER_SELECTOR = {"smoke": ["-m","smoke"], "sanity": ["-m","sanity"],
 
 **Patterns to copy:**
 - The per-test SSE event `z.object({...})` schema mirroring the backend `shared/events` model 1:1 (`explore.ts` lines 23-35) — the page parses every frame through it.
-- `screenshotUrl(runId, name)` → the artifact-URL builder `artifactUrl(runId, flowId, kind)` (`explore.ts` lines 56-59) — run-relative basename, never a raw path.
+- `screenshotUrl(runId, name)` → the artifact-URL builder `artifactUrl(runId, flowId, kind)` targeting `/api/executions/{runId}/artifacts/{flowId}/{name}` (`explore.ts` lines 56-59) — run-relative segments, never a raw absolute path.
 - The `api.get`/`api.post` fetchers with `schema.parse(...)` at the boundary (`scenarios.ts` lines 64-91).
 - `startRun(tier)` / `killRun(runId)` mirror `startExplore`/`stopExplore` (`explore.ts` lines 39-54).
 
@@ -393,9 +419,9 @@ TIER_SELECTOR = {"smoke": ["-m","smoke"], "sanity": ["-m","sanity"],
 
 ### Authentication (router-level cookie gate)
 **Source:** `app/routers/explore.py` lines 35-40, `app/routers/scenarios.py` lines 50-55, `app/routers/executions.py` lines 20-24.
-**Apply to:** ALL execution routes (start, status, events SSE, kill, artifacts). EventSource can't set headers — the httpOnly `access_token` cookie over the same-origin proxy is the only auth.
+**Apply to:** ALL execution routes (start, status, events SSE, kill, artifacts) — they all live on executions.py whose router-level `Depends(get_current_user)` already gates them. EventSource can't set headers — the httpOnly `access_token` cookie over the same-origin proxy is the only auth. The start/poll routes ALSO accept the scoped `ci_token` bearer (I1).
 ```python
-router = APIRouter(prefix="/api", tags=["..."],
+router = APIRouter(prefix="/api/executions", tags=["executions"],
                    dependencies=[Depends(get_current_user)])
 ```
 
@@ -411,21 +437,21 @@ router = APIRouter(prefix="/api", tags=["..."],
 **Source:** `app/core/redis_client.py` (`get_redis()`), `app/services/explorer/progress.py` line 21, `app/routers/explore.py` line 27.
 **Apply to:** `worker/progress.py` (publish), the kill-flag read in `worker/job.py`, the SSE subscribe in the router. Always `get_redis()` — never construct a new client.
 
-### Redis pub/sub → SSE live seam (absolute counters, snapshot-on-reconnect)
+### Redis pub/sub → SSE live seam (absolute counters, current-counter snapshot-on-reconnect)
 **Source:** publish `app/services/explorer/progress.py` lines 68-75; SSE re-emit `app/routers/explore.py` lines 90-122; frontend `app/(dashboard)/explore/[runId]/page.tsx`.
-**Apply to:** the entire live execution view. Run-scoped channel `exec:{run_id}`; absolute values; snapshot-first reconnect; `finally` unsubscribe.
+**Apply to:** the entire live execution view. Run-scoped channel `exec:{run_id}`; absolute values; snapshot-first reconnect built from the test_run row + test_results aggregate (W3 — RICHER than explore's terminal-only snapshot, so a mid-run reconnect sees current counters); `finally` unsubscribe.
 
-### Artifact / screenshot path-traversal containment
-**Source:** `app/routers/explore.py` lines 125-144.
-**Apply to:** the execution artifact-serving route (screenshot/trace/video/logs). Reject `..`/separators before touching the FS; resolve inside `run_dir(run_id)`. RESEARCH Security Domain mandates this reuse.
+### Artifact path-traversal containment (multi-segment)
+**Source:** `app/routers/explore.py` lines 125-144 (the bare-filename analog — ADAPT, do not copy verbatim).
+**Apply to:** the execution artifact-serving route (screenshot/trace/video). Use `{name:path}`; reject empty/`.`/`..`/backslash per segment; resolve `run_dir(run_id) / flow_id / name` (the flow_id segment participates); assert realpath containment under run_dir(run_id) (B2). RESEARCH Security Domain mandates the containment guard.
 
 ### Graceful cooperative kill (Redis flag)
 **Source:** `app/routers/explore.py` lines 147-156 (set flag) + the explorer loop-top check.
-**Apply to:** `kill_run` (set `run:{run_id}:kill`) + the worker's between-tests check (D-07). NET-NEW addition: `queue.purge()` on the aio-pika queue (RESEARCH Pattern 3). No SIGKILL.
+**Apply to:** `kill_run` (set `run:{run_id}:kill`) + the worker's between-tests check (D-07). NET-NEW addition: `queue.purge()` on the aio-pika queue (RESEARCH Pattern 3; purges the whole exec.jobs queue — safe one-run-at-a-time, A6/I2). No SIGKILL.
 
 ### Pure, table-testable verdict modules (SC3 NO-LLM)
 **Source:** `app/services/kg/risk.py` (stdlib-only, no DB/graph/LLM imports, swappable frozen weights).
-**Apply to:** `worker/classifier.py` (the flaky rule) and the risk-based ranking weights (frozen dataclass like `RiskWeights`, RESEARCH A1 weights `[ASSUMED]`).
+**Apply to:** `worker/classifier.py` (the flaky rule) and the risk-based ranking weights (frozen dataclass like `RiskWeights`, RESEARCH A1 weights `[ASSUMED]`). NOTE the ranking READS each `build_flows` record's `risk_score` — it does NOT call `risk_score()` itself (that runs inside build_flows).
 
 ### ORM model + migration column conventions
 **Source:** `app/models/run.py`, `app/models/scenario.py`, `alembic/versions/0006_scenarios.py`.
@@ -446,7 +472,7 @@ These have NO close analog in the codebase and must be built from the cited RESE
 | `app/services/worker/consumer.py` | worker AMQP consume loop | pub-sub (AMQP) | No aio-pika usage anywhere in the repo (aio-pika is the one new dep). Build from RESEARCH Pattern 1: `connect_robust` + `channel.set_qos(prefetch_count=2)` + `queue.iterator()` + `message.process(requeue=...)`. Memory: prefetch=2 hard ceiling (3GB cap). |
 | AMQP producer (in `app/services/exec_service.py`) | enqueue jobs | pub-sub (AMQP) | No AMQP publish anywhere. Build from RESEARCH Pattern 2: `connect_robust` + `Message(..., delivery_mode=PERSISTENT)` + `default_exchange.publish` on a `durable=True` queue, publisher confirms. The row-management half (around it) reuses `run_service`. |
 | `components/executions/trend-charts.tsx` | Recharts trend cards | — | Recharts is NOT in `apps/web/package.json` (verified, 07-UI-SPEC). It is the ONE stack-sanctioned frontend add (analogue of backend's `aio-pika`) — gate the `pnpm add recharts@3.8.*` behind the standard verification step. Honest fallback: token-styled native SVG/HTML sparkline over `--status-*` tokens (no new dep). |
-| `.github/workflows/run-suite.yml` | CI trigger | request-response | NO `.github/workflows/` directory exists — net-new CI surface. Build from RESEARCH §"GitHub Actions trigger": `workflow_dispatch` → `curl POST /api/execute` (scoped `CI_TOKEN` secret) → poll `GET /api/executions/{run_id}` → map `passed`/`failed` to exit 0/1 (→ GitHub check conclusion). Reachability assumption (A5): self-hosted runner or tunnel — host port 8001 is local. |
+| `.github/workflows/run-suite.yml` | CI trigger | request-response | NO `.github/workflows/` directory exists — net-new CI surface. Build from RESEARCH §"GitHub Actions trigger": `workflow_dispatch` → `curl POST /api/executions` (scoped `CI_TOKEN` secret) → poll `GET /api/executions/{run_id}` → map `passed`/`failed` to exit 0/1 (→ GitHub check conclusion). Reachability assumption (A5): self-hosted runner or tunnel — host port 8001 is local. |
 
 > **Gated new dependencies (2, both pre-sanctioned by CLAUDE.md):** `aio-pika==9.6.*` (backend, the one expected runtime dep) and `recharts@3.8.*` (frontend, the one sanctioned chart dep). Both behind a `checkpoint:human-verify` per project policy. NO other new package (e.g. `pytest-rerunfailures`) — the worker-side retry loop avoids it (D-05, RESEARCH).
 
@@ -454,6 +480,7 @@ These have NO close analog in the codebase and must be built from the cited RESE
 
 ## Metadata
 
-**Analog search scope:** `apps/api/app/services/` (execution, stability, explorer/progress, codegen/project, run_service, scenarios, kg/risk), `apps/api/app/routers/` (explore, execute, executions, scenarios), `apps/api/app/models/`, `apps/api/alembic/versions/`, `apps/api/app/schemas/`, `apps/api/app/templates/`, `apps/api/app/core/` (redis_client, workspaces, main lifespan), `apps/web/app/(dashboard)/` (explore, scenarios), `apps/web/lib/api/`, `apps/web/components/` (explore, scenarios, app-sidebar), `infra/docker-compose.yml`, `.github/` (absent).
+**Analog search scope:** `apps/api/app/services/` (execution, stability, explorer/progress, codegen/project, run_service, kg/risk, kg/flows, kg/reader), `apps/api/app/routers/` (explore, execute, executions, scenarios), `apps/api/app/models/`, `apps/api/alembic/versions/`, `apps/api/app/schemas/`, `apps/api/app/templates/`, `apps/api/app/core/` (redis_client, workspaces, main lifespan), `apps/web/app/(dashboard)/` (explore, scenarios), `apps/web/lib/api/`, `apps/web/components/` (explore, scenarios, app-sidebar), `infra/docker-compose.yml`, `.github/` (absent).
 **Files scanned:** ~30 source files read; ~6 directory listings.
-**Pattern extraction date:** 2026-06-20
+**Pattern extraction date:** 2026-06-20 (revised 2026-06-21 for checker fixes)
+</content>
