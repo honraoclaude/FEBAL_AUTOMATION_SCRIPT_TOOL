@@ -55,7 +55,12 @@ _OUTPUT_TAIL_CHARS = 8000
 _BASE_URL_ENV = "TARGET_BASE_URL"
 
 
-async def _run_spec_once(spec_path: str, *, base_url: str | None = None) -> dict:
+async def _run_spec_once(
+    spec_path: str,
+    *,
+    base_url: str | None = None,
+    extra_args: list[str] | None = None,
+) -> dict:
     """Run the spec ONCE in an isolated subprocess; return {passed, exit_code, output}.
 
     Reuses the Phase-3 execution.run_execution subprocess shape VERBATIM:
@@ -63,20 +68,24 @@ async def _run_spec_once(spec_path: str, *, base_url: str | None = None) -> dict
     combined stdout/stderr captured + tail-capped. NEVER runs the spec in-process (T-06-19).
     When `base_url` is given it is exported as TARGET_BASE_URL into the child env so the
     generated conftest points the SAME spec at an override target (the seeded-bug build).
+
+    `extra_args` appends trusted, CONSTANT pytest flags to the argv (e.g. the worker's
+    pytest-playwright capture flags `--screenshot=on --tracing=on --video=retain-on-failure
+    --output <dir>` in Plan 03). They are appended to the SAME argv list (still no shell): the
+    caller owns them and they are never raw client input (the worker builds them from constants
+    + a run_id-derived output dir — T-07-11).
     """
     env = os.environ.copy()
     if base_url is not None:
         env[_BASE_URL_ENV] = base_url
 
+    argv = ["uv", "run", "pytest", spec_path, "-q", *(extra_args or [])]
+
     exit_code: int | None = None
     output = ""
     try:
         proc = await asyncio.create_subprocess_exec(
-            "uv",
-            "run",
-            "pytest",
-            spec_path,
-            "-q",
+            *argv,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             cwd=_run_cwd(),
