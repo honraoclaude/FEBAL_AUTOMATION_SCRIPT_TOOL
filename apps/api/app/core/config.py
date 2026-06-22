@@ -129,6 +129,17 @@ class Settings(BaseSettings):
     #   it is NEVER echoed/logged (T-07-07).
     ci_token: str | None = None  # env CI_TOKEN
 
+    # --- Self-healing engine thresholds (Phase 8, plan 08-01; HEAL-02 / D-04) ---
+    # CONFIG-tunable confidence bands for the deterministic heal resolver (mirror stability_runs).
+    # Auto-heal requires conf >= heal_high_threshold AND a UNIQUE live match (the hard uniqueness
+    # gate in healing/confidence.heal_outcome is applied FIRST, independent of these bands); a
+    # conf in [med, high) -> quarantine; below med -> fail-as-defect. Starting points (RESEARCH
+    # A2) tuned by the mutation harness (QUAL-02). heal_enabled is the kill-switch for the inline
+    # heal hook. Compose does NOT pass the whole .env — add each to the compose env explicitly.
+    heal_enabled: bool = True  # env HEAL_ENABLED
+    heal_high_threshold: float = 0.85  # env HEAL_HIGH_THRESHOLD — auto-heal band floor
+    heal_med_threshold: float = 0.60  # env HEAL_MED_THRESHOLD — quarantine band floor
+
     @property
     def checkpoint_dsn(self) -> str:
         """Plain psycopg3 conninfo for AsyncPostgresSaver (Pitfall 1: NOT the SQLAlchemy DSN).
