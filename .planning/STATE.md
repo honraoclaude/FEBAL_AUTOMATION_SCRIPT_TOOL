@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 8 planned (5 MVP slices, checker PASS — 3 MEDIUM advisories to carry into execution: page_object _chains as data-dict not sink-literals; mutation-harness tuning loop; ingest element_key->page-module mapping); ready to execute"
-last_updated: "2026-06-22T22:39:09.416Z"
+stopped_at: "Completed 08-03-PLAN.md (heal-as-commit: heal_audit + migration 0008 + page-object rewrite + KG write-back + worker wiring)"
+last_updated: "2026-06-22T23:11:55.910Z"
 last_activity: 2026-06-22
 progress:
   total_phases: 11
   completed_phases: 7
   total_plans: 37
-  completed_plans: 34
+  completed_plans: 35
   percent: 64
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 08 (self-healing-engine) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-06-22
 
-Progress: [█████████░] 92%
+Progress: [██████████] 95%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -89,6 +89,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 07 P04 | continuation | 3 tasks | 18 files |
 | Phase 08 P01 | 12min | 2 tasks | 9 files |
 | Phase 08 P02 | 33min | 3 tasks | 8 files |
+| Phase 08 P03 | 26min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 08-02: candidate enumeration is element-specific (broken tag + lower chain tiers) so a removed element yields 0 candidates -> uniqueness gate (count!=1) forces fail_as_defect, never a coincidental unique heal
 - [Phase ?]: 08-02: reconcile_verdict — journal'd auto_heal -> auto_healed (overrides passed/flaky); additive String(16) verdicts, SC3 import-pure; wired into job.py in 08-03
 - [Phase ?]: 08-02: page-object _chains/_element_meta render as Python literals via a pyrepr filter (not tojson null) and stay plain DATA dicts, not selector sinks (MED-1)
+- [Phase ?]: 08-03: heal-as-commit (D-03, NOT git) = heal_audit row + ast-validated attr-keyed page-object rewrite + KG Element-history append via new single-writer append_element_history (MATCH-only, read-back 0-count RAISE)
+- [Phase ?]: 08-03: MED-3 element_key->page-module resolved by SCAN of pages/*.py for the self.<attr> = page.locator( line (no re-open of 08-02 journal/template)
 
 ### Pending Todos
 
@@ -191,8 +194,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-22T22:38:24.319Z
-Stopped at: Phase 8 planned (5 MVP slices, checker PASS — 3 MEDIUM advisories to carry into execution: page_object _chains as data-dict not sink-literals; mutation-harness tuning loop; ingest element_key->page-module mapping); ready to execute
+Last session: 2026-06-22T23:11:55.887Z
+Stopped at: Completed 08-03-PLAN.md (heal-as-commit: heal_audit + migration 0008 + page-object rewrite + KG write-back + worker wiring)
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
