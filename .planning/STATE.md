@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: "Phase 8 planned (5 MVP slices, checker PASS — 3 MEDIUM advisories to carry into execution: page_object _chains as data-dict not sink-literals; mutation-harness tuning loop; ingest element_key->page-module mapping); ready to execute"
-last_updated: "2026-06-22T16:38:36.835Z"
+last_updated: "2026-06-22T22:39:09.416Z"
 last_activity: 2026-06-22
 progress:
   total_phases: 11
   completed_phases: 7
   total_plans: 37
-  completed_plans: 33
+  completed_plans: 34
   percent: 64
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 08 (self-healing-engine) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-06-22
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 92%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -88,6 +88,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 07 P03 | ~2h | 2 tasks | 11 files |
 | Phase 07 P04 | continuation | 3 tasks | 18 files |
 | Phase 08 P01 | 12min | 2 tasks | 9 files |
+| Phase 08 P02 | 33min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,10 @@ Recent decisions affecting current work:
 - [Phase ?]: 07-03: /api/executions is the SINGLE owner (B1) — POST 202 tier round-trip + GET history/status; legacy RunStatus namespaced at /{run_id}/legacy-status so exactly one handler per (method,path) (T-07-18); I1 router gate accepts cookie OR scoped ci_token bearer (hmac.compare_digest, never logged)
 - [Phase ?]: 07-03: api container image was stale (built before 07-01 added aio-pika); rebuilt via uv sync --frozen since exec_service now imports at app startup via the registered executions router (Rule 3 blocking, no new package)
 - [Phase 07]: 07-04: Executions trends derived client-side from the server runs list (no backend trends route); recharts is the one sanctioned frontend dep
+- [Phase ?]: 08-02: THE CRUX — heal runs IN-SPEC (worker has no live page handle); _healing.py VENDORS the byte-equivalent plan-01 scorer (drift guard); _resolve(element_key) heals on a locator miss
+- [Phase ?]: 08-02: candidate enumeration is element-specific (broken tag + lower chain tiers) so a removed element yields 0 candidates -> uniqueness gate (count!=1) forces fail_as_defect, never a coincidental unique heal
+- [Phase ?]: 08-02: reconcile_verdict — journal'd auto_heal -> auto_healed (overrides passed/flaky); additive String(16) verdicts, SC3 import-pure; wired into job.py in 08-03
+- [Phase ?]: 08-02: page-object _chains/_element_meta render as Python literals via a pyrepr filter (not tojson null) and stay plain DATA dicts, not selector sinks (MED-1)
 
 ### Pending Todos
 
@@ -186,7 +191,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-22T16:37:22.538Z
+Last session: 2026-06-22T22:38:24.319Z
 Stopped at: Phase 8 planned (5 MVP slices, checker PASS — 3 MEDIUM advisories to carry into execution: page_object _chains as data-dict not sink-literals; mutation-harness tuning loop; ingest element_key->page-module mapping); ready to execute
 Resume file: None
 
