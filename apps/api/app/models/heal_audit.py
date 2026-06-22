@@ -40,7 +40,9 @@ class HealAudit(Base):
     # The BROKEN repo chain before the heal, as a JSON list of {strategy, value} entries.
     before_chain: Mapped[list] = mapped_column(JSON)
     # The HEALED locator chain (JSON list) — nullable: a fail_as_defect produced no after.
-    after_chain: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # none_as_null=True so a Python None persists as SQL NULL (not JSON 'null'), keeping the
+    # "no after chain" state cleanly distinguishable when the diff renders from the record.
+    after_chain: Mapped[list | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     # The blended heal confidence [0,1] (healing/confidence.confidence output).
     confidence: Mapped[float] = mapped_column(Float)
     # auto_heal | quarantine | fail_as_defect | applied | rejected.

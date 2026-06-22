@@ -94,6 +94,39 @@ async def upsert_element(
     )
 
 
+# Heal-as-commit (HEAL-03): append the post-heal locator state to an EXISTING Element. MATCHes
+# (never MERGEs) on the key — an unknown element key matches nothing, so the read-back guard's
+# 0-count RAISE surfaces a heal against a non-existent element LOUDLY (a heal heals an element the
+# crawl already knows). Parameterized ONLY ($key/$history_json/$chain_json/$now) — NO journal/page
+# text is ever interpolated into the Cypher (Cypher-injection mitigation, T-08-11, carries
+# T-04-14/T-05-01). Routed through the single _write read-back guard like every other writer, so
+# the single-write-path grep gate stays green.
+_APPEND_ELEMENT_HISTORY = (
+    "MATCH (e:Element {key:$key}) "
+    "SET e.history_json=$history_json, e.chain_json=$chain_json, e.last_verified=$now "
+    "RETURN count(*) AS n"
+)
+
+
+async def append_element_history(
+    *, key: str, history_json: str, chain_json: str, now: str,
+    driver: AsyncDriver | None = None,
+) -> dict:
+    """Append the healed locator state to an existing :Element (HEAL-03 KG write-back).
+
+    The ONLY new graph write in Plan 08-03. Sets the element's history_json (the merged
+    {step, chain} snapshots from explorer/locators.merge_locator_history) + the new top chain_json
+    + freshness, MATCHing on the element key. An unknown key matches nothing -> the _write
+    read-back guard RAISES (a 0-count write is never silent): a heal must target a known element.
+    Parameterized only; routed through the single writer (single-write-path gate stays green).
+    """
+    return await _write(
+        _APPEND_ELEMENT_HISTORY,
+        {"key": key, "history_json": history_json, "chain_json": chain_json, "now": now},
+        driver=driver, what="append_element_history",
+    )
+
+
 _UPSERT_BUTTON = (
     "MERGE (b:Button {key:$key}) "
     "ON CREATE SET b.first_seen=$now "

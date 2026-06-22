@@ -24,8 +24,8 @@ THREAT POSTURE:
     broken source (T-08-10). It never executes or evaluates journal/page text.
   - `out_dir` / `project_root` are run_id-DERIVED by the worker (workspaces helpers); a path is
     NEVER taken from the journal body (T-08-12 carries T-07-11).
-  - The KG write-back routes EXCLUSIVELY through kg/writer.append_element_history (no execute_write
-    here — the single-write-path grep gate finds nothing in this module).
+  - The KG write-back routes EXCLUSIVELY through kg/writer.append_element_history (no managed
+    write-txn here — the single-write-path grep gate finds nothing in this module).
 
 NO LLM / explorer import (SC3 — the worker imports this module, and the worker-plane gate scans
 job.py's import graph; this module reaches only the DB session, the model, kg/writer, and the
@@ -184,3 +184,184 @@ def rewrite_page_object_locator(
     rewritten = pattern.sub(_sub, source, count=1)
     ast.parse(rewritten)  # raises SyntaxError on a malformed result -> caller never persists it
     return rewritten
+
+
+def _resolve_page_module(pages_dir: Path, element_key: str) -> Path | None:
+    """MED-3 strategy (a): find the pages/<module>.py owning `self.<element_key> = page.locator(`.
+
+    The heal-journal carries element_key (the page-object attr name) but NOT the page module —
+    codegen maps modules by page fingerprint, which the journal does not record. Rather than
+    re-open Plan 02 to thread the module name into the journal, the ingest SCANS the run's
+    generated page objects for the single line that assigns this attr (the template guarantees
+    exactly one such line per attr across the project). Returns the owning module path, or None
+    if no page object declares it (then the audit row still persists; only the rewrite is skipped).
+    `pages_dir` is run_id-derived (worker-supplied) — never a path from the journal body (T-08-12).
+    """
+    if not pages_dir.is_dir():
+        return None
+    needle = _attr_assignment_re(element_key)
+    for module in sorted(pages_dir.glob("*.py")):
+        try:
+            text = module.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if needle.search(text):
+            return module
+    return None
+
+
+def _selector_from_chain(chain: list) -> str | None:
+    """The healed locator literal: the top chain entry's `value` (what the page object stores).
+
+    The page object's `self.<attr> = page.locator(<literal>)` literal is the TOP chain entry's
+    raw value string (codegen.locators._top_chain_entry). The rewrite swaps in the healed
+    after_chain's top value. Returns None for an empty/malformed chain (no rewrite).
+    """
+    if not chain:
+        return None
+    top = chain[0]
+    if isinstance(top, dict):
+        value = top.get("value")
+        return value if isinstance(value, str) and value else None
+    if isinstance(top, str) and top:
+        return top
+    return None
+
+
+def _apply_page_object_rewrite(
+    pages_dir: Path, *, element_key: str, after_chain: list
+) -> str | None:
+    """For an auto_heal: resolve the owning module + rewrite its locator literal (ast-validated).
+
+    Returns the rewritten module's path (str) on success, or None when the module/selector can't
+    be resolved or the rewrite is a no-op. Tolerant of I/O errors and a non-parsing rewrite — a
+    rewrite failure is LOGGED and skipped (the audit row + KG append still persist); it never
+    crashes the worker. Only an `auto_heal` ever reaches here (the caller gates on outcome).
+    """
+    new_selector = _selector_from_chain(after_chain)
+    if new_selector is None:
+        return None
+    module = _resolve_page_module(pages_dir, element_key)
+    if module is None:
+        log.warning("heal_rewrite_no_module", element_key=element_key, pages_dir=str(pages_dir))
+        return None
+    try:
+        source = module.read_text(encoding="utf-8")
+        rewritten = rewrite_page_object_locator(
+            source, element_key=element_key, new_selector=new_selector
+        )
+        if rewritten == source:
+            return None  # unknown-key no-op (shouldn't happen — module was matched — but safe)
+        module.write_text(rewritten, encoding="utf-8")
+        return str(module)
+    except (OSError, SyntaxError) as exc:  # a bad rewrite never crashes the worker
+        log.warning("heal_rewrite_failed", element_key=element_key, error=str(exc))
+        return None
+
+
+async def _append_kg_history(
+    entry: dict, *, driver, now: str
+) -> bool:
+    """Best-effort KG Element-history append via the SINGLE writer (HEAL-03 write-back, T-08-14).
+
+    Builds the merged history (explorer/locators.merge_locator_history) from the before+after
+    chains and routes through kg/writer.append_element_history (parameterized + read-back guarded).
+    Best-effort: a down neo4j (or an unknown element key -> read-back RAISE) is caught + logged so
+    the worker never crashes mid-run — the audit row + page-object rewrite persist regardless.
+    Returns True on a successful append, False otherwise.
+    """
+    # Imported lazily so importing this module never requires neo4j when the KG is off.
+    from app.services.explorer.locators import merge_locator_history
+    from app.services.kg import writer
+
+    after_chain = entry.get("after_chain") or entry.get("before_chain") or []
+    history = merge_locator_history([], after_chain, step=0)
+    try:
+        await writer.append_element_history(
+            key=entry["element_key"],
+            history_json=json.dumps(history),
+            chain_json=json.dumps(after_chain),
+            now=now,
+            driver=driver,
+        )
+        return True
+    except Exception as exc:  # noqa: BLE001 -- a down neo4j must not crash the worker (T-08-14)
+        log.warning(
+            "heal_kg_writeback_skipped", element_key=entry.get("element_key"), error=str(exc)
+        )
+        return False
+
+
+async def ingest_heal_journal(
+    db,
+    run_id: str,
+    flow_id: str,
+    *,
+    project_root: Path,
+    journal_dir: Path,
+    driver=None,
+    now: str | None = None,
+) -> list[str]:
+    """Ingest the per-flow heal-journal: audit rows + page-object rewrite + KG write-back.
+
+    The worker calls this INSIDE its fresh SessionLocal block AFTER the subprocess exits. For each
+    VALID journal entry (parse_heal_journal: tolerant + bounded, T-08-09):
+
+      1. `db.add(HealAudit(...))` — does NOT commit (the worker owns the commit on its session,
+         so the heal rows ride the SAME transaction as the TestResult, Pitfall 2);
+      2. for outcome == "auto_heal" ONLY, rewrite the owning page object under
+         project_root/pages/<module>.py (ast-validated; quarantine/fail STAGE in the audit row,
+         no rewrite — Open Q3);
+      3. for auto_heal/applied, append the KG Element history via the single writer (best-effort —
+         a down neo4j never crashes the worker, T-08-14).
+
+    Both `project_root` (where pages/ lives, run_dir(run_id)/<target>) and `journal_dir` (where the
+    in-spec layer wrote heal-journal.json, run_dir(run_id)/<flow_id>) are run_id-derived
+    (worker-supplied) — NEVER paths from the journal body (T-08-12). Returns the list of journal
+    outcomes (for reconcile_verdict).
+    """
+    import time
+
+    from app.models.heal_audit import HealAudit
+
+    now = now or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    entries = parse_heal_journal(journal_dir)
+
+    pages_dir = project_root / "pages"
+    outcomes: list[str] = []
+    for entry in entries:
+        outcome = entry["outcome"]
+        outcomes.append(outcome)
+
+        # (1) the auditable row — added to the worker's session, committed by the worker.
+        db.add(
+            HealAudit(
+                element_key=entry["element_key"],
+                run_id=run_id,
+                flow_id=flow_id,
+                before_chain=entry["before_chain"],
+                after_chain=entry["after_chain"] or None,
+                confidence=entry["confidence"],
+                outcome=outcome,
+                live_match_count=entry["live_match_count"],
+            )
+        )
+
+        # (2) the script-repo update — auto_heal ONLY (quarantine/fail stage in the audit row).
+        if outcome == "auto_heal":
+            _apply_page_object_rewrite(
+                pages_dir,
+                element_key=entry["element_key"],
+                after_chain=entry["after_chain"],
+            )
+
+        # (3) the KG write-back — auto_heal/applied, best-effort (T-08-14).
+        if outcome in ("auto_heal", "applied"):
+            await _append_kg_history(entry, driver=driver, now=now)
+
+    if entries:
+        log.info(
+            "heal_journal_ingested", run_id=run_id, flow_id=flow_id, entries=len(entries),
+            outcomes=outcomes,
+        )
+    return outcomes
