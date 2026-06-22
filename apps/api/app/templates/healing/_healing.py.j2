@@ -1,0 +1,559 @@
+{# In-spec self-healing layer (HEAL-01 / HEAL-02, THE CRUX). Rendered into the generated project
+   tree as `_healing.py`. The generated project CANNOT `import app.services`, so the PURE scorer
+   from app/services/healing/ (confidence + geometry + candidates) is VENDORED BYTE-EQUIVALENT
+   into this template — a drift-guard test (test_healing_vendor_drift.py) fails the build if the
+   vendored copy diverges from the canonical source. The xpath JS is vendored verbatim from
+   explorer/locators.py.
+
+   heal() runs INSIDE the spec subprocess where the live Playwright `page` is in scope (the worker
+   has NO live page handle). On a locator miss the page-object `_resolve(element_key)` accessor
+   calls heal(): it enumerates live candidates, scores them through the vendored scorer, applies
+   the HARD live uniqueness gate (page.locator(selector).count() == 1), appends ONE entry to the
+   per-flow heal-journal JSON in the spec's KNOWN out_dir, then either returns the healed locator
+   (auto_heal) or raises HealFailed (quarantine / fail_as_defect) so the test fails naturally.
+
+   heal() NEVER touches expect(...) / assertions (HEAL-02 invariant). out_dir is the spec's known
+   per-flow workspace path, NEVER derived from page/DOM text (path-traversal guard, T-08-06).
+
+   This template has NO Jinja slots in the heal LOGIC — the element_key + ordered chain + broken
+   attrs/bbox/history are passed to heal() at runtime by the page-object accessor (themselves
+   repo-sourced template inputs at codegen time, never LLM slots). #}
+"""In-spec deterministic self-healing layer (AUTO-GENERATED — do not edit by hand).
+
+Vendors the byte-equivalent pure scorer from app/services/healing/ (confidence/geometry/
+candidates) + the verbatim xpath JS from explorer/locators.py. Runs INSIDE the generated spec
+subprocess on a locator miss: live candidate search -> deterministic blend -> HARD uniqueness
+re-validation -> journal append -> auto_heal (return healed locator) or raise HealFailed.
+
+NEVER touches expect(...) assertions (HEAL-02). out_dir is the spec's known per-flow path.
+"""
+
+from __future__ import annotations
+
+import difflib
+import json
+import os
+import re
+import time
+from dataclasses import dataclass
+
+# ---------------------------------------------------------------------------------------------
+# VENDORED VERBATIM from app/services/explorer/locators.py — the stable absolute-xpath read JS.
+# (drift-guard: _XPATH_JS)
+# ---------------------------------------------------------------------------------------------
+_XPATH_JS = """
+el => {
+  function segment(node) {
+    if (node.id) return `//*[@id=\"${node.id}\"]`;
+    let ix = 1, sib = node.previousElementSibling;
+    while (sib) { if (sib.tagName === node.tagName) ix++; sib = sib.previousElementSibling; }
+    return node.tagName.toLowerCase() + '[' + ix + ']';
+  }
+  const parts = [];
+  let node = el;
+  while (node && node.nodeType === 1 && node.tagName.toLowerCase() !== 'html') {
+    const seg = segment(node);
+    if (seg.startsWith('//*[@id')) { parts.unshift(seg); return parts.join('/'); }
+    parts.unshift(seg);
+    node = node.parentElement;
+  }
+  return '/' + parts.join('/');
+}
+"""
+
+
+# ---------------------------------------------------------------------------------------------
+# VENDORED VERBATIM from app/services/healing/confidence.py (HealWeights / DEFAULT_WEIGHTS /
+# confidence / heal_outcome). drift-guard byte-equivalence enforced.
+# ---------------------------------------------------------------------------------------------
+@dataclass(frozen=True)
+class HealWeights:
+    """Tunable, FROZEN blend weights for the four similarity sub-scores (swap per call via `w`).
+
+    Frozen so a shared DEFAULT_WEIGHTS can never be mutated under callers (same reason
+    `kg/risk.RiskWeights` and `explorer/budget.ExploreBudget` are frozen). The values are
+    RESEARCH A1 starting points (LOW confidence on exact values, HIGH on the shape) — they are
+    tuned empirically by the mutation harness (QUAL-02) and may be overridden per call.
+    """
+
+    dom: float = 0.30      # DOM-structure Jaccard + tag bonus + xpath-ancestry overlap
+    visual: float = 0.20   # bounding-box IoU + size proximity (geometry only, no pixel decode)
+    a11y: float = 0.30     # role equality blended with accessible-name difflib ratio
+    history: float = 0.20  # candidate chain matches a prior history_json snapshot
+
+
+DEFAULT_WEIGHTS = HealWeights()
+
+
+def confidence(signals: dict, w: HealWeights = DEFAULT_WEIGHTS) -> float:
+    """PURE: weighted blend of four [0,1] sub-scores -> clamped [0,1]. No I/O, no LLM, no browser.
+
+    `signals` keys (any may be absent -> treated as 0.0): dom, visual, a11y, history.
+
+    The blend is normalized by the SUM of the weights (so an all-max signal set blends to exactly
+    1.0 regardless of the relative weight values), then clamped to [0,1]. The clamp guarantees the
+    range even for pathological signals (out-of-range or negative) or weights; the `or 1.0` guard
+    avoids a divide-by-zero when all weights are zero.
+    """
+    raw = (
+        w.dom * float(signals.get("dom", 0.0))
+        + w.visual * float(signals.get("visual", 0.0))
+        + w.a11y * float(signals.get("a11y", 0.0))
+        + w.history * float(signals.get("history", 0.0))
+    )
+    total = (w.dom + w.visual + w.a11y + w.history) or 1.0
+    return max(0.0, min(1.0, raw / total))
+
+
+def heal_outcome(conf: float, live_match_count: int, *, high: float, med: float) -> str:
+    """PURE: the 3-outcome resolver with the HARD uniqueness gate FIRST (HEAL-02 / D-04).
+
+    Returns exactly one of the three LOCATOR-resolution verdicts:
+      "auto_heal"      — conf >= high AND the candidate re-validates to EXACTLY ONE live element
+      "quarantine"     — conf >= med  (and unique) — held for human review
+      "fail_as_defect" — below med, OR a non-unique match (feeds Phase 9 as a product failure)
+
+    The `live_match_count != 1` gate is applied UNCONDITIONALLY before any band comparison: a
+    candidate matching 0 or >1 live elements can NEVER auto-heal regardless of `conf`. This is the
+    structural false-heal guard (QUAL-02), independent of the thresholds. `high`/`med` are passed
+    by callers from `settings.heal_high_threshold` / `settings.heal_med_threshold` (config-tunable,
+    like `stability_runs`) — never hardcoded here. Assertions are never a heal target.
+    """
+    if live_match_count != 1:
+        return "fail_as_defect"  # ambiguous/missing -> never auto-heal (structural guard)
+    if conf >= high:
+        return "auto_heal"
+    if conf >= med:
+        return "quarantine"
+    return "fail_as_defect"
+
+
+# ---------------------------------------------------------------------------------------------
+# VENDORED VERBATIM from app/services/healing/geometry.py (iou / size_proximity).
+# drift-guard byte-equivalence enforced.
+# ---------------------------------------------------------------------------------------------
+def iou(a: dict | None, b: dict | None) -> float:
+    """PURE: intersection-over-union of two bounding boxes -> [0,1]. None (off-screen) -> 0.0.
+
+    Box = {"x", "y", "width", "height"}. Identical boxes -> 1.0; disjoint or edge-touching -> 0.0;
+    union <= 0 (both degenerate) -> 0.0. The clamp at 0 on each axis discards non-overlapping cases.
+    """
+    if not a or not b:
+        return 0.0
+    ax2, ay2 = a["x"] + a["width"], a["y"] + a["height"]
+    bx2, by2 = b["x"] + b["width"], b["y"] + b["height"]
+    ix = max(0.0, min(ax2, bx2) - max(a["x"], b["x"]))
+    iy = max(0.0, min(ay2, by2) - max(a["y"], b["y"]))
+    inter = ix * iy
+    union = a["width"] * a["height"] + b["width"] * b["height"] - inter
+    return inter / union if union > 0 else 0.0
+
+
+def size_proximity(a: dict | None, b: dict | None) -> float:
+    """PURE: min-area / max-area ratio of two boxes -> [0,1]. None or zero-area -> 0.0.
+
+    Complements IoU: two equally-sized boxes in different positions still score 1.0 here, so a
+    moved-but-same-size element retains visual signal even when IoU drops. Folded into the visual
+    sub-score (averaged with IoU) so position shift alone does not zero out the visual evidence.
+    """
+    if not a or not b:
+        return 0.0
+    area_a = a["width"] * a["height"]
+    area_b = b["width"] * b["height"]
+    if area_a <= 0 or area_b <= 0:
+        return 0.0
+    return min(area_a, area_b) / max(area_a, area_b)
+
+
+# ---------------------------------------------------------------------------------------------
+# VENDORED VERBATIM from app/services/healing/candidates.py (the four sub-scores + score_candidate
+# + its private helpers). drift-guard byte-equivalence enforced. The lazy geometry import in the
+# canonical score_candidate is rewritten to a no-op here (iou/size_proximity are in this module);
+# the drift guard normalizes that single import line out before comparing.
+# ---------------------------------------------------------------------------------------------
+_TIER_ORDER = ["xpath", "text", "role", "aria-label", "data-testid"]
+_TIER_RANK = {strategy: i + 1 for i, strategy in enumerate(_TIER_ORDER)}
+_MAX_TIER_RANK = len(_TIER_ORDER)
+
+_DOM_ATTR_KEYS = ("type", "name", "placeholder")
+
+_DOM_JACCARD_W = 0.5
+_DOM_TAG_W = 0.2
+_DOM_XPATH_W = 0.3
+
+
+def _attr_set(attrs: dict) -> set[str]:
+    """Build the comparable attribute SET — scalar attrs as key=value, class as split tokens."""
+    tokens: set[str] = set()
+    for key in _DOM_ATTR_KEYS:
+        val = (attrs.get(key) or "").strip()
+        if val:
+            tokens.add(f"{key}={val}")
+    cls = (attrs.get("class") or "").strip()
+    for tok in cls.split():
+        if tok:
+            tokens.add(f"class={tok}")
+    return tokens
+
+
+def _jaccard(a: set[str], b: set[str]) -> float:
+    if not a and not b:
+        return 0.0
+    union = a | b
+    return len(a & b) / len(union) if union else 0.0
+
+
+def _xpath_overlap(a: str, b: str) -> float:
+    """Shared leading xpath segments / max segment count -> [0,1] ancestry overlap."""
+    sa = [s for s in (a or "").split("/") if s]
+    sb = [s for s in (b or "").split("/") if s]
+    if not sa or not sb:
+        return 0.0
+    shared = 0
+    for x, y in zip(sa, sb):
+        if x == y:
+            shared += 1
+        else:
+            break
+    return shared / max(len(sa), len(sb))
+
+
+def dom_sim(candidate_attrs: dict, broken_attrs: dict) -> float:
+    """PURE: DOM-structure similarity — attribute Jaccard + tag bonus + xpath-ancestry overlap.
+
+    Each component is weighted, but the blend is normalized over only the components that are
+    APPLICABLE (have data on at least one side) — so two elements that are identical on the
+    attributes/tag they DO expose score 1.0 even when neither carries an xpath. An xpath present
+    on either side activates the ancestry-overlap component (and can lower the score for an element
+    with the same attrs but a divergent DOM position).
+    """
+    cset, bset = _attr_set(candidate_attrs), _attr_set(broken_attrs)
+    ctag = (candidate_attrs.get("tag") or "").strip().lower()
+    btag = (broken_attrs.get("tag") or "").strip().lower()
+    cxp = (candidate_attrs.get("xpath") or "").strip()
+    bxp = (broken_attrs.get("xpath") or "").strip()
+
+    components: list[tuple[float, float]] = []  # (weight, score)
+    if cset or bset:
+        components.append((_DOM_JACCARD_W, _jaccard(cset, bset)))
+    if ctag or btag:
+        components.append((_DOM_TAG_W, 1.0 if (ctag and ctag == btag) else 0.0))
+    if cxp or bxp:
+        components.append((_DOM_XPATH_W, _xpath_overlap(cxp, bxp)))
+
+    total_w = sum(w for w, _ in components)
+    if total_w <= 0:
+        return 0.0
+    raw = sum(w * s for w, s in components) / total_w
+    return max(0.0, min(1.0, raw))
+
+
+def a11y_sim(candidate: dict, broken: dict) -> float:
+    """PURE: role equality blended with the case-folded accessible-name difflib ratio."""
+    crole = (candidate.get("role") or "").strip().lower()
+    brole = (broken.get("role") or "").strip().lower()
+    role_eq = 1.0 if (crole and crole == brole) else 0.0
+    cname = (candidate.get("name") or "").strip().casefold()
+    bname = (broken.get("name") or "").strip().casefold()
+    name_ratio = difflib.SequenceMatcher(None, cname, bname).ratio() if (cname or bname) else 0.0
+    # Equal weight: identical role + identical name -> 1.0; same role, different name -> partial;
+    # different role caps the blend at the name half.
+    return max(0.0, min(1.0, 0.5 * role_eq + 0.5 * name_ratio))
+
+
+def _chain_key(chain: list) -> tuple[str, str] | None:
+    """The (strategy, value) of a chain's top (highest-priority) entry, or None if empty."""
+    if not chain:
+        return None
+    top = chain[0]
+    return ((top.get("strategy") or ""), (top.get("value") or ""))
+
+
+def history_sim(candidate_chain: list, history: list) -> float:
+    """PURE: best-tier match of the candidate chain against prior {step, chain} snapshots -> [0,1].
+
+    A candidate whose top chain entry equals the top of ANY history snapshot scores the TIER
+    WEIGHT of that strategy normalized to [0,1] (higher build_locator_chain priority -> higher
+    score). No history, or no matching snapshot -> 0.0.
+    """
+    cand_key = _chain_key(candidate_chain)
+    if not cand_key or not history:
+        return 0.0
+    best = 0.0
+    for snap in history:
+        if not isinstance(snap, dict):
+            continue
+        if _chain_key(snap.get("chain") or []) == cand_key:
+            rank = _TIER_RANK.get(cand_key[0], 0)
+            best = max(best, rank / _MAX_TIER_RANK)
+    return best
+
+
+def score_candidate(
+    candidate: dict,
+    broken_chain: list,
+    broken_attrs: dict,
+    broken_bbox: dict | None,
+    history: list,
+) -> dict:
+    """PURE: assemble the four [0,1] sub-scores `confidence()` consumes for one candidate.
+
+    `candidate` carries its own attrs (tag/role/name/class/xpath), a `bbox` dict (or None
+    off-screen), and its freshly-built `chain`. The visual sub-score averages IoU with size
+    proximity so a moved-but-same-size element keeps visual signal. Ordering/tie-breaks follow
+    build_locator_chain priority via history_sim's tier weighting.
+    """
+    bbox = candidate.get("bbox")
+    visual = 0.5 * iou(bbox, broken_bbox) + 0.5 * size_proximity(bbox, broken_bbox)
+    return {
+        "dom": dom_sim(candidate, broken_attrs),
+        "visual": max(0.0, min(1.0, visual)),
+        "a11y": a11y_sim(candidate, broken_attrs),
+        "history": history_sim(candidate.get("chain") or [], history),
+    }
+
+
+# ---------------------------------------------------------------------------------------------
+# Vendored from explorer/locators.build_locator_chain — used to build each live candidate's
+# fresh chain (so history_sim can compare top-tier keys). Same priority order, stdlib-only.
+# ---------------------------------------------------------------------------------------------
+def build_locator_chain(attrs: dict) -> list[dict]:
+    """PURE: build the ordered locator chain from a plain attribute dict (healing priority)."""
+    chain: list[dict] = []
+    tid = (attrs.get("data-testid") or attrs.get("data-test") or "").strip()
+    if tid:
+        chain.append({"strategy": "data-testid", "value": tid})
+    al = (attrs.get("aria-label") or "").strip()
+    if al:
+        chain.append({"strategy": "aria-label", "value": al})
+    role = (attrs.get("role") or "").strip()
+    name = (attrs.get("text") or "").strip()[:80]
+    if role:
+        entry: dict = {"strategy": "role", "value": role}
+        if name:
+            entry["name"] = name
+        chain.append(entry)
+    if name:
+        chain.append({"strategy": "text", "value": name})
+    xpath = (attrs.get("xpath") or "").strip()
+    if xpath:
+        chain.append({"strategy": "xpath", "value": xpath})
+    return chain
+
+
+# ---------------------------------------------------------------------------------------------
+# In-spec heal machinery — net-new logic (RESEARCH Code Examples lines 430-449).
+# ---------------------------------------------------------------------------------------------
+class HealFailed(Exception):
+    """Raised when heal() cannot auto-heal (quarantine / fail_as_defect). The spec then fails
+    naturally on the raise — assertions are NEVER weakened (HEAL-02 / D-04)."""
+
+
+# Thresholds default to the plan-01 starting bands; the conftest may override via env so the
+# whole spec stays config-tunable like settings.heal_high_threshold / heal_med_threshold.
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, "") or default)
+    except (TypeError, ValueError):
+        return default
+
+
+HEAL_HIGH = _env_float("HEAL_HIGH_THRESHOLD", 0.85)
+HEAL_MED = _env_float("HEAL_MED_THRESHOLD", 0.60)
+
+
+def _to_selector(chain_entry: dict) -> str:
+    """Map a single chain entry {strategy, value} to a Playwright selector STRING.
+
+    Selectors use Playwright's parameterized engines (no shell, no eval of page text into code —
+    T-08-05). An unknown strategy falls back to a text= match on the value.
+    """
+    strategy = (chain_entry or {}).get("strategy") or ""
+    value = (chain_entry or {}).get("value") or ""
+    if strategy == "data-testid":
+        return f'[data-test="{value}"], [data-testid="{value}"]'
+    if strategy == "aria-label":
+        return f'[aria-label="{value}"]'
+    if strategy == "role":
+        return f'[role="{value}"]'
+    if strategy == "text":
+        return f"text={value}"
+    if strategy == "xpath":
+        return f"xpath={value}"
+    return f"text={value}"
+
+
+def _chain_to_selector(chain: list) -> str | None:
+    """The selector for a chain's TOP entry, or None for an empty chain."""
+    if not chain:
+        return None
+    return _to_selector(chain[0])
+
+
+def _append_journal(out_dir, entry: dict) -> None:
+    """Append ONE entry to the per-flow heal-journal JSON list at <out_dir>/heal-journal.json.
+
+    out_dir is the spec's KNOWN per-flow workspace path (passed in by the caller) — NEVER derived
+    from page/DOM text (path-traversal guard, T-08-06). File I/O only; tolerant of a missing/
+    malformed existing file (starts a fresh list).
+    """
+    import pathlib
+
+    journal_path = pathlib.Path(out_dir) / "heal-journal.json"
+    existing: list = []
+    try:
+        raw = journal_path.read_text(encoding="utf-8")
+        loaded = json.loads(raw)
+        if isinstance(loaded, list):
+            existing = loaded
+    except (FileNotFoundError, ValueError, OSError):
+        existing = []
+    existing.append(entry)
+    journal_path.parent.mkdir(parents=True, exist_ok=True)
+    journal_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+
+def _read_candidate(page, handle) -> dict:
+    """Read one live candidate's attrs / role / name / bbox / chain from a Playwright handle."""
+    def _attr(name: str) -> str:
+        try:
+            return handle.get_attribute(name) or ""
+        except Exception:  # noqa: BLE001 -- a stale handle must not crash enumeration
+            return ""
+
+    try:
+        text = (handle.inner_text() or "").strip()
+    except Exception:  # noqa: BLE001
+        text = ""
+    try:
+        bbox = handle.bounding_box()
+    except Exception:  # noqa: BLE001
+        bbox = None
+    try:
+        xpath = page.evaluate(_XPATH_JS, handle)
+    except Exception:  # noqa: BLE001
+        xpath = ""
+
+    role = _attr("role")
+    name = _attr("aria-label") or text
+    attrs = {
+        "data-test": _attr("data-test"),
+        "data-testid": _attr("data-testid"),
+        "aria-label": _attr("aria-label"),
+        "role": role,
+        "text": text,
+        "type": _attr("type"),
+        "name": _attr("name"),
+        "placeholder": _attr("placeholder"),
+        "class": _attr("class"),
+        "xpath": xpath,
+    }
+    chain = build_locator_chain(attrs)
+    return {
+        "tag": "",
+        "role": role,
+        "name": name,
+        "type": attrs["type"],
+        "placeholder": attrs["placeholder"],
+        "class": attrs["class"],
+        "xpath": xpath,
+        "bbox": bbox,
+        "chain": chain,
+        "attrs": attrs,
+    }
+
+
+def _enumerate_live_candidates(page, broken_chain: list) -> list[dict]:
+    """Enumerate live candidate elements near the broken element's role/lower tiers.
+
+    Searches the live DOM along the priority chain's LOWER tiers (the tiers that may still match
+    after a benign drift broke the top tier): role, aria-label, text. Returns scored-ready
+    candidate dicts. Bounded to a small cap so a pathological page cannot blow up the heal.
+    """
+    seen_handles = []
+    candidates: list[dict] = []
+    selectors: list[str] = []
+    for entry in broken_chain:
+        strategy = (entry or {}).get("strategy") or ""
+        if strategy in ("role", "aria-label", "text"):
+            selectors.append(_to_selector(entry))
+    # Always also scan generic interactables so a tag change (button -> a[role=button]) is reachable.
+    selectors.extend(["button", "a", "input", "[role]"])
+
+    for selector in selectors:
+        try:
+            handles = page.locator(selector).element_handles()
+        except Exception:  # noqa: BLE001
+            continue
+        for handle in handles[:25]:
+            if handle in seen_handles:
+                continue
+            seen_handles.append(handle)
+            candidates.append(_read_candidate(page, handle))
+            if len(candidates) >= 50:
+                return candidates
+    return candidates
+
+
+def heal(
+    page,
+    *,
+    element_key: str,
+    broken_chain: list,
+    broken_attrs: dict | None = None,
+    broken_bbox: dict | None = None,
+    history: list | None = None,
+    out_dir: str,
+    flow_id: str = "",
+    weights: HealWeights = DEFAULT_WEIGHTS,
+    high: float | None = None,
+    med: float | None = None,
+):
+    """In-spec heal: live candidate search + score + HARD uniqueness gate + journal append.
+
+    Returns a healed Playwright Locator ONLY for outcome == "auto_heal"; otherwise appends the
+    decision to the heal-journal and raises HealFailed (the spec fails naturally — assertions are
+    NEVER weakened). `out_dir` is the spec's known per-flow workspace path (never from page text).
+    """
+    high_t = HEAL_HIGH if high is None else high
+    med_t = HEAL_MED if med is None else med
+    broken_attrs = broken_attrs or {}
+    history = history or []
+
+    candidates = _enumerate_live_candidates(page, broken_chain)
+    scored: list[tuple[float, dict]] = []
+    for cand in candidates:
+        signals = score_candidate(
+            cand, broken_chain, broken_attrs, broken_bbox, history
+        )
+        scored.append((confidence(signals, weights), cand))
+    scored.sort(reverse=True, key=lambda t: t[0])
+    conf, best = scored[0] if scored else (0.0, None)
+
+    selector = _chain_to_selector(best["chain"]) if best else None
+    match_count = 0
+    if selector:
+        try:
+            match_count = page.locator(selector).count()  # HARD live re-validation
+        except Exception:  # noqa: BLE001
+            match_count = 0
+
+    outcome = heal_outcome(conf, match_count, high=high_t, med=med_t)
+    after_chain = best["chain"] if best else []
+    _append_journal(
+        out_dir,
+        {
+            "element_key": element_key,
+            "before_chain": list(broken_chain),
+            "after_chain": list(after_chain),
+            "confidence": conf,
+            "outcome": outcome,
+            "flow_id": flow_id,
+            "live_match_count": match_count,
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+    )
+
+    if outcome == "auto_heal":
+        return page.locator(selector)  # continue the test with the healed locator
+    raise HealFailed(outcome)  # quarantine / fail -> the test fails (no weakened assert)

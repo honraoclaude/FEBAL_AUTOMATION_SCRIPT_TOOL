@@ -5,22 +5,36 @@
    literal is repo-traceable by construction (asserted by selector_gate.assert_page_object_literals_are_repo_sourced).
 
    Slots (all repo/KG-sourced by codegen.project, never free-hand LLM text):
-     class_name  -- deterministic PascalCase page name (from the KG page)
-     page_url    -- the KG page url (for goto())
-     locators    -- {attr_name: top_priority_repo_chain_entry} from the Element Repository #}
+     class_name      -- deterministic PascalCase page name (from the KG page)
+     page_url        -- the KG page url (for goto())
+     locators        -- {attr_name: top_priority_repo_chain_entry} from the Element Repository
+     element_chains  -- {attr_name: full ordered repo chain list} for the heal accessor (a plain
+                        DATA dict literal — NOT a page.locator(...) sink, so the page-object
+                        repo-sourced gate sees no extra selector literals, only the top entries
+                        already emitted as self.<attr> = page.locator(...) above) #}
 """Page Object: {{ class_name }} (AUTO-GENERATED — do not edit by hand).
 
 Every locator below is sourced from the Phase-5 Element Repository by element key (the only
 sanctioned literal home). Regenerate via POST /api/generate-scripts.
 """
 
+import os
+
 from playwright.sync_api import Page, expect
 
 PAGE_URL = {{ page_url | tojson }}
 
+# How long the heal-aware accessor waits for the top-priority locator before treating it as a
+# miss and attempting an in-spec heal (env-overridable, like the heal thresholds).
+HEAL_TIMEOUT_MS = float(os.environ.get("HEAL_TIMEOUT_MS", "") or 3000)
+
 
 class {{ class_name }}:
     """Page object for {{ class_name }} — repo-sourced locators + @then assertion helpers."""
+
+    # {element_key: ordered repo chain} — a plain DATA dict (NOT a selector sink). The heal
+    # accessor reads it to drive the in-spec deterministic heal on a locator miss.
+    _chains = {{ element_chains | tojson }}
 
     def __init__(self, page: Page) -> None:
         self.page = page
@@ -29,6 +43,32 @@ class {{ class_name }}:
     def goto(self) -> None:
         """Navigate to this page's URL."""
         self.page.goto(PAGE_URL)
+
+    def _resolve(self, element_key: str):
+        """Heal-aware locator resolution (HEAL-01/HEAL-02, THE CRUX).
+
+        Returns the page-object's repo-sourced Locator if the top-priority chain entry is still
+        attached to the live page. On a miss (timeout / detached), delegates to the in-spec
+        deterministic heal: an auto_heal returns the healed Locator (the test continues); a
+        quarantine / fail_as_defect raises HealFailed so the test FAILS naturally — assertions are
+        NEVER weakened. out_dir is the spec's KNOWN per-flow workspace path, never from page text.
+        """
+        loc = getattr(self, element_key)
+        try:
+            loc.wait_for(state="attached", timeout=HEAL_TIMEOUT_MS)
+            return loc
+        except Exception:  # noqa: BLE001 -- a locator miss is a heal trigger, not a crash
+            from _healing import heal
+
+            out_dir = os.environ.get("HEAL_OUT_DIR", ".")
+            flow_id = os.environ.get("HEAL_FLOW_ID", "")
+            return heal(
+                self.page,
+                element_key=element_key,
+                broken_chain=self._chains.get(element_key, []),
+                out_dir=out_dir,
+                flow_id=flow_id,
+            )
 
 {% for attr, selector in locators.items() %}    def assert_{{ attr }}_visible(self) -> None:
         """Assert the {{ attr }} element is visible (a @then home for a kg_ref)."""
