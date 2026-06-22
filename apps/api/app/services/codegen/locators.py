@@ -79,3 +79,28 @@ async def page_object_locators(
         name = _attr_name(row.get("role"), row.get("label"))
         attrs.setdefault(name, locator)
     return attrs
+
+
+async def page_object_chains(
+    page_fingerprint: str, *, driver: AsyncDriver | None = None
+) -> dict[str, list]:
+    """Map each element on a page → {attr_name: FULL ordered repo chain} (the heal accessor input).
+
+    The sibling of `page_object_locators` (same `_attr_name` keying + same page filter + same
+    skip-if-no-usable-locator + same first-wins collision rule), but returns the COMPLETE
+    prioritized chain (data-testid → aria-label → role → text → xpath) instead of only the top
+    entry — the in-spec `_resolve(element_key)` accessor needs the lower tiers to drive a heal when
+    the top tier breaks. The chain is a plain DATA list of repo chain entries (never freehand);
+    codegen renders it into the page object's `_chains` data dict (NOT a selector sink).
+    """
+    rows = await reader.element_repository(driver=driver)
+    chains: dict[str, list] = {}
+    for row in rows:
+        if row.get("page_fp") != page_fingerprint:
+            continue
+        chain = row.get("chain") or []
+        if _top_chain_entry(chain) is None:
+            continue
+        name = _attr_name(row.get("role"), row.get("label"))
+        chains.setdefault(name, chain)
+    return chains

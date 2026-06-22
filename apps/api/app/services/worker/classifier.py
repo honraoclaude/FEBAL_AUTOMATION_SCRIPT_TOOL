@@ -44,3 +44,35 @@ def classify_retry(attempt_exit_codes: list[int]) -> dict:
         "passed": passed,
         "exit_codes": codes,
     }
+
+
+def reconcile_verdict(exit_verdict: str, journal_events: list[dict]) -> str:
+    """PURE: override the exit-code verdict from the per-flow heal-journal (HEAL-02, Pitfall 4).
+
+    The exit-code classifier (`classify_retry`) only sees subprocess exit codes — a healed pass
+    that needed a retry would be mislabeled `flaky`, and a healed clean pass would be `passed`.
+    Neither is right: a heal is NOT a flake. This pure helper reconciles the journal-recorded heal
+    decisions with the exit verdict and returns the ADDITIVE verdict (no schema change — the
+    verdict column is String(16), RESEARCH A5).
+
+    Precedence (highest first):
+      - any `auto_heal` event       -> "auto_healed"   (a journal'd auto-heal overrides passed/flaky)
+      - any `quarantine` event      -> "quarantined"
+      - any `fail_as_defect` event  -> "product_failure"  (feeds Phase 9)
+      - no heal events              -> `exit_verdict` unchanged
+
+    Stdlib-only, no I/O, table-testable like `classify_retry` (the SC3 worker-plane gate scans
+    this file — it must stay import-pure).
+    """
+    outcomes = {
+        (event or {}).get("outcome")
+        for event in (journal_events or [])
+        if isinstance(event, dict)
+    }
+    if "auto_heal" in outcomes:
+        return "auto_healed"
+    if "quarantine" in outcomes:
+        return "quarantined"
+    if "fail_as_defect" in outcomes:
+        return "product_failure"
+    return exit_verdict

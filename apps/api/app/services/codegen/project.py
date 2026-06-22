@@ -43,7 +43,7 @@ from app.core.neo4j_driver import get_neo4j
 from app.core.workspaces import run_dir as _ws_run_dir
 from app.services import scenario_service
 from app.services.codegen.examples import derive_examples
-from app.services.codegen.locators import page_object_locators
+from app.services.codegen.locators import page_object_chains, page_object_locators
 from app.services.gates.gherkin_lint import GenerationError
 from app.services.gates.selector_gate import (
     assert_no_freehand_selectors,
@@ -150,6 +150,7 @@ async def generate_project(
     page_class_for_fp: dict[str, str] = {}
     for fp, detail in pages.items():
         locators = await page_object_locators(fp, driver=drv)
+        element_chains = await page_object_chains(fp, driver=drv)
         class_name = _pascal(detail.get("title") or detail.get("url") or fp)
         module = _snake(detail.get("title") or detail.get("url") or fp)
         page_module_for_fp[fp] = module
@@ -160,12 +161,25 @@ async def generate_project(
             class_name=class_name,
             page_url=detail.get("url") or "",
             locators=locators,
+            element_chains=element_chains,
         )
         # Page-object literals MUST equal a repo chain entry (repo-traceable by construction).
+        # The _chains data dict is NOT a selector sink, so only the top-tier self.<attr> locator
+        # literals are gated against the repo chain set (MED-1 — _chains stays a plain data dict).
         assert_page_object_literals_are_repo_sourced(source, set(locators.values()))
         files[f"pages/{module}.py"] = source
 
     files["pages/__init__.py"] = ""
+
+    # The in-spec self-healing layer (HEAL-01/HEAL-02, THE CRUX): a self-contained _healing.py
+    # vendoring the byte-equivalent pure scorer. Rendered + ast-gated like every other file (no
+    # Jinja heal-logic slots) and written in the SAME no-partial-write block below. Treated as
+    # page-object-like for the selector gate (is_page_object=True) — its vendored selectors are
+    # constructed from repo chains at runtime, not freehand literals.
+    files["_healing.py"] = _render_checked_py(
+        "healing/_healing.py.j2",
+        is_page_object=True,
+    )
 
     # A fallback page object when a scenario's flow has no usable KG page (keeps steps importable).
     if not pages:
@@ -175,6 +189,7 @@ async def generate_project(
             class_name="TargetPage",
             page_url=_DEFAULT_BASE_URL,
             locators={},
+            element_chains={},
         )
 
     def _page_for_scenario(row) -> tuple[str, str]:
