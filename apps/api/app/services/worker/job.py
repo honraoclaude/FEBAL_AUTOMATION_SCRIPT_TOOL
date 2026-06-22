@@ -48,14 +48,19 @@ from app.core.redis_client import get_redis
 from app.core.workspaces import run_dir, spec_path
 from app.db.session import SessionLocal
 from app.models.execution_history import TestArtifact, TestResult
+from app.services.healing.ingest import ingest_heal_journal
 from app.services.stability import _run_spec_once
 from app.services.worker import progress
-from app.services.worker.classifier import classify_retry
+from app.services.worker.classifier import classify_retry, reconcile_verdict
 
 log = structlog.get_logger()
 
 # Original attempt + up to 2 retries (D-05). Stop early on a clean exit 0.
 MAX_ATTEMPTS = 3
+
+# The generated Playwright project subtree name (codegen.project._TARGET) — pages/ lives under
+# run_dir(run_id)/<TARGET>/pages/. Kept in sync with codegen; the heal ingest rewrites under it.
+_TARGET = "target"
 
 
 def _kill_flag_key(run_id: str) -> str:
@@ -165,11 +170,32 @@ async def run_flow_job(job: dict) -> dict:
     duration_s = time.monotonic() - started
     duration_ms = int(duration_s * 1000)
 
-    verdict = classify_retry(exit_codes)  # pure classifier (D-05)
+    base_verdict = classify_retry(exit_codes)  # pure exit-code classifier (D-05)
     artifacts = _discover_artifacts(run_id, out_dir)
 
-    # FRESH session (Pitfall 2): the worker owns its own session, never a request's.
+    # FRESH session (Pitfall 2): the worker owns its own session, never a request's. The heal
+    # ingest's HealAudit rows + the TestResult ride the SAME session + commit (Pitfall 2).
     async with SessionLocal() as db:
+        # HEAL-AS-COMMIT (D-03, HEAL-03): ingest the per-flow heal-journal post-subprocess —
+        # one HealAudit row per entry + a page-object rewrite for auto_heal + a best-effort KG
+        # write-back. project_root holds pages/ (run_dir/<target>); journal_dir is the per-flow
+        # out_dir the in-spec layer wrote to. Both run_id-derived, never journal-supplied (T-08-12).
+        # The KG write-back is best-effort INSIDE ingest (a down neo4j never crashes the worker,
+        # T-08-14); the audit rows + rewrite persist regardless.
+        journal_outcomes = await ingest_heal_journal(
+            db,
+            run_id,
+            flow_id,
+            project_root=run_dir(run_id) / _TARGET,
+            journal_dir=out_dir,
+        )
+        # Reconcile the exit-code verdict with the journal: a journal'd auto_heal -> auto_healed
+        # (a heal is NOT a flake, Pitfall 4); quarantine -> quarantined; fail_as_defect ->
+        # product_failure. No heal events -> the exit verdict is unchanged.
+        journal_events = [{"outcome": o} for o in journal_outcomes]
+        verdict = dict(base_verdict)
+        verdict["verdict"] = reconcile_verdict(base_verdict["verdict"], journal_events)
+
         db.add(
             TestResult(
                 run_id=run_id,
