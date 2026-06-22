@@ -124,6 +124,10 @@ None — every function in this plan is fully implemented pure logic. (The in-sp
 - The pure scorer is the keyless core every other Phase-8 plan consumes. Plan 08-02 can vendor `confidence`/`heal_outcome`/`iou`/sub-scores byte-for-byte into the in-spec `_healing.py` template (they are stdlib-only). The config bands are ready for the in-spec/worker callers to pass as `high`/`med`.
 - Carry forward: a byte-equivalence drift-guard test (RESEARCH Open Q2) between `app/services/healing/` and the vendored `_healing.py` belongs in plan 08-02.
 
+## Self-Check: PASSED
+
+All 9 claimed files exist on disk; all 5 commits (aaface9, ec78d8e, 9868a33, e32b8a4, f8b731a) present in git history.
+
 ---
 *Phase: 08-self-healing-engine*
 *Completed: 2026-06-22*
