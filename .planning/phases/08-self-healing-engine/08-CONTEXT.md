@@ -33,7 +33,7 @@ UI changes stop breaking the suite: when a locator fails during execution becaus
 - The benign-vs-breaking MUTATION CATALOG (QUAL-02): which benign mutations (rename data-testid/data-test, move element, change visible text, reorder siblings, change tag) SHOULD heal, and which breaking mutations (remove element, break the flow, change semantics — reuse/extend the SEED_BUG build) MUST still fail; how to measure >90% benign-heal + ~0 false-heal deterministically on planted specs without keys.
 - The heal-audit data model + migration 0008; per-element heal-success/false-heal aggregation (mirror the Phase-7 execution-history queries) for HEAL-04 reporting.
 - The inline worker hook: exactly where in the per-flow job a locator failure is intercepted, how the heal re-validation reuses the live page, and how the outcome maps to the TestResult verdict (auto-healed vs quarantined vs failed) + the Phase-7 retry/flaky reconciliation.
-- The minimal quarantine review surface (queue + apply/reject) vs deferring all heal UI to Phase 10 — confirm whether Phase 8 needs its own small UI-SPEC.
+- **RESOLVED (D-05):** Phase 8 ships NO heal UI — only a minimal auth-gated quarantine API (list quarantined heals / apply / reject, returning the before/after diff + confidence from the heal-audit record). The quarantine-review SCREEN and the heal-success/false-heal visualizations are DEFERRED to Phase 10 (where HEAL-04's "reported on dashboards" lives). So plan-phase skips the UI-SPEC; the planner builds the engine + heal-audit persistence + the quarantine API/router only.
 
 </decisions>
 
