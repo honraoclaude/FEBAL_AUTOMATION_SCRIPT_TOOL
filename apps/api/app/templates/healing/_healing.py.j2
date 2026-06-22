@@ -433,6 +433,10 @@ def _read_candidate(page, handle) -> dict:
         xpath = page.evaluate(_XPATH_JS, handle)
     except Exception:  # noqa: BLE001
         xpath = ""
+    try:
+        tag = (handle.evaluate("e => e.tagName") or "").lower()
+    except Exception:  # noqa: BLE001
+        tag = ""
 
     role = _attr("role")
     name = _attr("aria-label") or text
@@ -450,7 +454,7 @@ def _read_candidate(page, handle) -> dict:
     }
     chain = build_locator_chain(attrs)
     return {
-        "tag": "",
+        "tag": tag,
         "role": role,
         "name": name,
         "type": attrs["type"],
@@ -463,13 +467,21 @@ def _read_candidate(page, handle) -> dict:
     }
 
 
-def _enumerate_live_candidates(page, broken_chain: list) -> list[dict]:
-    """Enumerate live candidate elements near the broken element's role/lower tiers.
+def _enumerate_live_candidates(
+    page, broken_chain: list, broken_attrs: dict | None = None
+) -> list[dict]:
+    """Enumerate live candidate elements ELEMENT-SPECIFICALLY (HEAL-01, RESEARCH Pattern 2).
 
-    Searches the live DOM along the priority chain's LOWER tiers (the tiers that may still match
-    after a benign drift broke the top tier): role, aria-label, text. Returns scored-ready
-    candidate dicts. Bounded to a small cap so a pathological page cannot blow up the heal.
+    Candidates are read from the live DOM along the broken element's OWN identity tiers — the
+    priority chain's LOWER tiers that may still match after a benign top-tier drift (role,
+    aria-label, text) PLUS the broken element's tag (from broken_attrs). This is deliberately
+    scoped to the broken element's kind: a genuinely-removed element (whose tag + lower tiers
+    match nothing live) yields NO candidates, so the best selector re-validates to 0 and the
+    uniqueness gate forces fail_as_defect — never a heal onto an unrelated unique element. A
+    benign rename (same tag/role, only the top tier changed) still surfaces its element. Bounded
+    to a small cap so a pathological page cannot blow up the heal.
     """
+    broken_attrs = broken_attrs or {}
     seen_handles = []
     candidates: list[dict] = []
     selectors: list[str] = []
@@ -477,8 +489,9 @@ def _enumerate_live_candidates(page, broken_chain: list) -> list[dict]:
         strategy = (entry or {}).get("strategy") or ""
         if strategy in ("role", "aria-label", "text"):
             selectors.append(_to_selector(entry))
-    # Always also scan generic interactables so a tag change (button -> a[role=button]) is reachable.
-    selectors.extend(["button", "a", "input", "[role]"])
+    tag = (broken_attrs.get("tag") or "").strip().lower()
+    if tag:
+        selectors.append(tag)
 
     for selector in selectors:
         try:
@@ -520,7 +533,7 @@ def heal(
     broken_attrs = broken_attrs or {}
     history = history or []
 
-    candidates = _enumerate_live_candidates(page, broken_chain)
+    candidates = _enumerate_live_candidates(page, broken_chain, broken_attrs)
     scored: list[tuple[float, dict]] = []
     for cand in candidates:
         signals = score_candidate(

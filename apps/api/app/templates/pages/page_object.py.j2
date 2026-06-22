@@ -11,7 +11,10 @@
      element_chains  -- {attr_name: full ordered repo chain list} for the heal accessor (a plain
                         DATA dict literal — NOT a page.locator(...) sink, so the page-object
                         repo-sourced gate sees no extra selector literals, only the top entries
-                        already emitted as self.<attr> = page.locator(...) above) #}
+                        already emitted as self.<attr> = page.locator(...) above)
+     element_meta    -- (optional) {attr_name: {attrs, bbox, history}} repo-sourced broken-element
+                        signals the heal scorer compares live candidates against (DOM/visual/
+                        history sub-scores). A plain DATA dict; defaults to {} when not supplied. #}
 """Page Object: {{ class_name }} (AUTO-GENERATED — do not edit by hand).
 
 Every locator below is sourced from the Phase-5 Element Repository by element key (the only
@@ -33,8 +36,13 @@ class {{ class_name }}:
     """Page object for {{ class_name }} — repo-sourced locators + @then assertion helpers."""
 
     # {element_key: ordered repo chain} — a plain DATA dict (NOT a selector sink). The heal
-    # accessor reads it to drive the in-spec deterministic heal on a locator miss.
-    _chains = {{ element_chains | tojson }}
+    # accessor reads it to drive the in-spec deterministic heal on a locator miss. Rendered as a
+    # Python literal (pyrepr — None/True/False, never JSON null/true/false).
+    _chains = {{ element_chains | pyrepr }}
+
+    # {element_key: {attrs, bbox, history}} — repo-sourced broken-element signals the heal scorer
+    # compares live candidates against. A plain DATA dict; empty when codegen has no extra signals.
+    _element_meta = {{ (element_meta if element_meta is defined else {}) | pyrepr }}
 
     def __init__(self, page: Page) -> None:
         self.page = page
@@ -62,10 +70,14 @@ class {{ class_name }}:
 
             out_dir = os.environ.get("HEAL_OUT_DIR", ".")
             flow_id = os.environ.get("HEAL_FLOW_ID", "")
+            meta = self._element_meta.get(element_key, {})
             return heal(
                 self.page,
                 element_key=element_key,
                 broken_chain=self._chains.get(element_key, []),
+                broken_attrs=meta.get("attrs", {}),
+                broken_bbox=meta.get("bbox"),
+                history=meta.get("history", []),
                 out_dir=out_dir,
                 flow_id=flow_id,
             )

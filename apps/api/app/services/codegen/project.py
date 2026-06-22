@@ -69,6 +69,21 @@ _jinja_env = Environment(
 )
 
 
+def _pyrepr(value: object) -> str:
+    """Render a value as a Python literal (None/True/False — never JSON null/true/false).
+
+    Page-object DATA dicts (`_chains` / `_element_meta`) are emitted into a `.py` file as Python
+    expressions, so they must serialize with Python's `repr` (which uses None/True/False and
+    deterministic dict ordering), NOT `tojson` (which emits JSON null/true/false that is invalid
+    Python). The repr of repo-sourced chain/attrs/history dicts is a safe literal (str/num/bool/
+    None/list/dict only — no callables).
+    """
+    return repr(value)
+
+
+_jinja_env.filters["pyrepr"] = _pyrepr
+
+
 def _pascal(text: str) -> str:
     """Deterministic PascalCase identifier from arbitrary text (KG page title / feature name)."""
     parts = [p for p in _NON_IDENT.split(text or "") if p]
