@@ -45,4 +45,71 @@ RUN if [ "$SEED_BUG" = "1" ]; then \
         | xargs -r sed -i 's/inventory_list/inventory_list_BROKEN/g'; \
     fi
 
+# =====================================================================================
+# QUAL-02 benign-vs-breaking mutation catalog (Phase 8 plan 08-04). Extends the SEED_BUG
+# build-arg pattern above into a catalog that the keyless mutation harness
+# (apps/api/tests/functional/test_healing_mutations.py) runs the heal-wired planted spec
+# against. EVERY arg below defaults to 0, so the DEFAULT build and the existing
+# saucedemo / saucedemo-bug builds stay BYTE-IDENTICAL (T-08-17 / T-06-21 — no drift).
+#
+# All mutations target ONE deterministic element — the LOGIN BUTTON, rendered by the
+# bundle component as <input type="submit" class="submit-button btn_action"
+# data-test="login-button" id="login-button" name="login-button" value="Login">. The
+# button component renders via the unique bundle expr
+#   (0,Ue.jsx)("input",ke(ke({type:"submit",className:"submit-button".concat(o),value:r}, ...
+# and the login screen calls it via the unique usage expr
+#   (0,Ue.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"})
+# Each `sed` rewrite below targets one of those VERIFIED-UNIQUE strings (1 occurrence
+# in the hashed main.*.js bundle), gated by its own build-arg, mirroring SEED_BUG exactly.
+#
+# CATALOG -> EXPECTED OUTCOME (sourced from 08-RESEARCH Pattern 6):
+#   BENIGN (the element survives + stays identifiable on a lower tier -> MUST HEAL):
+#     BENIGN_RENAME_DATATEST  data-test/id/name "login-button" -> "login-button-v2"
+#                             (found by visible text "Login"; new data-test re-validates count 1)
+#     BENIGN_CHANGE_TEXT      value "Login" -> "Sign In"
+#                             (data-test unchanged; found by tag input; re-validates count 1)
+#     BENIGN_CHANGE_TAG       <input type=submit value="Login"> -> <button type=submit>Login</button>
+#                             (role/a11y-name + visible text "Login" survive; re-validates count 1)
+#     BENIGN_WRAP             wrap the button in an extra <div> (ancestry/xpath shift only;
+#                             attrs/role/text/bbox unchanged -> re-validates count 1)
+#   BREAKING (the structural false-heal guard MUST hold -> NEVER auto_heal):
+#     BREAK_REMOVE            delete the login button entirely
+#                             (no candidate clears the band; the best leftover input is a
+#                              low-confidence unrelated element -> fail_as_defect, never auto_heal)
+#     BREAK_DUPLICATE         render the login button TWICE (ambiguous)
+#                             (the heal selector re-validates to live_match_count > 1 ->
+#                              the HARD uniqueness gate (count != 1) forbids heal -> fail_as_defect)
+#     SEED_BUG (above)        break the post-login flow (.inventory_list -> _BROKEN)
+#                             (an ASSERTION target, not a locator -> product_failure, never a heal)
+#
+# This is COMPOSE INFRA (build-args), NOT a package (T-08-SC: zero new packages, no image-diff lib).
+# busybox `sed` (BRE): literal `.` `[` are escaped (`\.` `\[`); `(` `)` `{` `}` are literal in BRE.
+# `_BUNDLE` is the hashed bundle glob (filename carries a content hash, never sed by exact name).
+# =====================================================================================
+ARG BENIGN_RENAME_DATATEST=0
+ARG BENIGN_CHANGE_TEXT=0
+ARG BENIGN_CHANGE_TAG=0
+ARG BENIGN_WRAP=0
+ARG BREAK_REMOVE=0
+ARG BREAK_DUPLICATE=0
+RUN _BUNDLE=$(ls /usr/share/nginx/html/static/js/main.*.js); \
+    if [ "$BENIGN_RENAME_DATATEST" = "1" ]; then \
+      sed -i 's/testId:"login-button"/testId:"login-button-v2"/' "$_BUNDLE"; \
+    fi; \
+    if [ "$BENIGN_CHANGE_TEXT" = "1" ]; then \
+      sed -i 's/testId:"login-button",value:"Login"/testId:"login-button",value:"Sign In"/' "$_BUNDLE"; \
+    fi; \
+    if [ "$BENIGN_CHANGE_TAG" = "1" ]; then \
+      sed -i 's/jsx)("input",ke(ke({type:"submit",className:"submit-button"\.concat(o),value:r}/jsx)("button",ke(ke({type:"submit",className:"submit-button".concat(o),children:r}/' "$_BUNDLE"; \
+    fi; \
+    if [ "$BENIGN_WRAP" = "1" ]; then \
+      sed -i 's/(0,Ue\.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"})/(0,Ue.jsx)("div",{className:"heal-wrap",children:(0,Ue.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"})})/' "$_BUNDLE"; \
+    fi; \
+    if [ "$BREAK_REMOVE" = "1" ]; then \
+      sed -i 's/(0,Ue\.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"})/null/' "$_BUNDLE"; \
+    fi; \
+    if [ "$BREAK_DUPLICATE" = "1" ]; then \
+      sed -i 's/(0,Ue\.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"})/(0,Ue.jsxs)("div",{children:[(0,Ue.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"}),(0,Ue.jsx)(xr,{customClass:"btn_action",testId:"login-button",value:"Login"})]})/' "$_BUNDLE"; \
+    fi
+
 EXPOSE 80

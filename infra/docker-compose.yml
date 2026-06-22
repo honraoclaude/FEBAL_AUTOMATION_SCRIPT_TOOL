@@ -178,6 +178,120 @@ services:
     ports:
       - "8081:80" # distinct host port (8080 is the default target)
 
+  # =====================================================================================
+  # QUAL-02 benign-vs-breaking mutation catalog (Phase 8 plan 08-04). One SauceDemo build
+  # per catalog mutation (infra/targets/saucedemo/Dockerfile build-args), each on a DISTINCT
+  # host port, all behind the `mutation` profile so a plain `docker compose up` NEVER starts
+  # them (mirrors saucedemo-bug's bugbuild profile + neo4j's graph profile). The keyless
+  # harness (apps/api/tests/functional/test_healing_mutations.py) runs the heal-wired planted
+  # spec against each build by its host URL: BENIGN builds MUST heal (>=90%), BREAKING builds
+  # MUST still fail (~0 false-heal — removed/duplicated elements never auto_heal).
+  #
+  # OOM SEQUENCING (Pitfall 6 / T-08-16, the 3GB WSL cap): neo4j is OFF in this RUN phase —
+  # the chains/history are vendored into the planted spec at plant time, not read from the
+  # graph. The matrix runs the saucedemo variants (128m each) + a Chromium subprocess only;
+  # bring up only what is needed. Memory fit is a Manual-Only `docker stats` observation
+  # (08-VALIDATION). The DEFAULT saucedemo build is unchanged (every build-arg defaults to 0).
+  #
+  #   cd infra && docker compose --profile mutation build
+  #   cd infra && docker compose --profile mutation up -d --wait
+  # =====================================================================================
+  saucedemo-benign-rename:
+    build:
+      context: ./targets/saucedemo
+      args:
+        BENIGN_RENAME_DATATEST: "1"
+    profiles: [mutation]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8082:80"
+
+  saucedemo-benign-text:
+    build:
+      context: ./targets/saucedemo
+      args:
+        BENIGN_CHANGE_TEXT: "1"
+    profiles: [mutation]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8083:80"
+
+  saucedemo-benign-tag:
+    build:
+      context: ./targets/saucedemo
+      args:
+        BENIGN_CHANGE_TAG: "1"
+    profiles: [mutation]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8084:80"
+
+  saucedemo-benign-wrap:
+    build:
+      context: ./targets/saucedemo
+      args:
+        BENIGN_WRAP: "1"
+    profiles: [mutation]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8085:80"
+
+  saucedemo-break-remove:
+    build:
+      context: ./targets/saucedemo
+      args:
+        BREAK_REMOVE: "1"
+    profiles: [mutation]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8086:80"
+
+  saucedemo-break-duplicate:
+    build:
+      context: ./targets/saucedemo
+      args:
+        BREAK_DUPLICATE: "1"
+    profiles: [mutation]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8087:80"
+
   # --- Dormant: defined now, activated by later phases (D-08) ---
   # Trimmed to fit the 3GB WSL cap (D-01/02/03): heap 512m + pagecache 256m +
   # mem_limit 1g. Run ONLY via graph_mode (stops web's 1.5g first) so
