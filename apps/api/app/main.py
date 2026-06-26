@@ -21,6 +21,7 @@ from app.models.execution_history import (  # noqa: F401 -- Base.metadata/Alembi
     TestResult,
     TestRun,
 )
+from app.models.heal_audit import HealAudit  # noqa: F401 -- Base.metadata/Alembic discovery
 from app.models.llm_usage import LLMUsage  # noqa: F401 -- Base.metadata/Alembic discovery
 from app.models.run import Execution, Run  # noqa: F401 -- Base.metadata/Alembic discovery
 from app.models.scenario import Scenario  # noqa: F401 -- Base.metadata/Alembic discovery
@@ -32,6 +33,7 @@ from app.routers.execute import router as execute_router
 from app.routers.explore import router as explore_router
 from app.routers.generate import router as generate_router
 from app.routers.health import router as health_router
+from app.routers.heals import router as heals_router
 from app.routers.kg import router as kg_router
 from app.routers.scenarios import router as scenarios_router
 from app.routers.stubs import router as stubs_router
@@ -115,4 +117,8 @@ app.include_router(kg_router)
 # Scenario review queue (GEN-02 / D-01..D-04) — auth-gated list/get/edit/approve/reject.
 # Included BEFORE stubs_router (like kg_router) so its real routes win over any residual stub.
 app.include_router(scenarios_router)
+# Heal review/stats API (HEAL-03 review surface + HEAL-04 stats / D-05) — auth-gated
+# list/apply/reject + per-element stats. API ONLY (no heal UI — deferred to Phase 10). Included
+# BEFORE stubs_router so its real /api/heals routes win over any residual stub (mirrors kg/scenarios).
+app.include_router(heals_router)
 app.include_router(stubs_router)
