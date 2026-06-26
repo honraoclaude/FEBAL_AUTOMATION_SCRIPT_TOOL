@@ -93,7 +93,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Quality Harnesses
 
 - [x] **QUAL-01**: A hand-labeled ground-truth graph of a demo app (SauceDemo) measures exploration coverage (>80% target)
-- [ ] **QUAL-02**: A seeded-bug / benign-mutation harness measures self-healing success (>90%) and false-heal rate, and proves generated tests fail on real bugs
+- [x] **QUAL-02**: A seeded-bug / benign-mutation harness measures self-healing success (>90%) and false-heal rate, and proves generated tests fail on real bugs
 - [ ] **QUAL-03**: A labeled failure set measures defect classification accuracy (>85%) and calibrates the Jira confidence threshold
 - [x] **QUAL-04**: Self-hosted demo target apps run in Docker with snapshot/restore so exploration and execution are repeatable
 
@@ -185,7 +185,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-03 | Phase 11 | Pending |
 | INFRA-04 | Phase 11 | Pending |
 | QUAL-01 | Phase 5 | Complete |
-| QUAL-02 | Phase 8 | Pending |
+| QUAL-02 | Phase 8 | Complete |
 | QUAL-03 | Phase 9 | Pending |
 | QUAL-04 | Phase 1 | Complete |
 
