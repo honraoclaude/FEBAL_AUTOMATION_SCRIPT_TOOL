@@ -59,7 +59,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **HEAL-01**: On locator failure, the healing engine finds alternatives via DOM similarity, visual similarity, accessibility attributes, and historical locator mapping, using the priority chain (data-testid → aria-label → role → text → xpath)
 - [x] **HEAL-02**: Healing has three outcomes — auto-heal (high confidence), quarantine for review (medium), fail-as-potential-defect (low); assertions are never weakened to make a test pass
 - [x] **HEAL-03**: Every heal is recorded as an auditable before/after diff with confidence score, updates the script repository, and writes back to the knowledge graph
-- [ ] **HEAL-04**: Healing success rate and false-heal rate are tracked per element and reported on dashboards
+- [x] **HEAL-04**: Healing success rate and false-heal rate are tracked per element and reported on dashboards
 
 ### Defect Intelligence
 
@@ -166,7 +166,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HEAL-01 | Phase 8 | Complete |
 | HEAL-02 | Phase 8 | Complete |
 | HEAL-03 | Phase 8 | Complete |
-| HEAL-04 | Phase 8 | Pending |
+| HEAL-04 | Phase 8 | Complete |
 | DEF-01 | Phase 9 | Pending |
 | DEF-02 | Phase 9 | Pending |
 | DEF-03 | Phase 9 | Pending |

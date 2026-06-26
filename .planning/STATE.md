@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Completed 08-03-PLAN.md (heal-as-commit: heal_audit + migration 0008 + page-object rewrite + KG write-back + worker wiring)"
-last_updated: "2026-06-26T22:29:50.090Z"
+status: verifying
+stopped_at: Completed 08-05-PLAN.md (per-element heal stats HEAL-04 + auth-gated quarantine review API D-05)
+last_updated: "2026-06-26T23:03:52.240Z"
 last_activity: 2026-06-26
 progress:
   total_phases: 11
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 37
-  completed_plans: 36
-  percent: 64
+  completed_plans: 37
+  percent: 73
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 Phase: 08 (self-healing-engine) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-26
 
-Progress: [██████████] 97%
+Progress: [██████████] 100%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -91,6 +91,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 08 P02 | 33min | 3 tasks | 8 files |
 | Phase 08 P03 | 26min | 3 tasks | 11 files |
 | Phase 08 P04 | 50min | 1 tasks | 1 files |
+| Phase 08 P05 | ~20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 08-03: heal-as-commit (D-03, NOT git) = heal_audit row + ast-validated attr-keyed page-object rewrite + KG Element-history append via new single-writer append_element_history (MATCH-only, read-back 0-count RAISE)
 - [Phase ?]: 08-03: MED-3 element_key->page-module resolved by SCAN of pages/*.py for the self.<attr> = page.locator( line (no re-open of 08-02 journal/template)
 - [Phase ?]: [Phase 08]: 08-04 (QUAL-02): live mutation harness proves benign_heal_rate=4/4=1.00 (>=0.90) + false_heal_rate=0/2=0. MED-2 retune: proof band _MUTATION_HIGH=0.15 (window 0.06<band<=0.21); confidence.py untouched + byte-equivalent. BREAK_REMOVE held by the BAND (leftover count==1, conf 0.06), BREAK_DUPLICATE by the uniqueness gate (count==2). Inner runner uses python -m pytest (Windows Application Control blocks pytest.exe shim, os error 4551); stability.py untouched.
+- [Phase ?]: 08-05: list status default is 'quarantine' (heal_audit outcome value) not plan's 'quarantined' (Rule-1 fix); heal_success_rate excludes reviewed_outcome='rejected' (a rejected heal is never a success)
+- [Phase ?]: 08-05: apply reuses Plan-03 ast-validated ingest._apply_page_object_rewrite + single-writer KG append verbatim (T-08-20/21); reject is a reviewed_outcome flag flip; /api/heals router-level get_current_user gates every endpoint (no require_role DI exists)
 
 ### Pending Todos
 
@@ -196,8 +199,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-26T22:26:20.585Z
-Stopped at: Completed 08-03-PLAN.md (heal-as-commit: heal_audit + migration 0008 + page-object rewrite + KG write-back + worker wiring)
+Last session: 2026-06-26T23:03:52.178Z
+Stopped at: Completed 08-05-PLAN.md (per-element heal stats HEAL-04 + auth-gated quarantine review API D-05)
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):

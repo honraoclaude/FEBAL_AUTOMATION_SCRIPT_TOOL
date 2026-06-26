@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
  (completed 2026-06-20)
 - [x] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch (completed 2026-06-21)
-- [ ] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate
+- [x] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate (completed 2026-06-26)
 - [ ] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision
 - [ ] **Phase 10: Dashboards, RBAC & Coverage/Traceability** - Executive/QA/developer dashboards, role enforcement, graph-derived coverage, full traceability chain, Elasticsearch-backed search
 - [ ] **Phase 11: Hardening & Ops** - K8s manifests on Docker Desktop/kind, GitHub Actions CI/CD for platform images, Prometheus + Grafana domain metrics
@@ -356,7 +356,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Knowledge Graph & Flow Learning | 4/4 | Complete   | 2026-06-20 |
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
 | 7. Execution Engine & Workers | 5/5 | Complete   | 2026-06-21 |
-| 8. Self-Healing Engine | 4/5 | In Progress|  |
+| 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 0/TBD | Not started | - |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |
 | 11. Hardening & Ops | 0/TBD | Not started | - |
