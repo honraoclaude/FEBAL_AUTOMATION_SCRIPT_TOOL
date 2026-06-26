@@ -358,8 +358,12 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
-HEAL_HIGH = _env_float("HEAL_HIGH_THRESHOLD", 0.85)
-HEAL_MED = _env_float("HEAL_MED_THRESHOLD", 0.60)
+# Defaults MIRROR settings.heal_high_threshold / heal_med_threshold (config.py) — the QUAL-02
+# mutation-harness-tuned bands. The compressed geometry/DOM-only confidence scale tops out ~0.41
+# for real benign drift, so the in-spec layer must default to the same 0.15/0.10 production bands
+# (overridable via env) or it would never auto-heal when run without explicit thresholds.
+HEAL_HIGH = _env_float("HEAL_HIGH_THRESHOLD", 0.15)
+HEAL_MED = _env_float("HEAL_MED_THRESHOLD", 0.10)
 
 
 def _to_selector(chain_entry: dict) -> str:

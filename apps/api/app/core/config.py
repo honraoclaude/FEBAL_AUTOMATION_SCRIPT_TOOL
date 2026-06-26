@@ -137,8 +137,15 @@ class Settings(BaseSettings):
     # A2) tuned by the mutation harness (QUAL-02). heal_enabled is the kill-switch for the inline
     # heal hook. Compose does NOT pass the whole .env — add each to the compose env explicitly.
     heal_enabled: bool = True  # env HEAL_ENABLED
-    heal_high_threshold: float = 0.85  # env HEAL_HIGH_THRESHOLD — auto-heal band floor
-    heal_med_threshold: float = 0.60  # env HEAL_MED_THRESHOLD — quarantine band floor
+    # Tuned by the QUAL-02 mutation harness (08-04): the geometry/DOM-only confidence blend is
+    # compressed — realistic benign drift (even a data-testid rename, the canonical heal case) tops
+    # out ~0.21–0.41, a removed element's best leftover candidate scores ~0.06, a duplicated element
+    # is held by the uniqueness gate. Empirical separation window 0.06 < high <= 0.21; 0.15/0.10 sits
+    # in it (every benign clears high; BREAK_REMOVE@0.06 < med stays fail_as_defect). The earlier
+    # 0.85/0.60 starting points were UNREACHABLE for real drift → benign would fail-as-defect in
+    # production (SC4 miss). med MUST be <= high for the quarantine band to be non-empty.
+    heal_high_threshold: float = 0.15  # env HEAL_HIGH_THRESHOLD — auto-heal band floor
+    heal_med_threshold: float = 0.10  # env HEAL_MED_THRESHOLD — quarantine band floor
 
     @property
     def checkpoint_dsn(self) -> str:

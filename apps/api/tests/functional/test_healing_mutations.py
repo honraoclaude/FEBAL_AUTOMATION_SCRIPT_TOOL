@@ -71,22 +71,22 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 _WORKSPACES_ROOT = _REPO_ROOT / "workspaces"
 _TEMPLATES_DIR = _REPO_ROOT / "apps" / "api" / "app" / "templates"
 
-# A HIGH band the unique benign login-button matches all clear with a margin over the best leftover
-# candidate of a removed element — proving the heal MECHANIC + the structural separation, independent
-# of the production default 0.85. (Bands are config-tunable like stability_runs; this proof asserts
-# the rates, not the default tuning.)
-#
-# EMPIRICALLY TUNED against the live mutation builds (the MED-2 retune the plan anticipated — see
-# 08-04-SUMMARY "Deviations"). Measured live geometry/DOM-only confidences:
+# The auto-heal band the harness proves against is the SHIPPED PRODUCTION default
+# (settings.heal_high_threshold) — NOT a test-local override — so this gate proves the config the
+# product actually runs (and can never silently drift from it). The QUAL-02 mutation harness is the
+# instrument that TUNED that default (08-04): the geometry/DOM-only confidence blend is compressed,
+# so the production bands were set into the empirical separation window 0.06 < high <= 0.21.
+# Measured live geometry/DOM-only confidences:
 #   BENIGN_RENAME=0.21  BENIGN_CHANGE_TAG=0.3125  BENIGN_CHANGE_TEXT=0.41  BENIGN_WRAP=0.41 (all count==1)
 #   BREAK_REMOVE=0.06 (count==1!)  BREAK_DUPLICATE=0.41 (count==2 -> uniqueness gate blocks at any band)
-# The separation window is 0.06 < band <= 0.21 (the lowest benign). 0.15 sits in the middle: every
-# benign (>=0.21) clears it and the removed element's best leftover candidate (0.06, count==1) does
-# NOT. Note the uniqueness gate alone does NOT protect BREAK_REMOVE (it re-validates to count==1 on an
-# unrelated leftover input) — the BAND is what holds it; the gate is what holds BREAK_DUPLICATE
-# (count==2). Both guards are exercised. The vendored scorer (confidence.py) is UNTOUCHED + byte-
-# equivalent (test_healing_vendor_drift) — only this proof band is tuned, never the gate or weights.
-_MUTATION_HIGH = "0.15"
+# At the production high=0.15: every benign (>=0.21) clears it and the removed element's best leftover
+# candidate (0.06, count==1) does NOT. The uniqueness gate alone does NOT protect BREAK_REMOVE (it
+# re-validates to count==1 on an unrelated leftover input) — the BAND holds it; the gate holds
+# BREAK_DUPLICATE (count==2). Both guards are exercised. The vendored scorer (confidence.py) is
+# UNTOUCHED + byte-equivalent (test_healing_vendor_drift) — only the config bands were tuned.
+from app.core.config import settings as _settings  # noqa: E402
+
+_MUTATION_HIGH = str(_settings.heal_high_threshold)
 
 # 127.0.0.1 (not localhost) — IPv4-only nginx; localhost->::1 is wedged on Windows/WSL.
 # Each mutation build is a distinct mutation-profile compose service on its own host port.
