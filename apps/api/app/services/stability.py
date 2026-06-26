@@ -79,7 +79,11 @@ async def _run_spec_once(
     if base_url is not None:
         env[_BASE_URL_ENV] = base_url
 
-    argv = ["uv", "run", "pytest", spec_path, "-q", *(extra_args or [])]
+    # `uv run python -m pytest` (NOT the `pytest` console-script shim): same uv env + pytest 9,
+    # still an ISOLATED subprocess (argv LIST, no shell — T-06-18; never in-process — T-06-19), but
+    # invoked via the python.exe entrypoint. The bare `pytest.exe` shim is blocked by Windows
+    # Application Control on this host (os error 4551); `python -m pytest` is the allowed equivalent.
+    argv = ["uv", "run", "python", "-m", "pytest", spec_path, "-q", *(extra_args or [])]
 
     exit_code: int | None = None
     output = ""
