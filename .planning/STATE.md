@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 08-05-PLAN.md (per-element heal stats HEAL-04 + auth-gated quarantine review API D-05)
-last_updated: "2026-06-26T23:03:52.240Z"
+stopped_at: "Phase 8 COMPLETE — 5 plans executed + verified (deterministic PASS 345 tests; QUAL-02 4/4 benign-heal & 0 false-heal vs production thresholds; 2 Manual-Only items pending keys/docker-stats). Fixes: production heal thresholds tuned to QUAL-02 separation; shared spec runner -> python -m pytest (Win AppControl)"
+last_updated: "2026-06-26T23:57:45.998Z"
 last_activity: 2026-06-26
 progress:
   total_phases: 11
@@ -199,8 +199,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-26T23:03:52.178Z
-Stopped at: Completed 08-05-PLAN.md (per-element heal stats HEAL-04 + auth-gated quarantine review API D-05)
+Last session: 2026-06-26T23:57:45.950Z
+Stopped at: Phase 8 COMPLETE — 5 plans executed + verified (deterministic PASS 345 tests; QUAL-02 4/4 benign-heal & 0 false-heal vs production thresholds; 2 Manual-Only items pending keys/docker-stats). Fixes: production heal thresholds tuned to QUAL-02 separation; shared spec runner -> python -m pytest (Win AppControl)
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
