@@ -37,8 +37,8 @@ Failures triage themselves. Every failure is RETRIED (Phase-7 retry loop) then C
 - The infra-health evidence source.
 - The traceability-chain representation (Postgres FKs + Jira key, and/or KG links) exposed for Phase 10.
 
-### Open question for plan-phase (UI gate)
-- **UI scope:** Phase 9 has a UI hint and JIRA-02 names a "draft/review queue" as a success-criterion behavior. The draft-review queue (list draft issues + the rendered before/after evidence + apply/reject, and surfacing the accuracy/precision numbers the human uses to flip the autonomy flag) is arguably CORE to operating the phase — leaning toward a MINIMAL review-queue UI-SPEC this phase — while the rich traceability-chain VISUALIZATION + classification/defect dashboards defer to Phase 10. Resolve at plan-phase's UI gate (own minimal UI-SPEC now vs API-only + defer all UI to Phase 10), as was done for Phase 8.
+### UI scope (RESOLVED — D-06)
+- **D-06:** Phase 9 SHIPS a MINIMAL draft-review-queue UI (it has its own UI-SPEC). Scope: a review-queue screen — list draft Jira issues + the rendered classification (class + 0-100 confidence + cited evidence) + the before/after / steps-to-reproduce / attachment links + apply (file/update to Jira) / reject, and a calibration panel surfacing the QUAL-03 accuracy + draft-precision numbers the human reviews before flipping the autonomy flag (D-04). The RICH traceability-chain VISUALIZATION + classification/defect DASHBOARDS + RBAC defer to Phase 10. JIRA-02 names the review queue as a success-criterion behavior and D-04's human gate needs this surface, so it is built here, minimally, to the locked design system (zero new shadcn / native-styled, like Phase 6/7).
 
 </decisions>
 
