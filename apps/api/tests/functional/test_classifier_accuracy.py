@@ -55,6 +55,24 @@ from urllib.parse import urlparse
 
 import pytest
 
+# The calibrated autonomous-filing floor the harness proves against is the SHIPPED PRODUCTION
+# default (settings.jira_confidence_threshold) — NOT a test-local override — so this gate proves
+# the config the runtime actually reads at the autonomy gate (and can never silently drift from it).
+# This is the QUAL-02 `_MUTATION_HIGH = str(_settings.heal_high_threshold)` discipline (line 89 of
+# test_healing_mutations.py) carried into Phase 9. Measured per-class confidences (the SEED_BUG +
+# BREAK_REMOVE builds + the dead-port fault, this host, deterministic):
+#   product_defect : 80 (product:assertion-or-api + product:page-loaded -> 60 + 20*1)
+#   automation     : 100 (automation:heal-fail_as_defect + locator-miss + page-loaded -> 60 + 20*2)
+#   infrastructure : 80 (infra:error-signature + infra:health-down -> 60 + 20*1)
+# At 100% accuracy there is NO misclassified tail; the separating floor for autonomous filing is the
+# product_defect distribution MINIMUM (80). The shipped default 70 sits just below it, so EVERY
+# correctly-classified product defect clears the autonomy gate while the conservative starting point
+# is preserved (no retune required — the default already sits in the empirical separation window
+# (0, 80]). The classifier's frozen weights are UNTOUCHED.
+from app.core.config import settings as _settings  # noqa: E402
+
+_THRESHOLD = _settings.jira_confidence_threshold
+
 # Reuse the QUAL-02 heal-wired plant + journal helpers VERBATIM (same planted spec, same vendored
 # heal page object) so the automation case exercises the SHIPPED heal path, not a re-implementation.
 from tests.functional.test_healing_mutations import (
@@ -301,4 +319,100 @@ async def test_labeled_set_spans_all_three_classes_and_exercises_classifier() ->
     assert all(ev["heal_outcome"] != "auto_heal" for ev in auto_cases), (
         f"a BREAK_REMOVE case auto_healed (false-heal breach): "
         f"{[ev['heal_outcome'] for ev in auto_cases]}"
+    )
+
+
+async def test_classifier_accuracy_meets_85pct_and_calibrates_threshold(capsys) -> None:
+    """DEF-03 / QUAL-03: accuracy >= 0.85 on the labeled set + the calibrated threshold proven.
+
+    Runs the PRODUCTION classifier over the keyless three-class labeled set, asserts
+    accuracy >= 0.85 against the hand-labels, accumulates per-class confidences, derives the
+    separating autonomous-filing threshold (the product_defect distribution MINIMUM vs the
+    misclassified/below tail), and asserts the calibrated value against the SHIPPED config default
+    `settings.jira_confidence_threshold` — never a test-local literal (the `_THRESHOLD` discipline,
+    mirroring QUAL-02's `_MUTATION_HIGH = str(_settings.heal_high_threshold)`).
+    """
+    _require_targets()
+    assert not _port_open(_DEAD_PORT_URL), (
+        f"the dead-port infra fault target {_DEAD_PORT_URL} is unexpectedly OPEN"
+    )
+
+    cases = await _build_labeled_set()
+    from app.services.defects.classifier import classify
+
+    correct = 0
+    confs_by_class: dict[str, list[int]] = {}
+    misclassified_tail: list[int] = []  # confidences of WRONG predictions (the below-threshold tail)
+    per_case: list[dict] = []
+    for expected, ev in cases:
+        decision = classify(ev)
+        got = decision["classification"]
+        conf = decision["confidence"]
+        ok = got == expected
+        if ok:
+            correct += 1
+            confs_by_class.setdefault(expected, []).append(conf)
+        else:
+            misclassified_tail.append(conf)
+        per_case.append(
+            {
+                "expected": expected,
+                "got": got,
+                "confidence": conf,
+                "cited": decision["cited"],
+                "passed": ev.get("_passed"),
+            }
+        )
+
+    total = len(cases)
+    accuracy = correct / total
+
+    # --- Auditability: emit the per-class confidence matrix (the 08-04 measured-matrix precedent) ---
+    print("\n=== QUAL-03 classifier accuracy + calibration ===")
+    print(f"accuracy = {correct}/{total} = {accuracy:.2f}")
+    for cls in ("product_defect", "automation", "infrastructure"):
+        confs = confs_by_class.get(cls, [])
+        if confs:
+            print(
+                f"  {cls:15s} n={len(confs)} confidences={confs} "
+                f"min={min(confs)} max={max(confs)}"
+            )
+    for c in per_case:
+        print(
+            f"    [{ 'OK ' if c['expected']==c['got'] else 'XX ' }] "
+            f"expected={c['expected']:15s} got={c['got']:15s} conf={c['confidence']:3d} "
+            f"cited={c['cited']}"
+        )
+
+    # --- DEF-03 / QUAL-03: accuracy gate ---
+    assert accuracy >= 0.85, (
+        f"classification accuracy {accuracy:.2f} < 0.85 :: {per_case}"
+    )
+
+    # --- The derived separating threshold for autonomous filing ---
+    # Autonomous Jira filing is gated to Product Defects (the only class that becomes a ticket), so
+    # the separating floor is the product_defect confidence MINIMUM: the value below which a correct
+    # product-defect classification would still clear the gate, and at/above which the misclassified
+    # tail must NOT slip through. The calibrated threshold must sit in
+    #   (max(misclassified_tail, default 0), min(product_defect confidences)]
+    # — at 100% accuracy the tail is empty (floor 0); the upper bound is the product_defect minimum.
+    product_confs = confs_by_class.get("product_defect", [])
+    assert product_confs, "no correctly-classified product_defect case to calibrate against"
+    upper = min(product_confs)  # every correct product defect must clear the threshold
+    lower = max(misclassified_tail) if misclassified_tail else 0  # the tail must NOT clear it
+    print(f"  separation window for the autonomous-filing floor: ({lower}, {upper}]")
+    assert lower < upper, (
+        f"no separation: misclassified tail max {lower} >= product_defect min {upper} :: {per_case}"
+    )
+
+    # --- T-09-05: the SHIPPED default sits in the empirical window (config can't drift from proof) ---
+    assert lower < _THRESHOLD <= upper, (
+        f"the shipped jira_confidence_threshold={_THRESHOLD} is NOT in the calibrated separation "
+        f"window ({lower}, {upper}] — retune the config DEFAULT into the window (the 08-04 "
+        f"0.85->0.15 precedent), never special-case the test :: {per_case}"
+    )
+    # Every correctly-classified product defect clears the shipped autonomy floor.
+    assert all(conf >= _THRESHOLD for conf in product_confs), (
+        f"a correct product_defect ({product_confs}) scored below the shipped floor "
+        f"{_THRESHOLD} — the gate would suppress a real defect :: {per_case}"
     )
