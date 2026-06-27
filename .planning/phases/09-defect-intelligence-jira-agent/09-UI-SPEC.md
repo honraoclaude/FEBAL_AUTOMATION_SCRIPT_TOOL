@@ -1,7 +1,8 @@
 ---
 phase: 9
 slug: defect-intelligence-jira-agent
-status: draft
+status: approved
+reviewed_at: 2026-06-27
 shadcn_initialized: true
 preset: "new-york style, base color zinc, CSS variables true (inherited from 01-UI-SPEC; apps/web/components.json confirmed on disk this session)"
 created: 2026-06-27
@@ -276,11 +277,11 @@ Supplementary contract for planner/executor. Every view ships every listed state
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-06-27 (gsd-ui-checker — 6/6 PASS, zero recommendations)
