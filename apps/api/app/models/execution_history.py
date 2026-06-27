@@ -21,7 +21,7 @@ matching run.py/scenario.py, server_default timestamps via func.now().
 
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Integer, String, func
+from sqlalchemy import JSON, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -70,6 +70,10 @@ class TestResult(Base):
     attempts: Mapped[int] = mapped_column(Integer)
     # The exit code of every attempt, as a JSON list (no binary column).
     exit_codes: Mapped[list] = mapped_column(JSON)
+    # The LAST attempt's tail-capped subprocess output (stdout/stderr) — the error TEXT the
+    # Phase-9 classifier reads to classify by error type (Pitfall 1, plan 09-01). Nullable: the
+    # aborted/kill-drained path never ran a subprocess so it has no output. Text, never a blob.
+    error_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

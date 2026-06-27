@@ -147,6 +147,32 @@ class Settings(BaseSettings):
     heal_high_threshold: float = 0.15  # env HEAL_HIGH_THRESHOLD — auto-heal band floor
     heal_med_threshold: float = 0.10  # env HEAL_MED_THRESHOLD — quarantine band floor
 
+    # --- Defect intelligence + Jira agent (Phase 9, plan 09-01; DEF/JIRA, D-03/D-04/D-05) ---
+    # Jira Cloud connection. ALL default None so the api boots without a Jira instance (none in
+    # dev) — the deterministic classifier + the keyless harness + the draft queue work without it;
+    # only LIVE filing/dedup needs these (Manual-Only). jira_api_token is a SECRET: optional-default
+    # + NEVER logged (the anthropic_api_key / ci_token precedent — the SENSITIVE regex matches
+    # "token"; the gateway/client structlog events must omit it entirely). Compose does NOT pass the
+    # whole .env — add each to the compose env explicitly (the heal_high_threshold note).
+    jira_url: str | None = None  # env JIRA_URL (the Jira Cloud base URL)
+    jira_email: str | None = None  # env JIRA_EMAIL (the Jira Cloud account email)
+    jira_api_token: str | None = None  # env JIRA_API_TOKEN — SECRET, NEVER echoed/logged
+    jira_project_key: str | None = None  # env JIRA_PROJECT_KEY (the target project, e.g. "QA")
+    # AUTONOMOUS FILING OFF BY DEFAULT (D-04): until a human reviews QUAL-03 accuracy (>=85%) +
+    # draft precision (>=90%) and EXPLICITLY flips this on, every classification stays a draft for
+    # human apply/reject. Even flag-on additionally requires confidence >= the calibrated threshold.
+    jira_autonomous_enabled: bool = False  # env JIRA_AUTONOMOUS_ENABLED
+    # The autonomous-filing eligibility floor — a STARTING POINT (RESEARCH A1) the QUAL-03 harness
+    # CALIBRATES from the measured per-class confidence distribution, exactly as the QUAL-02
+    # mutation harness tuned heal_high_threshold (0.85 -> 0.15) into its empirical separation
+    # window. The harness asserts against THIS shipped default (never a test-local literal) so the
+    # config can never silently drift from the proof. Read at the autonomy gate, never hardcoded.
+    jira_confidence_threshold: int = 70  # env JIRA_CONFIDENCE_THRESHOLD — calibrated by QUAL-03
+    # The per-run CREATE cap (D-05 / Pitfall 5): throttles new-issue filing to prevent ticket
+    # storms. Updates to existing fp-<hash> issues are free; the local Defect row persists
+    # regardless of the cap (a capped defect is still in the review queue, just not auto-filed).
+    jira_max_tickets_per_run: int = 25  # env JIRA_MAX_TICKETS_PER_RUN
+
     @property
     def checkpoint_dsn(self) -> str:
         """Plain psycopg3 conninfo for AsyncPostgresSaver (Pitfall 1: NOT the SQLAlchemy DSN).

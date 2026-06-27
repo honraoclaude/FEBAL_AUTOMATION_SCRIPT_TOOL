@@ -156,6 +156,7 @@ async def run_flow_job(job: dict) -> dict:
     capture_args = _capture_args(out_dir)
 
     exit_codes: list[int] = []
+    last_output: str | None = None  # the last attempt's tail-capped output (Pitfall 1, 09-01)
     started = time.monotonic()
     for attempt in range(1, MAX_ATTEMPTS + 1):
         # Cooperative kill check BETWEEN attempts (D-07): a kill set mid-retry stops further
@@ -165,6 +166,10 @@ async def run_flow_job(job: dict) -> dict:
         result = await _run_spec_once(spec, base_url=base_url, extra_args=capture_args)
         exit_code = result["exit_code"] if result["exit_code"] is not None else 1
         exit_codes.append(exit_code)
+        # Hold the LAST attempt's tail-capped output as the error text the Phase-9 classifier
+        # reads (Pitfall 1, plan 09-01). `result` survives the loop, so the final iteration's
+        # output is what persists — no new import (the no-llm-in-worker gate stays green).
+        last_output = result.get("output")
         if exit_code == 0:
             break  # passed -> stop retrying
     duration_s = time.monotonic() - started
@@ -203,6 +208,7 @@ async def run_flow_job(job: dict) -> dict:
                 verdict=verdict["verdict"],
                 attempts=verdict["attempts"],
                 exit_codes=exit_codes,
+                error_text=last_output,
                 duration_ms=duration_ms,
             )
         )
