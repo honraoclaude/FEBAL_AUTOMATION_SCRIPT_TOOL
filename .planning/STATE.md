@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: executing
 stopped_at: "Phase 9 planned (5 MVP slices, checker PASS clean — DEF-01..03/JIRA-01..04/QUAL-03); ready to execute. Notes: error_text persistence gap fixed in 09-01; atlassian-python-api gated in 09-03; QUAL-03 harness reads shipped threshold; autonomy OFF by default"
-last_updated: "2026-06-27T17:15:36.741Z"
-last_activity: 2026-06-26
+last_updated: "2026-06-27T18:00:10.648Z"
+last_activity: 2026-06-27
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 42
-  completed_plans: 37
+  completed_plans: 38
   percent: 73
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 08 — self-healing-engine
+**Current focus:** Phase 09 — defect-intelligence-jira-agent
 
 ## Current Position
 
-Phase: 08 (self-healing-engine) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-06-26
+Phase: 09 (defect-intelligence-jira-agent) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-06-27
 
-Progress: [██████████] 100%
+Progress: [█████████░] 90%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -92,6 +92,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 08 P03 | 26min | 3 tasks | 11 files |
 | Phase 08 P04 | 50min | 1 tasks | 1 files |
 | Phase 08 P05 | ~20min | 2 tasks | 6 files |
+| Phase 09 P01 | 25min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -175,6 +176,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 08]: 08-04 (QUAL-02): live mutation harness proves benign_heal_rate=4/4=1.00 (>=0.90) + false_heal_rate=0/2=0. MED-2 retune: proof band _MUTATION_HIGH=0.15 (window 0.06<band<=0.21); confidence.py untouched + byte-equivalent. BREAK_REMOVE held by the BAND (leftover count==1, conf 0.06), BREAK_DUPLICATE by the uniqueness gate (count==2). Inner runner uses python -m pytest (Windows Application Control blocks pytest.exe shim, os error 4551); stability.py untouched.
 - [Phase ?]: 08-05: list status default is 'quarantine' (heal_audit outcome value) not plan's 'quarantined' (Rule-1 fix); heal_success_rate excludes reviewed_outcome='rejected' (a rejected heal is never a success)
 - [Phase ?]: 08-05: apply reuses Plan-03 ast-validated ingest._apply_page_object_rewrite + single-writer KG append verbatim (T-08-20/21); reject is a reviewed_outcome flag flip; /api/heals router-level get_current_user gates every endpoint (no require_role DI exists)
+- [Phase 09]: 09-01: defect class/confidence DECISION is deterministic + keyless (D-01) — pure classify() over an evidence dict; the LLM enriches Jira prose only, never the decision (NO-LLM grep gate over app/services/defects/)
+- [Phase 09]: 09-01: infra_health is a PURE error-pattern signal (RESEARCH Open-Q2 b) over the error text — no live Docker probe (deferred to Phase 11); ClassifierWeights are FROZEN 60/20/-15 starting points the QUAL-03 harness tunes in Plan 02
+- [Phase 09]: 09-01: error_text persistence gap closed — job.py persists the last attempt's output on TestResult with NO new imports (no-llm-in-worker gate green); gather_evidence ORM-joins error_text + heal_audit + test_artifacts on a PASSED-IN session (caller owns SessionLocal)
 
 ### Pending Todos
 
@@ -199,9 +203,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T17:15:36.665Z
+Last session: 2026-06-27T17:59:17.463Z
 Stopped at: Phase 9 planned (5 MVP slices, checker PASS clean — DEF-01..03/JIRA-01..04/QUAL-03); ready to execute. Notes: error_text persistence gap fixed in 09-01; atlassian-python-api gated in 09-03; QUAL-03 harness reads shipped threshold; autonomy OFF by default
-Resume file: .planning/phases/09-defect-intelligence-jira-agent/09-01-PLAN.md
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 

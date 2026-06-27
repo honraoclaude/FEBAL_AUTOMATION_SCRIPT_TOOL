@@ -63,8 +63,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Defect Intelligence
 
-- [ ] **DEF-01**: Every failure is classified as Infrastructure (browser crash, network, environment), Automation (locator, test data), or Product Defect (functional, validation, performance, API) with a 0–100 confidence score
-- [ ] **DEF-02**: Failures are retried before classification; classification cites evidence (error type, DOM diff, healing history, infra health)
+- [x] **DEF-01**: Every failure is classified as Infrastructure (browser crash, network, environment), Automation (locator, test data), or Product Defect (functional, validation, performance, API) with a 0–100 confidence score
+- [x] **DEF-02**: Failures are retried before classification; classification cites evidence (error type, DOM diff, healing history, infra health)
 - [ ] **DEF-03**: Classification accuracy is measured against a hand-labeled failure set before autonomous Jira filing is enabled
 
 ### Jira Integration
@@ -167,8 +167,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HEAL-02 | Phase 8 | Complete |
 | HEAL-03 | Phase 8 | Complete |
 | HEAL-04 | Phase 8 | Complete |
-| DEF-01 | Phase 9 | Pending |
-| DEF-02 | Phase 9 | Pending |
+| DEF-01 | Phase 9 | Complete |
+| DEF-02 | Phase 9 | Complete |
 | DEF-03 | Phase 9 | Pending |
 | JIRA-01 | Phase 9 | Pending |
 | JIRA-02 | Phase 9 | Pending |
