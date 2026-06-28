@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Bug,
   Crosshair,
   ListChecks,
   LogOut,
@@ -48,6 +49,9 @@ const NAV_ITEMS: NavItem[] = [
   // EXEC-06 / 07-UI-SPEC: the Executions section (launcher + history + live view). Positioned
   // after Scenarios (explore → graph → scenarios → executions). Active via startsWith("/executions").
   { icon: PlayCircle, label: "Executions", href: "/executions" },
+  // JIRA-02 / 09-UI-SPEC: the Defects review queue. Positioned after Executions (explore → graph
+  // → scenarios → executions → defects). Active via pathname.startsWith("/defects").
+  { icon: Bug, label: "Defects", href: "/defects" },
 ];
 
 type Me = { id: number; email: string };
