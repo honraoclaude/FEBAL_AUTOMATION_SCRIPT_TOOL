@@ -139,3 +139,25 @@ async def get_current_user(
     if user is None:
         raise HTTPException(status_code=401, detail=_CREDENTIALS_401)
     return user
+
+
+def require_role(*allowed: str):
+    """RBAC dependency factory (PLAT-04 / D-01) — gate a route/router to a set of roles.
+
+    Composes on `get_current_user` (which already resolves the User row from the access cookie)
+    and reads `user.role` OFF THE ROW — never from the JWT (the token carries only
+    {sub, type, iat, exp, jti}). Reading the role per request means an admin role change takes
+    effect on the very next request: no token reissue, no stale-role window (T-10-03/04).
+
+    Deny-by-default: a role not in `allowed` gets 403; the boundary is server-side (frontend
+    nav-hiding is UX only). Use at the router level
+    (`dependencies=[Depends(require_role("admin"))]`, mirroring routers/scenarios.py) so EVERY
+    route on the router is gated, or per-route as a `Depends`.
+    """
+
+    async def _dep(user: User = Depends(get_current_user)) -> User:
+        if user.role not in allowed:
+            raise HTTPException(status_code=403, detail="Insufficient role")
+        return user
+
+    return _dep
