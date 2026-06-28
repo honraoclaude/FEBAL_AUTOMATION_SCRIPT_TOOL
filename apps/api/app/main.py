@@ -28,6 +28,7 @@ from app.models.scenario import Scenario  # noqa: F401 -- Base.metadata/Alembic 
 from app.models.user import User
 from app.routers.admin_llm import router as admin_llm_router
 from app.routers.auth import router as auth_router
+from app.routers.defects import router as defects_router
 from app.routers.executions import router as executions_router
 from app.routers.execute import router as execute_router
 from app.routers.explore import router as explore_router
@@ -121,4 +122,8 @@ app.include_router(scenarios_router)
 # list/apply/reject + per-element stats. API ONLY (no heal UI — deferred to Phase 10). Included
 # BEFORE stubs_router so its real /api/heals routes win over any residual stub (mirrors kg/scenarios).
 app.include_router(heals_router)
+# Defect draft-review API (JIRA-02 / D-04) — auth-gated list/detail/calibration/apply/reject.
+# The human-in-the-loop surface the autonomy gate requires. Included BEFORE stubs_router so its
+# real /api/defects routes win over any residual stub (mirrors kg/scenarios/heals).
+app.include_router(defects_router)
 app.include_router(stubs_router)
