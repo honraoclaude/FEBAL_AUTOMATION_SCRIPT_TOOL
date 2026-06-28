@@ -39,6 +39,7 @@ from app.routers.kg import router as kg_router
 from app.routers.scenarios import router as scenarios_router
 from app.routers.stubs import router as stubs_router
 from app.routers.targets import router as targets_router
+from app.routers.users import router as users_router
 from app.services.kg.schema import ensure_constraints
 
 log = structlog.get_logger()
@@ -130,4 +131,8 @@ app.include_router(heals_router)
 # The human-in-the-loop surface the autonomy gate requires. Included BEFORE stubs_router so its
 # real /api/defects routes win over any residual stub (mirrors kg/scenarios/heals).
 app.include_router(defects_router)
+# Admin user-management API (PLAT-04 / D-01) — Admin-only list + role assignment. Included
+# BEFORE stubs_router so its real /api/users routes win over any residual stub (mirrors the
+# kg/scenarios/heals/defects precedent).
+app.include_router(users_router)
 app.include_router(stubs_router)
