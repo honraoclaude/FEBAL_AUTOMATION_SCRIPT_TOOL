@@ -80,7 +80,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DASH-02**: QA dashboard shows execution history, failed tests, screenshots, and videos
 - [x] **DASH-03**: Developer dashboard shows root cause groupings, error trends, and module failure breakdowns
 - [x] **DASH-04**: Coverage engine reports % of discovered flows covered by approved scenarios and passing executions (graph-derived, honest definition)
-- [ ] **DASH-05**: Traceability engine answers flow ↔ scenario ↔ script ↔ execution ↔ defect chains for any artifact
+- [x] **DASH-05**: Traceability engine answers flow ↔ scenario ↔ script ↔ execution ↔ defect chains for any artifact
 - [ ] **DASH-06**: Search across executions, failures, and logs is backed by Elasticsearch
 
 ### Infrastructure & Operations
@@ -178,7 +178,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 10 | Complete |
 | DASH-03 | Phase 10 | Complete |
 | DASH-04 | Phase 10 | Complete |
-| DASH-05 | Phase 10 | Pending |
+| DASH-05 | Phase 10 | Complete |
 | DASH-06 | Phase 10 | Pending |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 11 | Pending |
