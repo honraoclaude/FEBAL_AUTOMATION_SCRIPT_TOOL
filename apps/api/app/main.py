@@ -28,6 +28,7 @@ from app.models.scenario import Scenario  # noqa: F401 -- Base.metadata/Alembic 
 from app.models.user import User
 from app.routers.admin_llm import router as admin_llm_router
 from app.routers.auth import router as auth_router
+from app.routers.coverage_dash import router as coverage_dash_router
 from app.routers.defects import router as defects_router
 from app.routers.executions import router as executions_router
 from app.routers.execute import router as execute_router
@@ -135,4 +136,8 @@ app.include_router(defects_router)
 # BEFORE stubs_router so its real /api/users routes win over any residual stub (mirrors the
 # kg/scenarios/heals/defects precedent).
 app.include_router(users_router)
+# DASH-04 lifecycle-coverage panel (role-gated /api/coverage/flows) — DISTINCT from the kg
+# router's ground-truth /api/coverage (Pitfall 5). Included BEFORE stubs_router so its real route
+# wins over any residual stub (mirrors the kg/scenarios/heals/defects/users precedent).
+app.include_router(coverage_dash_router)
 app.include_router(stubs_router)
