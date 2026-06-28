@@ -349,7 +349,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 2)*
 
-- [ ] 10-05-PLAN.md — Role-gated sidebar nav + role badge + the 3 dashboards UI to the UI-SPEC (PLAT-04/DASH-01/02/03)
+- [x] 10-05-PLAN.md — Role-gated sidebar nav + role badge + the 3 dashboards UI to the UI-SPEC (PLAT-04/DASH-01/02/03)
 
 **Wave 6** *(blocked on Waves 3/4/5)*
 
@@ -387,5 +387,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Execution Engine & Workers | 5/5 | Complete   | 2026-06-21 |
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
-| 10. Dashboards, RBAC & Coverage/Traceability | 3/6 | In Progress|  |
+| 10. Dashboards, RBAC & Coverage/Traceability | 4/6 | In Progress|  |
 | 11. Hardening & Ops | 0/TBD | Not started | - |
