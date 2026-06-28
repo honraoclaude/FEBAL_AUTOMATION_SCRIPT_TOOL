@@ -76,10 +76,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Dashboards & Analytics
 
-- [ ] **DASH-01**: Executive dashboard shows coverage, pass rate, defect counts, and trends
-- [ ] **DASH-02**: QA dashboard shows execution history, failed tests, screenshots, and videos
-- [ ] **DASH-03**: Developer dashboard shows root cause groupings, error trends, and module failure breakdowns
-- [ ] **DASH-04**: Coverage engine reports % of discovered flows covered by approved scenarios and passing executions (graph-derived, honest definition)
+- [x] **DASH-01**: Executive dashboard shows coverage, pass rate, defect counts, and trends
+- [x] **DASH-02**: QA dashboard shows execution history, failed tests, screenshots, and videos
+- [x] **DASH-03**: Developer dashboard shows root cause groupings, error trends, and module failure breakdowns
+- [x] **DASH-04**: Coverage engine reports % of discovered flows covered by approved scenarios and passing executions (graph-derived, honest definition)
 - [ ] **DASH-05**: Traceability engine answers flow ↔ scenario ↔ script ↔ execution ↔ defect chains for any artifact
 - [ ] **DASH-06**: Search across executions, failures, and logs is backed by Elasticsearch
 
@@ -174,10 +174,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | JIRA-02 | Phase 9 | Complete |
 | JIRA-03 | Phase 9 | Complete |
 | JIRA-04 | Phase 9 | Complete |
-| DASH-01 | Phase 10 | Pending |
-| DASH-02 | Phase 10 | Pending |
-| DASH-03 | Phase 10 | Pending |
-| DASH-04 | Phase 10 | Pending |
+| DASH-01 | Phase 10 | Complete |
+| DASH-02 | Phase 10 | Complete |
+| DASH-03 | Phase 10 | Complete |
+| DASH-04 | Phase 10 | Complete |
 | DASH-05 | Phase 10 | Pending |
 | DASH-06 | Phase 10 | Pending |
 | INFRA-01 | Phase 1 | Complete |

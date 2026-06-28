@@ -337,7 +337,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 10-02-PLAN.md — Coverage (graph-derived, honest definition) + exec/qa/dev aggregation services + role-gated routers (DASH-01/02/03/04)
+- [x] 10-02-PLAN.md — Coverage (graph-derived, honest definition) + exec/qa/dev aggregation services + role-gated routers (DASH-01/02/03/04)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -387,5 +387,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Execution Engine & Workers | 5/5 | Complete   | 2026-06-21 |
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
-| 10. Dashboards, RBAC & Coverage/Traceability | 1/6 | In Progress|  |
+| 10. Dashboards, RBAC & Coverage/Traceability | 2/6 | In Progress|  |
 | 11. Hardening & Ops | 0/TBD | Not started | - |
