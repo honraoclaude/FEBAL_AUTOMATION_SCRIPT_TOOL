@@ -15,6 +15,7 @@ This package is the contract Plan 04's defect pipeline + router consume:
   (operation_type "defect.describe") with a DETERMINISTIC no-key fallback.
 """
 
+from app.services.jira.adf import build_adf
 from app.services.jira.client import AtlassianJira, JiraGateway, JiraNotConfiguredError
 from app.services.jira.fake import FakeJira
 
@@ -23,4 +24,5 @@ __all__ = [
     "FakeJira",
     "JiraGateway",
     "JiraNotConfiguredError",
+    "build_adf",
 ]

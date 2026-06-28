@@ -21,8 +21,6 @@ Run: cd apps/api && uv run python -m pytest tests/unit/test_jira_description.py 
 
 from __future__ import annotations
 
-import pytest
-
 from app.services.jira import description as desc
 
 EVIDENCE = {
