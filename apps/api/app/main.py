@@ -41,6 +41,7 @@ from app.routers.kg import router as kg_router
 from app.routers.scenarios import router as scenarios_router
 from app.routers.stubs import router as stubs_router
 from app.routers.targets import router as targets_router
+from app.routers.traceability import router as traceability_router
 from app.routers.users import router as users_router
 from app.services.kg.schema import ensure_constraints
 
@@ -145,4 +146,8 @@ app.include_router(coverage_dash_router)
 # matrix. Included BEFORE stubs_router so its real /api/dashboards/* routes win over any residual
 # stub (mirrors the kg/scenarios/heals/defects/users/coverage precedent).
 app.include_router(dashboards_router)
+# Traceability viewer (DASH-05) — role-gated GET /api/traceability cross-store chain. Read-only
+# join (no graph writes). Included BEFORE stubs_router so its real route wins over any residual
+# stub (mirrors the kg/scenarios/heals/defects/users/coverage/dashboards precedent).
+app.include_router(traceability_router)
 app.include_router(stubs_router)
