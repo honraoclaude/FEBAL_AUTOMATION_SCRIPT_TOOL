@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 9 planned (5 MVP slices, checker PASS clean — DEF-01..03/JIRA-01..04/QUAL-03); ready to execute. Notes: error_text persistence gap fixed in 09-01; atlassian-python-api gated in 09-03; QUAL-03 harness reads shipped threshold; autonomy OFF by default"
-last_updated: "2026-06-28T00:32:11.638Z"
+stopped_at: "Completed 09-04 (JIRA-02/03/04): defect pipeline + autonomy gate + fingerprint-label JQL dedup/cap + auth-gated /api/defects review router, all keyless over FakeJira; 408 deterministic tests green. Next: 09-05 (Defects review UI — last Phase-9 plan)"
+last_updated: "2026-06-28T00:47:53.172Z"
 last_activity: 2026-06-28
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 42
-  completed_plans: 40
+  completed_plans: 41
   percent: 73
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 09 (defect-intelligence-jira-agent) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-06-28
 
-Progress: [██████████] 95%
+Progress: [██████████] 98%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -95,6 +95,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 09 P01 | 25min | 3 tasks | 15 files |
 | Phase 09 P02 | ~40min | 2 tasks | 1 files |
 | Phase 09 P03 | 9min | 3 tasks | 10 files |
+| Phase 09 P04 | ~35min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -185,6 +186,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 09-03: AtlassianJira builds the atlassian.Jira client lazily (only when configured) so import/construction is boot-safe without a token
 - [Phase ?]: 09-03: describe() short-circuits to the deterministic fallback when no provider key is set — the gateway is never called keyless (D-01 prose-only)
 - [Phase ?]: 09-03: JIRA-01/03/04 contract is keyless-CI via a hand-written FakeJira behind the JiraGateway Protocol; live Jira filing/dedup is Manual-Only
+- [Phase 09]: 09-04: may_autofile = settings.jira_autonomous_enabled AND conf >= settings.jira_confidence_threshold (never a literal); flag-off OR below-threshold NEVER files — the core JIRA-02/D-04 safety gate, proven across the truth table over FakeJira
+- [Phase 09]: 09-04: file_or_update returns FileResult(action, jira_key, counter) — updates are free (no cap consumption), creates consume one slot, at-cap MISS returns action='none' and the draft persists (Pitfall 5); the fp-<hash> JQL is server-built (no user text, T-09-13); artifact paths run_id-derived via the executions.py containment guard (T-09-15)
+- [Phase 09]: 09-04: /api/defects (auth-gated list/detail/calibration/apply/reject, registered after heals_router) reuses pipeline.file_or_update + _severity_priority so the human-apply path is byte-identical to the autonomous-file path; run_defect_pipeline commits the draft (JIRA-04 run_id/flow_id link) BEFORE any Jira call so a cap/autonomy/gateway outcome never loses the classification
 
 ### Pending Todos
 
@@ -209,8 +213,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T00:29:12.196Z
-Stopped at: Phase 9 planned (5 MVP slices, checker PASS clean — DEF-01..03/JIRA-01..04/QUAL-03); ready to execute. Notes: error_text persistence gap fixed in 09-01; atlassian-python-api gated in 09-03; QUAL-03 harness reads shipped threshold; autonomy OFF by default
+Last session: 2026-06-28T01:55:00Z
+Stopped at: Completed 09-04-PLAN.md (JIRA-02/03/04). Defect pipeline wired end-to-end keyless: may_autofile flag-AND-threshold gate, file_or_update fingerprint-label JQL dedup + per-run cap, run_defect_pipeline draft-row + traceability, /api/defects auth-gated review router. 408 deterministic tests green. Next: 09-05 (Defects review UI consuming these payloads — the last Phase-9 plan).
 Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
