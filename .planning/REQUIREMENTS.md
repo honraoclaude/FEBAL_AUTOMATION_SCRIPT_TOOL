@@ -65,7 +65,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **DEF-01**: Every failure is classified as Infrastructure (browser crash, network, environment), Automation (locator, test data), or Product Defect (functional, validation, performance, API) with a 0–100 confidence score
 - [x] **DEF-02**: Failures are retried before classification; classification cites evidence (error type, DOM diff, healing history, infra health)
-- [ ] **DEF-03**: Classification accuracy is measured against a hand-labeled failure set before autonomous Jira filing is enabled
+- [x] **DEF-03**: Classification accuracy is measured against a hand-labeled failure set before autonomous Jira filing is enabled
 
 ### Jira Integration
 
@@ -94,7 +94,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **QUAL-01**: A hand-labeled ground-truth graph of a demo app (SauceDemo) measures exploration coverage (>80% target)
 - [x] **QUAL-02**: A seeded-bug / benign-mutation harness measures self-healing success (>90%) and false-heal rate, and proves generated tests fail on real bugs
-- [ ] **QUAL-03**: A labeled failure set measures defect classification accuracy (>85%) and calibrates the Jira confidence threshold
+- [x] **QUAL-03**: A labeled failure set measures defect classification accuracy (>85%) and calibrates the Jira confidence threshold
 - [x] **QUAL-04**: Self-hosted demo target apps run in Docker with snapshot/restore so exploration and execution are repeatable
 
 ## v2 Requirements
@@ -169,7 +169,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HEAL-04 | Phase 8 | Complete |
 | DEF-01 | Phase 9 | Complete |
 | DEF-02 | Phase 9 | Complete |
-| DEF-03 | Phase 9 | Pending |
+| DEF-03 | Phase 9 | Complete |
 | JIRA-01 | Phase 9 | Pending |
 | JIRA-02 | Phase 9 | Pending |
 | JIRA-03 | Phase 9 | Pending |
@@ -186,7 +186,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-04 | Phase 11 | Pending |
 | QUAL-01 | Phase 5 | Complete |
 | QUAL-02 | Phase 8 | Complete |
-| QUAL-03 | Phase 9 | Pending |
+| QUAL-03 | Phase 9 | Complete |
 | QUAL-04 | Phase 1 | Complete |
 
 **Coverage:**

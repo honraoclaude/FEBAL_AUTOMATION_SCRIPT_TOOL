@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: "Phase 9 planned (5 MVP slices, checker PASS clean — DEF-01..03/JIRA-01..04/QUAL-03); ready to execute. Notes: error_text persistence gap fixed in 09-01; atlassian-python-api gated in 09-03; QUAL-03 harness reads shipped threshold; autonomy OFF by default"
-last_updated: "2026-06-27T18:00:10.648Z"
+last_updated: "2026-06-27T18:13:17.433Z"
 last_activity: 2026-06-27
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 42
-  completed_plans: 38
+  completed_plans: 39
   percent: 73
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 09 (defect-intelligence-jira-agent) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-06-27
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 93%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -93,6 +93,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 08 P04 | 50min | 1 tasks | 1 files |
 | Phase 08 P05 | ~20min | 2 tasks | 6 files |
 | Phase 09 P01 | 25min | 3 tasks | 15 files |
+| Phase 09 P02 | ~40min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -179,6 +180,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-01: defect class/confidence DECISION is deterministic + keyless (D-01) — pure classify() over an evidence dict; the LLM enriches Jira prose only, never the decision (NO-LLM grep gate over app/services/defects/)
 - [Phase 09]: 09-01: infra_health is a PURE error-pattern signal (RESEARCH Open-Q2 b) over the error text — no live Docker probe (deferred to Phase 11); ClassifierWeights are FROZEN 60/20/-15 starting points the QUAL-03 harness tunes in Plan 02
 - [Phase 09]: 09-01: error_text persistence gap closed — job.py persists the last attempt's output on TestResult with NO new imports (no-llm-in-worker gate green); gather_evidence ORM-joins error_text + heal_audit + test_artifacts on a PASSED-IN session (caller owns SessionLocal)
+- [Phase 09]: 09-02 (QUAL-03/DEF-03): keyless 3-class accuracy harness (product_defect=SEED_BUG@8081, automation=un-healed BREAK_REMOVE@8086, infrastructure=NET-NEW dead-port/forced-timeout fault — the _port_open inverse, no build) over REAL-run evidence -> accuracy 10/10=1.00 (>=0.85). Per-class confidences product=80 / automation=100 / infra=80,80,80,60; autonomous-filing separation window (0,80]. The shipped jira_confidence_threshold=70 is ALREADY in-window -> NO retune; config.py + classifier.py frozen weights UNTOUCHED (the 08-04 retune precedent applies only IF the window demands it). Asserted via `_THRESHOLD=_settings.jira_confidence_threshold` (the QUAL-02 `_MUTATION_HIGH` discipline — config can't drift from the proof, T-09-05). neo4j OFF; `uv run python -m pytest` (Windows AppControl).
 
 ### Pending Todos
 
@@ -203,7 +205,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T17:59:17.463Z
+Last session: 2026-06-27T18:13:17.409Z
 Stopped at: Phase 9 planned (5 MVP slices, checker PASS clean — DEF-01..03/JIRA-01..04/QUAL-03); ready to execute. Notes: error_text persistence gap fixed in 09-01; atlassian-python-api gated in 09-03; QUAL-03 harness reads shipped threshold; autonomy OFF by default
 Resume file: None
 
