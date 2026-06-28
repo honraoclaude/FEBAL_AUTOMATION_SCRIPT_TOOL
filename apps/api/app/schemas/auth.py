@@ -11,3 +11,6 @@ class LoginRequest(BaseModel):
 class MeResponse(BaseModel):
     id: int
     email: str
+    # PLAT-04 / D-01: the caller's RBAC role (admin | qa_lead | qa_engineer | developer). The
+    # frontend gates nav/views off this; it is read off the User row, never from the JWT.
+    role: str

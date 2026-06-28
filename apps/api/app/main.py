@@ -58,6 +58,10 @@ async def seed_admin() -> None:
                     User(
                         email=settings.admin_email,
                         password_hash=hash_password(settings.admin_password),
+                        # D-01: the env-seeded admin is the platform Admin. Set explicitly on
+                        # create (in addition to the column server_default) so the intent is
+                        # local to the seed, not only an implicit migration default.
+                        role="admin",
                     )
                 )
                 log.info("admin_user_seeded", email=settings.admin_email)
