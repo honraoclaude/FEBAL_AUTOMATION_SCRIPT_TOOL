@@ -35,6 +35,7 @@ dependencies = [
     "psycopg[binary]==3.3.*",
     "sse-starlette==3.4.*",
     "aio-pika==9.6.*",
+    "atlassian-python-api==4.0.*",
 ]
 
 [dependency-groups]
