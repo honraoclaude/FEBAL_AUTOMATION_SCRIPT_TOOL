@@ -166,3 +166,84 @@ async def test_empty_data_is_honest_empty(monkeypatch) -> None:
         dev = await dashboards.developer(db)
         assert isinstance(dev["root_cause_groups"], list)
         assert isinstance(dev["module_breakdown"], list)
+
+
+# --- the role matrix (Task 3): per-route require_role(...) — 200 allowed / 403 denied / 401 unauth
+
+
+def _stub_user(role: str):
+    def _dep():
+        class _U:
+            id = 1
+            email = "u@example.com"
+
+        u = _U()
+        u.role = role
+        return u
+
+    return _dep
+
+
+def _make_app(role: str | None):
+    from app.core.security import get_current_user
+    from app.main import app
+
+    app.dependency_overrides.clear()
+    if role is not None:
+        app.dependency_overrides[get_current_user] = _stub_user(role)
+    return app
+
+
+# endpoint -> (allowed roles, denied roles) per the rbac.py matrix.
+_MATRIX = {
+    "/api/dashboards/executive": (
+        ["admin", "qa_lead"],
+        ["developer", "qa_engineer"],
+    ),
+    "/api/dashboards/qa": (
+        ["admin", "qa_lead", "qa_engineer"],
+        ["developer"],
+    ),
+    "/api/dashboards/developer": (
+        ["admin", "qa_lead", "developer"],
+        ["qa_engineer"],
+    ),
+    "/api/coverage/flows": (
+        ["admin", "qa_lead", "developer"],
+        ["qa_engineer"],
+    ),
+}
+
+
+@_loop_module
+@pytest.mark.parametrize("path", list(_MATRIX))
+async def test_role_matrix_allowed_and_denied(monkeypatch, path: str) -> None:
+    """Each route: permitted roles 200; disallowed roles 403; unauthenticated 401."""
+    _patch_mine(monkeypatch, 0)  # executive/coverage mine the graph — keep keyless
+    allowed, denied = _MATRIX[path]
+    try:
+        for role in allowed:
+            app = _make_app(role)
+            async with httpx.AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as c:
+                resp = await c.get(path)
+            assert resp.status_code == 200, f"{role} on {path} should be 200, got {resp.status_code}: {resp.text}"
+
+        for role in denied:
+            app = _make_app(role)
+            async with httpx.AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as c:
+                resp = await c.get(path)
+            assert resp.status_code == 403, f"{role} on {path} should be 403, got {resp.status_code}"
+
+        # unauthenticated -> 401
+        app = _make_app(None)
+        async with httpx.AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as c:
+            resp = await c.get(path)
+        assert resp.status_code == 401, f"unauth on {path} should be 401, got {resp.status_code}"
+    finally:
+        _make_app(None).dependency_overrides.clear()

@@ -29,6 +29,7 @@ from app.models.user import User
 from app.routers.admin_llm import router as admin_llm_router
 from app.routers.auth import router as auth_router
 from app.routers.coverage_dash import router as coverage_dash_router
+from app.routers.dashboards import router as dashboards_router
 from app.routers.defects import router as defects_router
 from app.routers.executions import router as executions_router
 from app.routers.execute import router as execute_router
@@ -140,4 +141,8 @@ app.include_router(users_router)
 # router's ground-truth /api/coverage (Pitfall 5). Included BEFORE stubs_router so its real route
 # wins over any residual stub (mirrors the kg/scenarios/heals/defects/users precedent).
 app.include_router(coverage_dash_router)
+# The three role-gated dashboards (DASH-01/02/03) — per-route require_role(...) per the rbac.py
+# matrix. Included BEFORE stubs_router so its real /api/dashboards/* routes win over any residual
+# stub (mirrors the kg/scenarios/heals/defects/users/coverage precedent).
+app.include_router(dashboards_router)
 app.include_router(stubs_router)
