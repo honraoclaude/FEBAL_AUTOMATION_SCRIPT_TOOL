@@ -24,9 +24,12 @@ Decimal phases appear between their surrounding integers in numeric order.
  (completed 2026-06-19)
 - [x] **Phase 6: BDD & Playwright Generation** - Quality-gated Gherkin and Playwright generation from the graph with approve/edit review and N-run stability acceptance
  (completed 2026-06-20)
-- [x] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch (completed 2026-06-21)
-- [x] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate (completed 2026-06-26)
-- [x] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision (completed 2026-06-28)
+- [x] **Phase 7: Execution Engine & Workers** - Suite tiers, RabbitMQ-distributed parallel Playwright workers, per-step artifacts, execution history, live run view with kill switch
+ (completed 2026-06-21)
+- [x] **Phase 8: Self-Healing Engine** - Three-outcome healing with audit diffs, graph write-back, and a mutation harness measuring true heal success and false-heal rate
+ (completed 2026-06-26)
+- [x] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision
+ (completed 2026-06-28)
 - [ ] **Phase 10: Dashboards, RBAC & Coverage/Traceability** - Executive/QA/developer dashboards, role enforcement, graph-derived coverage, full traceability chain, Elasticsearch-backed search
 - [ ] **Phase 11: Hardening & Ops** - K8s manifests on Docker Desktop/kind, GitHub Actions CI/CD for platform images, Prometheus + Grafana domain metrics
 
@@ -325,7 +328,33 @@ Plans:
   4. Traceability engine answers the flow ↔ scenario ↔ script ↔ execution ↔ defect chain for any artifact the user picks
   5. User searches across executions, failures, and logs with results served by Elasticsearch
 
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 10-01-PLAN.md — RBAC foundation: role column + migration 0010 + require_role + static map + admin users API + /me role (PLAT-04)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 10-02-PLAN.md — Coverage (graph-derived, honest definition) + exec/qa/dev aggregation services + role-gated routers (DASH-01/02/03/04)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 10-03-PLAN.md — Traceability cross-store join service + role-gated router (DASH-05)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 10-04-PLAN.md — Elasticsearch search: gated dep + es_client + compose/config fixes + on-write dual-index + backfill + search router + graceful-degrade (DASH-06)
+
+**Wave 5** *(blocked on Wave 2)*
+
+- [ ] 10-05-PLAN.md — Role-gated sidebar nav + role badge + the 3 dashboards UI to the UI-SPEC (PLAT-04/DASH-01/02/03)
+
+**Wave 6** *(blocked on Waves 3/4/5)*
+
+- [ ] 10-06-PLAN.md — Coverage panel + traceability viewer + search UI + admin role-assignment screen (PLAT-04/DASH-04/05/06)
+
 **UI hint**: yes
 
 ### Phase 11: Hardening & Ops
@@ -358,5 +387,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Execution Engine & Workers | 5/5 | Complete   | 2026-06-21 |
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
-| 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |
+| 10. Dashboards, RBAC & Coverage/Traceability | 0/6 | Planned | - |
 | 11. Hardening & Ops | 0/TBD | Not started | - |
