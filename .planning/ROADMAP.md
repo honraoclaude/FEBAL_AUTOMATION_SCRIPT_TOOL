@@ -357,6 +357,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. BDD & Playwright Generation | 4/4 | Complete   | 2026-06-20 |
 | 7. Execution Engine & Workers | 5/5 | Complete   | 2026-06-21 |
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
-| 9. Defect Intelligence & Jira Agent | 2/5 | In Progress|  |
+| 9. Defect Intelligence & Jira Agent | 3/5 | In Progress|  |
 | 10. Dashboards, RBAC & Coverage/Traceability | 0/TBD | Not started | - |
 | 11. Hardening & Ops | 0/TBD | Not started | - |

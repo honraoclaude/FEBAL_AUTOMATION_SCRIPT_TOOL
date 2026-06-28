@@ -69,7 +69,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Jira Integration
 
-- [ ] **JIRA-01**: Platform creates Jira Cloud issues with summary, description, steps to reproduce, expected/actual results, severity, priority, screenshots, video, and logs
+- [x] **JIRA-01**: Platform creates Jira Cloud issues with summary, description, steps to reproduce, expected/actual results, severity, priority, screenshots, video, and logs
 - [ ] **JIRA-02**: Jira Agent starts in draft/review mode (review queue); autonomous creation activates only above the confidence threshold and after measured >90% draft precision
 - [ ] **JIRA-03**: Duplicate defects are detected via failure fingerprinting + JQL search — existing issues are updated, not duplicated; ticket creation is capped per run
 - [ ] **JIRA-04**: Created issues are linked to the originating test, flow, and execution; links appear in the traceability chain
@@ -170,7 +170,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEF-01 | Phase 9 | Complete |
 | DEF-02 | Phase 9 | Complete |
 | DEF-03 | Phase 9 | Complete |
-| JIRA-01 | Phase 9 | Pending |
+| JIRA-01 | Phase 9 | Complete |
 | JIRA-02 | Phase 9 | Pending |
 | JIRA-03 | Phase 9 | Pending |
 | JIRA-04 | Phase 9 | Pending |
