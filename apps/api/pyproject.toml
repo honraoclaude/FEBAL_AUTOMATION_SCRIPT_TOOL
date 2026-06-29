@@ -36,6 +36,7 @@ dependencies = [
     "sse-starlette==3.4.*",
     "aio-pika==9.6.*",
     "atlassian-python-api==4.0.*",
+    "elasticsearch[async]==9.4.*",
 ]
 
 [dependency-groups]
@@ -61,6 +62,7 @@ markers = [
     "e2e: Playwright UI tests against the running web tier",
     "live_llm: needs real provider keys; skipped when absent; off the default gate",
     "graph: needs the neo4j graph profile active (run under graph_mode; web stopped)",
+    "search: needs the elasticsearch search profile active (run under search_mode; neo4j off — 3GB cap)",
 ]
 
 [tool.ruff]

@@ -84,6 +84,12 @@ services:
       # Optional under the queue profile: the api boots without rabbitmq up (only an enqueue
       # would then error); when the queue profile is up the broker is reached in-cluster.
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      # Elasticsearch full-text search (Phase 10, plan 10-04; DASH-06). In-cluster host is
+      # `elasticsearch`; the AsyncElasticsearch client opens lazily so the api boots even when
+      # the search profile is down (no depends_on — only a search query / on-write index then
+      # errors, swallowed/graceful-degraded). Enumerated explicitly (compose does NOT pass the
+      # whole .env; the NEO4J_URI precedent). Plain http:// — the ES block disables xpack security.
+      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL:-http://elasticsearch:9200}
       WATCHFILES_FORCE_POLLING: "true" # uvicorn --reload over a Windows bind mount needs polling
     volumes:
       - ../apps/api/app:/app/app # hot-reload mount
@@ -382,6 +388,14 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms512m -Xmx1g"
       discovery.type: single-node
+      # ES 9.x defaults security (HTTPS + auth) ON; an AsyncElasticsearch("http://...") client
+      # would fail the TLS/auth handshake (10-04 Pitfall 1). Disable security for the local-dev
+      # single-operator posture so the client connects over plain HTTP with no auth. NOT for prod.
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.enrollment.enabled: "false"
+    ports:
+      - "9200:9200" # host-published so the search-profile-gated live round-trip test reaches ES
 
 volumes:
   pgdata:

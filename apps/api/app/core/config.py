@@ -74,6 +74,15 @@ class Settings(BaseSettings):
     neo4j_user: str  # env NEO4J_USER
     neo4j_password: str  # env NEO4J_PASSWORD
 
+    # --- Elasticsearch full-text search (Phase 10, plan 10-04; DASH-06) ---
+    # The HTTP URL for the lifespan-managed AsyncElasticsearch client. Default points at the
+    # in-cluster `elasticsearch` host so the api boots without it set; the search profile is OFF
+    # by default and the client opens LAZILY (mirroring the neo4j driver), so the api still boots
+    # when ES is down — only a search query / on-write index then errors (graceful-degraded). Plain
+    # http:// (the compose ES block disables xpack security — 10-04 Pitfall 1). Compose enumerates
+    # env explicitly (the NEO4J_URI precedent — "compose does NOT pass the whole .env").
+    elasticsearch_url: str = "http://elasticsearch:9200"  # env ELASTICSEARCH_URL
+
     # --- Artifact workspaces + execution runner (Phase 3, plan 03-04; PLAT-02) ---
     # WORKSPACES_DIR: where generate-scripts writes (and /execute discovers) the run's
     #   spec at <WORKSPACES_DIR>/<run_id>/test_login.py. Default None => resolve the

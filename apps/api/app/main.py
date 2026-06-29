@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import structlog
+from elasticsearch.exceptions import ConnectionError as ESConnectionError
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from neo4j.exceptions import ServiceUnavailable
@@ -11,6 +12,7 @@ from sqlalchemy import select
 
 from app.core.checkpointer import close_checkpointer, init_checkpointer
 from app.core.config import settings
+from app.core.es_client import close_es, init_es
 from app.core.logging import configure_logging
 from app.core.neo4j_driver import close_neo4j, get_neo4j, init_neo4j
 from app.core.redis_client import close_redis, init_redis
@@ -78,6 +80,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     init_redis()  # open the single long-lived gateway Redis client (hot-path GET/MGET/pipeline)
     init_neo4j()  # open the single lifespan Neo4j driver/pool (lazy connect — boots even if neo4j is down)
+    init_es()  # open the single lifespan AsyncElasticsearch client (lazy connect — boots even if ES is down)
     # KG-03: create the uniqueness constraints backing the idempotent fingerprint-MERGE.
     # ensure_constraints is GRACEFUL — it catches an unreachable neo4j and returns without
     # raising, so the api still boots when the graph profile is down (no depends_on:neo4j).
@@ -89,6 +92,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
     await close_checkpointer()
     await close_neo4j()
+    await close_es()
     await close_redis()
     await engine.dispose()
 
@@ -108,6 +112,22 @@ async def _neo4j_unavailable_handler(request: Request, exc: ServiceUnavailable) 
     return JSONResponse(
         status_code=503,
         content={"detail": "Knowledge graph is unavailable — start the graph profile to browse it."},
+    )
+
+
+@app.exception_handler(ESConnectionError)
+async def _es_unavailable_handler(request: Request, exc: ESConnectionError) -> JSONResponse:
+    """The search endpoint needs Elasticsearch; the search profile is optional (api boots without it).
+
+    When ES is unreachable, return a clean 503 the search UI renders as its 'search unavailable'
+    state — NEVER an unhandled 500/stack trace and NEVER a fake empty hit list pretending zero
+    results (T-10-20). Mirrors the neo4j-503 handler; consistent with the graceful-without-ES
+    contract (lazy client, graceful ensure_indices, swallow-and-log on-write index).
+    """
+    log.warning("elasticsearch_unavailable", path=str(request.url.path))
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Search is unavailable — start the search profile to use it."},
     )
 
 
