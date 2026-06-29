@@ -1,0 +1,47 @@
+# Prometheus scrape config for the Autonomous QA Engineer Platform (INFRA-04).
+#
+# Mounted into the prometheus service (compose `monitoring` profile) at
+# /etc/prometheus/prometheus.yml. App-level only: the api exposes BOTH the
+# prometheus-fastapi-instrumentator HTTP histograms AND the 4 custom domain
+# gauges (qa_platform_*) on a single /metrics endpoint over the default REGISTRY.
+#
+# Exporters per the CLAUDE.md observability table:
+#   - postgres  → prometheuscommunity/postgres-exporter  (:9187)
+#   - redis     → oliver006/redis_exporter               (:9121)
+#   - rabbitmq  → the BUILT-IN rabbitmq_prometheus plugin (:15692, RESEARCH Pitfall 6 —
+#                 NOT the AMQP 5672 port, and NOT a separate exporter container)
+#   - elasticsearch → prometheuscommunity/elasticsearch-exporter (:9114) — only
+#                 meaningful when the `search` profile/overlay is also up; the scrape
+#                 target simply stays DOWN otherwise (Prometheus tolerates it).
+# Neo4j has NO scrape job: its native Prometheus endpoint is Enterprise-only
+# (CLAUDE.md) — graph metrics come from the app collector, never a DB exporter.
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['api:8000']
+
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: redis
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  - job_name: rabbitmq
+    # The built-in rabbitmq_prometheus plugin (rabbitmq:4-management) on :15692 —
+    # NOT the AMQP 5672 port and NOT an external exporter (RESEARCH Pitfall 6).
+    static_configs:
+      - targets: ['rabbitmq:15692']
+
+  - job_name: elasticsearch
+    # Only meaningful when the search overlay is up; otherwise the target is DOWN
+    # and Prometheus surfaces it as up{job="elasticsearch"}==0 (honest, never fatal).
+    static_configs:
+      - targets: ['elasticsearch-exporter:9114']

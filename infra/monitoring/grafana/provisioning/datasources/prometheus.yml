@@ -1,0 +1,15 @@
+# Grafana datasource provisioning (dashboards-as-code, INFRA-04 / D-04).
+#
+# Grafana v5+ reads /etc/grafana/provisioning/{datasources,dashboards} at boot, so
+# this Prometheus datasource is wired with NO manual clicking. Mounted into the
+# grafana service (compose `monitoring` profile) at
+# /etc/grafana/provisioning/datasources/prometheus.yml.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    # In-cluster/compose service name of the prometheus service in this profile.
+    url: http://prometheus:9090
+    isDefault: true

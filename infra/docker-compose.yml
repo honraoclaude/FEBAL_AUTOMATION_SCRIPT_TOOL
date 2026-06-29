@@ -397,5 +397,64 @@ services:
     ports:
       - "9200:9200" # host-published so the search-profile-gated live round-trip test reaches ES
 
+  # --- Observability stack (Phase 11, plan 11-01; INFRA-04) ---
+  # profiles:[monitoring] mirrors the graph/queue/search OFF-by-default mechanism: a plain
+  # `up` NEVER starts these (D-04). Enable with `--profile monitoring`. Prometheus scrapes the
+  # api /metrics (instrumentator HTTP histograms + the 4 qa_platform_* domain gauges) plus the
+  # pg/redis exporters; Grafana provisions the datasource + dashboards AS CODE (no clicking).
+  # RabbitMQ needs NO exporter (built-in plugin on :15692); Neo4j has none (Enterprise-only,
+  # CLAUDE.md). mem_limits keep the profile modest under the 3GB WSL cap.
+  prometheus:
+    image: prom/prometheus
+    profiles: [monitoring] # Phase 11 — OFF by default
+    mem_limit: 512m
+    volumes:
+      # The as-code scrape config (RESEARCH Pattern 5). Read-only mount.
+      - ../infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090" # Prometheus web UI / API
+
+  grafana:
+    image: grafana/grafana
+    profiles: [monitoring] # Phase 11 — OFF by default
+    mem_limit: 512m
+    environment:
+      # Admin password from .env (never a literal secret here); defaults for local dev only.
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+    volumes:
+      # Datasource + dashboard provider + dashboard JSON, all read at boot (dashboards-as-code).
+      - ../infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000" # host 3001 to avoid the web tier's 3000 clash; Grafana listens on 3000
+    depends_on:
+      - prometheus
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    profiles: [monitoring] # Phase 11 — OFF by default
+    mem_limit: 128m
+    environment:
+      # The exporter connects to the same Postgres the api uses (in-cluster host `postgres`).
+      DATA_SOURCE_URI: "postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATA_SOURCE_USER: ${POSTGRES_USER}
+      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD}
+    ports:
+      - "9187:9187" # postgres-exporter metrics
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis-exporter:
+    image: oliver006/redis_exporter
+    profiles: [monitoring] # Phase 11 — OFF by default
+    mem_limit: 128m
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121" # redis-exporter metrics
+    depends_on:
+      redis:
+        condition: service_healthy
+
 volumes:
   pgdata:

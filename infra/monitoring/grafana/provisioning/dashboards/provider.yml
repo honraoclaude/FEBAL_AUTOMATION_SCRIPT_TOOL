@@ -1,0 +1,14 @@
+# Grafana dashboard provider (dashboards-as-code, INFRA-04 / D-04).
+#
+# Tells Grafana to load every *.json dashboard in this directory at boot. Mounted
+# into the grafana service (compose `monitoring` profile) at
+# /etc/grafana/provisioning/dashboards/provider.yml — the platform-health.json and
+# domain-metrics.json dashboards in the same dir provision automatically.
+apiVersion: 1
+
+providers:
+  - name: 'qa-platform'
+    folder: ''
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards
