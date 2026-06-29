@@ -44,6 +44,22 @@ async def _delete_run(run_id: str) -> None:
         await conn.close()
 
 
+async def _isolate_sources() -> None:
+    """Truncate the 3 metric-source tables so the seeded run is the ONLY data.
+
+    The domain metrics are PLATFORM-WIDE aggregates over shared tables (heal_audit/defects/
+    llm_usage), so exact-value assertions require the run under test to be the sole contributor.
+    Other integration tests clean by run_id but may run in any order; a full truncate of just
+    these three source tables gives this module deterministic exact gauge values.
+    """
+    conn = await asyncpg.connect(_host_dsn())
+    try:
+        for tbl in ("heal_audit", "defects", "llm_usage"):
+            await conn.execute(f"TRUNCATE TABLE {tbl} RESTART IDENTITY")
+    finally:
+        await conn.close()
+
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module", autouse=True)
 async def _reset_engine_pool():
     from app.db.session import engine
@@ -98,7 +114,32 @@ async def _seed(run_id: str, *, applied: int, rejected: int) -> None:
 
 
 async def _scrape() -> httpx.Response:
-    from app.main import app
+    """Scrape /metrics over the REAL collector + Instrumentator wiring (without the heavy lifespan).
+
+    /metrics is mounted (and the custom collector registered) by start_metrics + the Instrumentator
+    that main.py's lifespan runs. We invoke those SAME two calls here rather than driving the full
+    lifespan_context — the full lifespan also opens the LangGraph checkpointer (psycopg, which the
+    Windows ProactorEventLoop rejects) and blocks on Neo4j/ES that are down in the host-test
+    context. start_metrics is idempotent (guarded register) and the snapshot has already been
+    populated by _refresh_once(), so this exercises the genuine exposition path keylessly. We do
+    NOT cancel the refresher here (no loop is needed for the scrape; the snapshot is pre-populated).
+    """
+    import app.core.metrics as _m  # noqa: PLC0415
+    from app.core.metrics import DomainMetricsCollector  # noqa: PLC0415
+    from app.main import app  # noqa: PLC0415
+    from prometheus_client.registry import REGISTRY  # noqa: PLC0415
+    from prometheus_fastapi_instrumentator import Instrumentator  # noqa: PLC0415
+
+    # Register the custom collector once (idempotent — mirror start_metrics' guard) + expose once.
+    if _m._collector is None:
+        _m._collector = DomainMetricsCollector()
+        REGISTRY.register(_m._collector)
+    if not any(getattr(r, "path", None) == "/metrics" for r in app.router.routes):
+        # ONLY .expose() (adds the /metrics route) — NOT .instrument() (adds middleware), which
+        # raises "Cannot add middleware after an application has started" once any other in-process
+        # test has booted the shared `app` singleton. The HTTP histograms .instrument() adds are
+        # not under test here; main.py's lifespan does the full instrument+expose in production.
+        Instrumentator().expose(app, endpoint="/metrics", include_in_schema=False)
 
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
@@ -112,6 +153,7 @@ async def test_metrics_endpoint_exposes_the_four_gauges(monkeypatch) -> None:
     _patch_mine(monkeypatch, 0)  # coverage source up but 0 flows → coverage_percent 0.0 (a value)
     run_id = f"metrics-{uuid.uuid4().hex}"
     try:
+        await _isolate_sources()
         await _seed(run_id, applied=3, rejected=1)  # precision = 3/4 = 0.75
         await metrics._refresh_once()  # populate the snapshot from real Postgres
 
@@ -146,6 +188,7 @@ async def test_zero_reviewed_omits_classification_precision(monkeypatch) -> None
     _patch_mine(monkeypatch, 0)
     run_id = f"metrics-{uuid.uuid4().hex}"
     try:
+        await _isolate_sources()
         await _seed(run_id, applied=0, rejected=0)  # only a draft defect — nothing reviewed
         await metrics._refresh_once()
 
@@ -164,12 +207,15 @@ async def test_metrics_stays_200_when_a_source_is_down(monkeypatch) -> None:
 
     _patch_mine(monkeypatch, 0)
 
-    async def _boom(driver=None):  # noqa: ANN001, ARG001
+    async def _boom(db=None, *, driver=None):  # noqa: ANN001, ARG001
+        # coverage() is called as coverage(db, driver=get_neo4j()) — accept db positionally so the
+        # fake matches the real signature (else "multiple values for argument 'driver'").
         raise RuntimeError("coverage source down")
 
     monkeypatch.setattr(coverage_dash, "coverage", _boom)
     run_id = f"metrics-{uuid.uuid4().hex}"
     try:
+        await _isolate_sources()
         await _seed(run_id, applied=1, rejected=1)
         await metrics._refresh_once()  # coverage raises internally → key None, never propagates
 

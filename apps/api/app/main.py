@@ -8,12 +8,14 @@ from elasticsearch.exceptions import ConnectionError as ESConnectionError
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from neo4j.exceptions import ServiceUnavailable
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import select
 
 from app.core.checkpointer import close_checkpointer, init_checkpointer
 from app.core.config import settings
 from app.core.es_client import close_es, get_es, init_es
 from app.core.logging import configure_logging
+from app.core.metrics import start_metrics, stop_metrics
 from app.core.neo4j_driver import close_neo4j, get_neo4j, init_neo4j
 from app.core.redis_client import close_redis, init_redis
 from app.core.security import hash_password
@@ -95,7 +97,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # OUTSIDE Alembic, idempotent — Pitfall 6). Coexists with the asyncpg SQLAlchemy engine.
     await init_checkpointer()
     await seed_admin()
+    # INFRA-04: register the domain-metric collector + start the 30s background refresher, then
+    # mount HTTP instrumentation + the /metrics endpoint on the DEFAULT REGISTRY (which now
+    # includes the custom collector). /metrics is unauthenticated-but-safe — the root /health
+    # precedent: it emits only aggregate numeric gauges + HTTP histograms, no secrets/PII/prompts
+    # (T-11-01 accept; llm_usage has no prompt/response columns, PLAT-07).
+    start_metrics(app)
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
     yield
+    await stop_metrics()
     await close_checkpointer()
     await close_neo4j()
     await close_es()
