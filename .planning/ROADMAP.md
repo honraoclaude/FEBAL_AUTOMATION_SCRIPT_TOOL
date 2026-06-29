@@ -378,7 +378,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 11-02-PLAN.md — CI/CD slice: production multi-stage Dockerfiles (api drop --reload, web next build/start) + GHCR platform-ci workflow (test-gate→build-publish, services:postgres) + actionlint (INFRA-03)
+- [x] 11-02-PLAN.md — CI/CD slice: production multi-stage Dockerfiles (api drop --reload, web next build/start) + GHCR platform-ci workflow (test-gate→build-publish, services:postgres) + actionlint (INFRA-03)
 
 **Wave 3** *(blocked on Waves 1+2)*
 
@@ -401,4 +401,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
 | 10. Dashboards, RBAC & Coverage/Traceability | 6/6 | Complete   | 2026-06-29 |
-| 11. Hardening & Ops | 1/3 | In Progress|  |
+| 11. Hardening & Ops | 2/3 | In Progress|  |

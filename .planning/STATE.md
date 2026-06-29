@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 11 planned (3 slices, checker PASS clean — INFRA-02/03/04); FINAL phase ready to execute. 2 LOW carries: 11-01 metrics test monkeypatches neo4j mine (coverage gauge absent in CI lane = correct degrade); 11-02 CI job keeps ADMIN_EMAIL/PASSWORD env (conftest import-time). gated deps prometheus-client+instrumentator in 11-01"
-last_updated: "2026-06-29T19:55:08.343Z"
-last_activity: 2026-06-29 -- Phase 11 execution started
+stopped_at: Completed 11-02-PLAN.md (prod Dockerfiles + GHCR platform-ci.yml)
+last_updated: "2026-06-29T20:42:19.991Z"
+last_activity: 2026-06-29
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 51
-  completed_plans: 48
+  completed_plans: 50
   percent: 91
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 11 (hardening-ops) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 11
-Last activity: 2026-06-29 -- Phase 11 execution started
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-06-29
 
-Progress: [██████████] 100%
+Progress: [██████████] 98%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -103,6 +103,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 10 P05 | ~13min | 3 tasks | 11 files |
 | Phase 10 P04 | 21 | 3 tasks | 17 files |
 | Phase 10 P06 | ~30min | 3 tasks | 12 files |
+| Phase 11 P02 | ~20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -206,6 +207,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 10-04: gated elasticsearch[async]==9.4.* — the async extra (aiohttp) enables the approved AsyncElasticsearch interface (the greenlet-for-SQLAlchemy precedent), not a new package choice
 - [Phase ?]: 10-04: on-write index swallow-and-log wraps client construction too so an ES outage never breaks the Postgres write (T-10-19); ES-down search bubbles to an honest 503, never a fake empty list (T-10-20)
 - [Phase ?]: 10-06: final Phase-10 UI slice (DASH-04/05/06 + PLAT-04 admin) — coverage panel (two metrics SEPARATE), traceability viewer (ordered chain + honest gaps), search UI (SAFE-parsed highlight + 503-distinct-from-empty), admin role-assign (self-demote guard + confirm dialog + no optimistic update + success-only toast); URL-as-source avoids setState-in-effect; ZERO new frontend deps; 17-test mocked e2e green
+- [Phase ?]: 11-02: api prod image drops --reload to uvicorn --workers 2 (T-11-08); web prod = multi-stage next build to slim next start (no Turbopack, no new dep)
+- [Phase ?]: 11-02: platform-ci.yml gates GHCR build-publish (api+web, SHA+latest) behind the keyless pytest lane+tsc+eslint; test job adds services:postgres + alembic upgrade head (Rule-2: integration tests insert into real tables); least-privilege contents:read+packages:write GITHUB_TOKEN never echoed; target fixture never published (D-02); actionlint-clean via rhysd/actionlint
 
 ### Pending Todos
 
@@ -230,9 +233,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T19:54:14.236Z
-Stopped at: Phase 11 planned (3 slices, checker PASS clean — INFRA-02/03/04); FINAL phase ready to execute. 2 LOW carries: 11-01 metrics test monkeypatches neo4j mine (coverage gauge absent in CI lane = correct degrade); 11-02 CI job keeps ADMIN_EMAIL/PASSWORD env (conftest import-time). gated deps prometheus-client+instrumentator in 11-01
-Resume file: .planning/phases/11-hardening-ops/11-01-PLAN.md
+Last session: 2026-06-29T20:42:19.930Z
+Stopped at: Completed 11-02-PLAN.md (prod Dockerfiles + GHCR platform-ci.yml)
+Resume file: None
 
 ENVIRONMENT FACTS (2026-06-13):
 
