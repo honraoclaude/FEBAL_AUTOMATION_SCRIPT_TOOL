@@ -41,6 +41,7 @@ from app.routers.health import router as health_router
 from app.routers.heals import router as heals_router
 from app.routers.kg import router as kg_router
 from app.routers.scenarios import router as scenarios_router
+from app.routers.search import router as search_router
 from app.routers.stubs import router as stubs_router
 from app.routers.targets import router as targets_router
 from app.routers.traceability import router as traceability_router
@@ -175,4 +176,9 @@ app.include_router(dashboards_router)
 # join (no graph writes). Included BEFORE stubs_router so its real route wins over any residual
 # stub (mirrors the kg/scenarios/heals/defects/users/coverage/dashboards precedent).
 app.include_router(traceability_router)
+# Full-text search (DASH-06) — role-gated GET /api/search over executions/failures/logs served
+# by Elasticsearch. ES-down → honest 503 (the ESConnectionError handler above). Included BEFORE
+# stubs_router so its real route wins over any residual stub (mirrors the kg/scenarios/heals/
+# defects/users/coverage/dashboards/traceability precedent).
+app.include_router(search_router)
 app.include_router(stubs_router)
