@@ -88,7 +88,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **INFRA-01**: Entire platform runs locally via Docker Compose (PostgreSQL, Neo4j, Elasticsearch, RabbitMQ, Redis + services) with healthchecks and per-container memory limits suited to Windows 11/Docker Desktop
 - [ ] **INFRA-02**: Kubernetes manifests deploy the platform, validated on Docker Desktop K8s or kind
 - [ ] **INFRA-03**: GitHub Actions CI/CD builds, tests, and publishes platform images
-- [ ] **INFRA-04**: Grafana + Prometheus expose platform health and domain metrics (healing success rate, classification precision, coverage, LLM cost)
+- [x] **INFRA-04**: Grafana + Prometheus expose platform health and domain metrics (healing success rate, classification precision, coverage, LLM cost)
 
 ### Quality Harnesses
 
@@ -183,7 +183,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 11 | Pending |
 | INFRA-03 | Phase 11 | Pending |
-| INFRA-04 | Phase 11 | Pending |
+| INFRA-04 | Phase 11 | Complete |
 | QUAL-01 | Phase 5 | Complete |
 | QUAL-02 | Phase 8 | Complete |
 | QUAL-03 | Phase 9 | Complete |

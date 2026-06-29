@@ -374,7 +374,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 11-01-PLAN.md — Observability slice: gated prometheus deps + core/metrics.py (snapshot+collector+4 gauges) + /metrics+instrumentator + monitoring config (prometheus.yml + Grafana dashboards-as-code) + compose monitoring profile (INFRA-04)
+- [x] 11-01-PLAN.md — Observability slice: gated prometheus deps + core/metrics.py (snapshot+collector+4 gauges) + /metrics+instrumentator + monitoring config (prometheus.yml + Grafana dashboards-as-code) + compose monitoring profile (INFRA-04)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -401,4 +401,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
 | 10. Dashboards, RBAC & Coverage/Traceability | 6/6 | Complete   | 2026-06-29 |
-| 11. Hardening & Ops | 0/3 | Not started | - |
+| 11. Hardening & Ops | 1/3 | In Progress|  |

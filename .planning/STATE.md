@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: executing
 stopped_at: "Phase 11 planned (3 slices, checker PASS clean — INFRA-02/03/04); FINAL phase ready to execute. 2 LOW carries: 11-01 metrics test monkeypatches neo4j mine (coverage gauge absent in CI lane = correct degrade); 11-02 CI job keeps ADMIN_EMAIL/PASSWORD env (conftest import-time). gated deps prometheus-client+instrumentator in 11-01"
-last_updated: "2026-06-29T19:54:14.296Z"
-last_activity: 2026-06-29
+last_updated: "2026-06-29T19:55:08.343Z"
+last_activity: 2026-06-29 -- Phase 11 execution started
 progress:
   total_phases: 11
   completed_phases: 10
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Autonomous discovery — point the platform at a URL with credentials and it maps the application, learns its workflows, and builds the knowledge graph by itself.
-**Current focus:** Phase 10 — dashboards-rbac-coverage-traceability
+**Current focus:** Phase 11 — hardening-ops
 
 ## Current Position
 
-Phase: 10 (dashboards-rbac-coverage-traceability) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-06-29
+Phase: 11 (hardening-ops) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 11
+Last activity: 2026-06-29 -- Phase 11 execution started
 
 Progress: [██████████] 100%
 
