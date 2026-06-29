@@ -369,7 +369,20 @@ Plans:
   2. GitHub Actions CI/CD builds, tests, and publishes platform images on push
   3. Grafana dashboards backed by Prometheus show platform health plus domain metrics: healing success rate, classification precision, coverage, and LLM cost (app-level exporters — no Enterprise-only Neo4j endpoint)
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 11-01-PLAN.md — Observability slice: gated prometheus deps + core/metrics.py (snapshot+collector+4 gauges) + /metrics+instrumentator + monitoring config (prometheus.yml + Grafana dashboards-as-code) + compose monitoring profile (INFRA-04)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 11-02-PLAN.md — CI/CD slice: production multi-stage Dockerfiles (api drop --reload, web next build/start) + GHCR platform-ci workflow (test-gate→build-publish, services:postgres) + actionlint (INFRA-03)
+
+**Wave 3** *(blocked on Waves 1+2)*
+
+- [ ] 11-03-PLAN.md — K8s slice: Kustomize base (7 core workloads) + ES overlay + monitoring manifests + kubeconform validate.sh + 3GB-sizing/Manual-Only-e2e README (INFRA-02)
 
 ## Progress
 
@@ -388,4 +401,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
 | 10. Dashboards, RBAC & Coverage/Traceability | 6/6 | Complete   | 2026-06-29 |
-| 11. Hardening & Ops | 0/TBD | Not started | - |
+| 11. Hardening & Ops | 0/3 | Not started | - |
