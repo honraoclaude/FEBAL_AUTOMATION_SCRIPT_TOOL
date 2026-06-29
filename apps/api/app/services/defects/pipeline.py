@@ -36,8 +36,24 @@ from app.services.defects import autonomy
 from app.services.defects.evidence import classify_failure
 from app.services.jira.adf import build_adf
 from app.services.jira.description import describe
+from app.services.search.indexer import index_failure
 
 log = structlog.get_logger()
+
+
+def _failure_error_text(evidence: dict | None) -> str | None:
+    """Pull the searchable error text out of a classifier evidence snapshot for the ES index.
+
+    Only the textual error/notes — never a token (T-10-21; the classifier evidence carries no
+    secret, and structlog redaction already masks any password/secret/token before render).
+    """
+    if not evidence:
+        return None
+    for key in ("error_text", "error", "notes", "summary"):
+        val = evidence.get(key)
+        if isinstance(val, str) and val:
+            return val
+    return None
 
 
 # --- severity -> priority map (RESEARCH Open-Q3 — a small PURE map, planner's discretion) -------
@@ -242,6 +258,18 @@ async def run_defect_pipeline(
     db.add(defect)
     await db.commit()
     await db.refresh(defect)
+
+    # DASH-06 on-write dual-index (AFTER the draft Defect commit — the row is durable first).
+    # Best-effort: index_failure SWALLOWS any ES failure (es_index_skipped), so a down search
+    # profile NEVER breaks this Postgres write path (T-10-19). The PG row stays backfillable.
+    await index_failure(
+        run_id,
+        flow_id,
+        classification=classification,
+        fingerprint=fingerprint,
+        confidence=confidence,
+        error_text=_failure_error_text(decision.get("evidence")),
+    )
 
     # The draft is now durable. Auto-file ONLY for an enabled+above-threshold product defect.
     if classification == "product_defect" and autonomy.may_autofile(confidence):

@@ -49,6 +49,7 @@ from app.core.workspaces import run_dir, spec_path
 from app.db.session import SessionLocal
 from app.models.execution_history import TestArtifact, TestResult
 from app.services.healing.ingest import ingest_heal_journal
+from app.services.search.indexer import index_execution
 from app.services.stability import _run_spec_once
 from app.services.worker import progress
 from app.services.worker.classifier import classify_retry, reconcile_verdict
@@ -217,6 +218,15 @@ async def run_flow_job(job: dict) -> dict:
                 TestArtifact(run_id=run_id, flow_id=flow_id, kind=kind, path=rel_path)
             )
         await db.commit()
+        # DASH-06 on-write dual-index (AFTER the commit — the row is durable first). Best-effort:
+        # index_execution SWALLOWS any ES failure (es_index_skipped), so a down search profile
+        # NEVER breaks this Postgres write path (T-10-19). The PG row stays backfillable.
+        await index_execution(
+            run_id,
+            flow_id,
+            verdict=verdict["verdict"],
+            error_text=last_output,
+        )
         # Publish the per-test event with the verdict + the CURRENT absolute run counters,
         # built from the test_run row + the test_results aggregate this session just wrote.
         await progress.publish_test_event(

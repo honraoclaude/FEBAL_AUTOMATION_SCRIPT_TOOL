@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.core.checkpointer import close_checkpointer, init_checkpointer
 from app.core.config import settings
-from app.core.es_client import close_es, init_es
+from app.core.es_client import close_es, get_es, init_es
 from app.core.logging import configure_logging
 from app.core.neo4j_driver import close_neo4j, get_neo4j, init_neo4j
 from app.core.redis_client import close_redis, init_redis
@@ -46,6 +46,7 @@ from app.routers.targets import router as targets_router
 from app.routers.traceability import router as traceability_router
 from app.routers.users import router as users_router
 from app.services.kg.schema import ensure_constraints
+from app.services.search.indexer import ensure_indices
 
 log = structlog.get_logger()
 
@@ -85,6 +86,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ensure_constraints is GRACEFUL — it catches an unreachable neo4j and returns without
     # raising, so the api still boots when the graph profile is down (no depends_on:neo4j).
     await ensure_constraints(get_neo4j())
+    # DASH-06: create the search index mappings (best-effort). ensure_indices is GRACEFUL —
+    # it swallows an unreachable ES and returns without raising (the ensure_constraints
+    # precedent), so the api still boots when the search profile is down (no depends_on:es).
+    await ensure_indices(get_es())
     # Open the LangGraph checkpointer pool + run setup() ONCE (creates checkpoint tables
     # OUTSIDE Alembic, idempotent — Pitfall 6). Coexists with the asyncpg SQLAlchemy engine.
     await init_checkpointer()
