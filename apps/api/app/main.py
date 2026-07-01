@@ -103,7 +103,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # precedent: it emits only aggregate numeric gauges + HTTP histograms, no secrets/PII/prompts
     # (T-11-01 accept; llm_usage has no prompt/response columns, PLAT-07).
     start_metrics(app)
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+    # NOTE: Instrumentator().instrument(app) adds middleware, which Starlette forbids after
+    # startup — it is set up at module scope right after app construction (below), NOT here.
     yield
     await stop_metrics()
     await close_checkpointer()
@@ -114,6 +115,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Autonomous QA Engineer Platform API", lifespan=lifespan)
+
+# INFRA-04: HTTP instrumentation + /metrics must be mounted at CONSTRUCTION time (adding
+# middleware after startup raises "Cannot add middleware after an application has started").
+# The custom domain-metric collector is registered on the default registry by start_metrics()
+# in the lifespan; Instrumentator().expose() reads that same default registry at scrape time.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 
 @app.exception_handler(ServiceUnavailable)
