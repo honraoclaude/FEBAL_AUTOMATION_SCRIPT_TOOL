@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Defect Intelligence & Jira Agent** - 3-way failure classification with calibrated confidence, draft-mode Jira with dedup and evidence, autonomous filing gated on measured precision
  (completed 2026-06-28)
 - [x] **Phase 10: Dashboards, RBAC & Coverage/Traceability** - Executive/QA/developer dashboards, role enforcement, graph-derived coverage, full traceability chain, Elasticsearch-backed search (completed 2026-06-29)
-- [ ] **Phase 11: Hardening & Ops** - K8s manifests on Docker Desktop/kind, GitHub Actions CI/CD for platform images, Prometheus + Grafana domain metrics
+- [x] **Phase 11: Hardening & Ops** - K8s manifests on Docker Desktop/kind, GitHub Actions CI/CD for platform images, Prometheus + Grafana domain metrics (completed 2026-07-01)
 
 ## Phase Details
 
@@ -382,7 +382,7 @@ Plans:
 
 **Wave 3** *(blocked on Waves 1+2)*
 
-- [ ] 11-03-PLAN.md — K8s slice: Kustomize base (7 core workloads) + ES overlay + monitoring manifests + kubeconform validate.sh + 3GB-sizing/Manual-Only-e2e README (INFRA-02)
+- [x] 11-03-PLAN.md — K8s slice: Kustomize base (7 core workloads) + ES overlay + monitoring manifests + kubeconform validate.sh + 3GB-sizing/Manual-Only-e2e README (INFRA-02)
 
 ## Progress
 
@@ -401,4 +401,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Self-Healing Engine | 5/5 | Complete   | 2026-06-26 |
 | 9. Defect Intelligence & Jira Agent | 5/5 | Complete   | 2026-06-28 |
 | 10. Dashboards, RBAC & Coverage/Traceability | 6/6 | Complete   | 2026-06-29 |
-| 11. Hardening & Ops | 2/3 | In Progress|  |
+| 11. Hardening & Ops | 3/3 | Complete   | 2026-07-01 |

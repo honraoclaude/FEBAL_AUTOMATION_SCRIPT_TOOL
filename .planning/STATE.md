@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 11-02-PLAN.md (prod Dockerfiles + GHCR platform-ci.yml)
-last_updated: "2026-06-29T20:42:19.991Z"
-last_activity: 2026-06-29
+status: complete
+stopped_at: Completed 11-03-PLAN.md (K8s manifests — INFRA-02); Phase 11 + milestone v1.0 complete
+last_updated: "2026-07-01T22:29:11.912Z"
+last_activity: 2026-07-01
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 51
-  completed_plans: 50
-  percent: 91
+  completed_plans: 51
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 ## Current Position
 
-Phase: 11 (hardening-ops) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
-Last activity: 2026-06-29
+Phase: 11 (hardening-ops) — COMPLETE
+Plan: 3 of 3 (all complete)
+Status: Phase 11 complete — milestone v1.0 all 11 phases / 51 plans done
+Last activity: 2026-07-01
 
-Progress: [██████████] 98%
+Progress: [██████████] 100%
 
 ## ⚠ REMEMBER for Phase 06 (BDD generation)
 
@@ -104,6 +104,7 @@ From Phase 04 onward the platform's core value (autonomous LLM-driven discovery)
 | Phase 10 P04 | 21 | 3 tasks | 17 files |
 | Phase 10 P06 | ~30min | 3 tasks | 12 files |
 | Phase 11 P02 | ~20min | 2 tasks | 3 files |
+| Phase 11 P03 | 30min | 2 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -209,6 +210,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 10-06: final Phase-10 UI slice (DASH-04/05/06 + PLAT-04 admin) — coverage panel (two metrics SEPARATE), traceability viewer (ordered chain + honest gaps), search UI (SAFE-parsed highlight + 503-distinct-from-empty), admin role-assign (self-demote guard + confirm dialog + no optimistic update + success-only toast); URL-as-source avoids setState-in-effect; ZERO new frontend deps; 17-test mocked e2e green
 - [Phase ?]: 11-02: api prod image drops --reload to uvicorn --workers 2 (T-11-08); web prod = multi-stage next build to slim next start (no Turbopack, no new dep)
 - [Phase ?]: 11-02: platform-ci.yml gates GHCR build-publish (api+web, SHA+latest) behind the keyless pytest lane+tsc+eslint; test job adds services:postgres + alembic upgrade head (Rule-2: integration tests insert into real tables); least-privilege contents:read+packages:write GITHUB_TOKEN never echoed; target fixture never published (D-02); actionlint-clean via rhysd/actionlint
+- [Phase 11]: 11-03 (INFRA-02): K8s manifests — Kustomize base (7 core workloads; Postgres+Neo4j StatefulSet+PVC, rest Deployments, worker no Service; GHCR api/web images from 11-02; api /health probes; requests+limits from compose mem_limits; sensitive env in a Secret with PLACEHOLDER values, non-secret in a ConfigMap; rabbitmq 15692; Neo4j double-underscore heap env) + optional ES overlay (OFF for the 3GB e2e) + a SEPARATE off-by-default monitoring group (Prometheus+Grafana+pg/redis exporters; NO Neo4j/RabbitMQ exporter; dashboards MIRRORED into infra/k8s/monitoring/dashboards so bare `kubectl apply -k` works with no --load-restrictor, validate.sh drift-checks vs the Plan-01 source). validate.sh = keyless kustomize-build|kubeconform gate, skip-cleans when the CLIs are absent (uses K8S_GROUPS, since GROUPS is a bash built-in array = the caller's GIDs). README: 3GB sizing table + ES-off/monitoring-separate/scale-web-to-0 fit rules + Manual-Only kubectl apply -k explore→execute→dashboard e2e. Rendered keyless: base 16 / ES 18 / monitoring 12 objects.
 
 ### Pending Todos
 
@@ -233,7 +235,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T20:42:19.930Z
+Last session: 2026-07-01T22:28:48.890Z
 Stopped at: Completed 11-02-PLAN.md (prod Dockerfiles + GHCR platform-ci.yml)
 Resume file: None
 
