@@ -1,0 +1,46 @@
+# Kustomize MONITORING group — Prometheus + Grafana + exporters (INFRA-02 / INFRA-04).
+#
+# The K8s analog of the OFF-by-default compose `monitoring` profile: a SEPARATE manifest
+# group, kept apart from the base so it is NOT deployed during the 3GB-constrained SC1 e2e
+# (D-04). Deploy the core first (`kubectl apply -k infra/k8s/base`), then — only if the
+# node has headroom — layer monitoring as a second step (`kubectl apply -k infra/k8s/monitoring`).
+#
+# It targets the SAME `qa-platform` namespace as the base so its pods can resolve the core
+# Services (api / postgres / redis / rabbitmq) and read the shared platform-config /
+# platform-secrets. This group does NOT re-declare the base — apply the base first.
+#
+# The 2 Grafana dashboard JSONs are generated via configMapGenerator from
+# ./dashboards/*.json. Those are byte-identical mirrors of the Plan-01 canonical
+# dashboards-as-code source (infra/monitoring/grafana/provisioning/dashboards/*.json) —
+# they live INSIDE this kustomization root because Kustomize's default load restrictor
+# forbids configMapGenerator file sources outside the root (so bare `kubectl apply -k`
+# works with NO --load-restrictor flag). validate.sh diffs the two locations to catch drift.
+#
+# Render keyless (no cluster):
+#   kustomize build infra/k8s/monitoring | kubeconform -strict -summary
+#   (or: kubectl kustomize infra/k8s/monitoring   — kubectl bundles kustomize v5)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: qa-platform
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: qa-platform
+    includeSelectors: false
+
+resources:
+  - prometheus.yaml
+  - grafana.yaml
+  - exporters.yaml
+
+configMapGenerator:
+  - name: grafana-dashboards
+    files:
+      - dashboards/platform-health.json
+      - dashboards/domain-metrics.json
+
+generatorOptions:
+  # Stable name (grafana.yaml volume refs `grafana-dashboards` by fixed name) + these are
+  # provisioning config, not rollout-triggering app config.
+  disableNameSuffixHash: true

@@ -1,0 +1,141 @@
+# Grafana — Deployment + Service + provisioning ConfigMaps (INFRA-02 / INFRA-04 / D-04).
+#
+# The K8s analog of the compose `monitoring`-profile grafana service. Dashboards-as-code:
+# the datasource + dashboard-provider + the 2 dashboard JSONs (all from Plan 01) are
+# ConfigMap-mounted under /etc/grafana/provisioning so Grafana wires everything at boot
+# with NO manual clicking (D-04) — reproducible.
+#
+# Grafana reads /etc/grafana/provisioning/{datasources,dashboards} at boot:
+#   - datasources/prometheus.yml → the Prometheus datasource (url http://prometheus:9090,
+#     the in-cluster Service from prometheus.yaml)
+#   - dashboards/provider.yml    → the file provider pointing at /etc/grafana/provisioning/dashboards
+#   - dashboards/platform-health.json + dashboards/domain-metrics.json → the 2 dashboards
+#
+# The datasource-config and dashboards-provider ConfigMaps are declared inline here (small,
+# self-contained). The 2 dashboard JSONs are generated from the SAME Plan-01 files via the
+# kustomization.yaml configMapGenerator (grafana-dashboards) — single source of truth, no
+# copy-paste drift. All three are mounted into the one provisioning tree by subPath.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+data:
+  # Verbatim from infra/monitoring/grafana/provisioning/datasources/prometheus.yml,
+  # with the datasource url pointing at the in-cluster prometheus Service.
+  prometheus.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+data:
+  # Verbatim from infra/monitoring/grafana/provisioning/dashboards/provider.yml —
+  # tells Grafana to load every *.json in the provisioning dashboards dir at boot.
+  provider.yml: |
+    apiVersion: 1
+    providers:
+      - name: 'qa-platform'
+        folder: ''
+        type: file
+        options:
+          path: /etc/grafana/provisioning/dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana
+          ports:
+            - containerPort: 3000
+          env:
+            # Admin password from the platform Secret (never a literal here). Local-dev
+            # default lives in the secret.example placeholder; set a real value for a demo.
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: ADMIN_PASSWORD
+          volumeMounts:
+            # Datasource provisioning (its own file in the datasources dir).
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+              subPath: prometheus.yml
+              readOnly: true
+            # Dashboard provider (points at the dashboards dir below).
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards/provider.yml
+              subPath: provider.yml
+              readOnly: true
+            # The 2 dashboard JSONs (from the configMapGenerator), same dir the provider scans.
+            - name: dashboards
+              mountPath: /etc/grafana/provisioning/dashboards/platform-health.json
+              subPath: platform-health.json
+              readOnly: true
+            - name: dashboards
+              mountPath: /etc/grafana/provisioning/dashboards/domain-metrics.json
+              subPath: domain-metrics.json
+              readOnly: true
+          resources:
+            requests:
+              memory: "320Mi"
+            limits:
+              memory: "512Mi" # compose mem_limit 512m
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
