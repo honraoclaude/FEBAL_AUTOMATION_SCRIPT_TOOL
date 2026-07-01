@@ -1,0 +1,93 @@
+# Neo4j — StatefulSet + PVC + Service (INFRA-02).
+# Translated from docker-compose.yml:305-329 (neo4j:2025, mem_limit 1g, the
+# NEO4J_server_memory_* trimmed-for-3GB env, wget :7474 healthcheck). CORE in K8s
+# (D-01 — Neo4j is NOT a graph profile here). Stateful → StatefulSet + PVC.
+#
+# CAVEAT carried VERBATIM from compose (Pitfall 1): server.memory.heap.max_size maps to
+# NEO4J_server_memory_heap_max__size with a DOUBLE underscore on max__size (the literal
+# `_` before `size`); the initial/heap and pagecache keys use single underscores.
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo4j
+  labels:
+    app: neo4j
+spec:
+  clusterIP: None # headless — required by the StatefulSet
+  selector:
+    app: neo4j
+  ports:
+    - name: bolt
+      port: 7687
+      targetPort: 7687
+    - name: http
+      port: 7474
+      targetPort: 7474
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neo4j
+spec:
+  serviceName: neo4j
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neo4j
+  template:
+    metadata:
+      labels:
+        app: neo4j
+    spec:
+      containers:
+        - name: neo4j
+          image: neo4j:2025
+          ports:
+            - containerPort: 7687
+            - containerPort: 7474
+          env:
+            # auth as user/password — from the Secret (placeholder values committed).
+            - name: NEO4J_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: NEO4J_AUTH
+            # Heap initial/max — single underscores EXCEPT max__size (DOUBLE, Pitfall 1).
+            - name: NEO4J_server_memory_heap_initial__size
+              value: "512m"
+            - name: NEO4J_server_memory_heap_max__size
+              value: "512m"
+            # Pagecache — single underscores throughout (no doubling).
+            - name: NEO4J_server_memory_pagecache_size
+              value: "256m"
+          resources:
+            requests:
+              memory: "640Mi"
+            limits:
+              memory: "1Gi" # compose mem_limit 1g (heap 512 + pagecache 256 + overhead)
+          # Translate the compose wget :7474 healthcheck (Neo4j HTTP browser/health port).
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "wget -q -O /dev/null http://127.0.0.1:7474/"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 10
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "wget -q -O /dev/null http://127.0.0.1:7474/"]
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 6
+          volumeMounts:
+            - name: neo4j-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: neo4j-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

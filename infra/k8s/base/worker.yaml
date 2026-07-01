@@ -1,0 +1,71 @@
+# worker — Deployment ONLY (no Service: it is an AMQP CONSUMER, not a server).
+# Translated from docker-compose.yml:352-382 (the SAME api image with a different
+# command, mem_limit 768m, EXEC_PREFETCH_COUNT 2). Reuses the GHCR api image with a
+# command override (T-11-14 — no second build); runs app.worker_main (the aio-pika
+# consumer + subprocess test runner). prefetch=2 hard-bounds concurrent Chromium
+# contexts under the 3GB cap. The worker has NO readiness/liveness HTTP probe (no
+# server port); RabbitMQ availability is handled by aio-pika robust reconnection.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/honraoclaude/api:latest # SAME image as api (command override)
+          command: ["python", "-m", "app.worker_main"]
+          envFrom:
+            - configMapRef:
+                name: platform-config
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: JWT_SECRET
+            - name: TARGET_CREDENTIAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: TARGET_CREDENTIAL_KEY
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: NEO4J_PASSWORD
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: ADMIN_PASSWORD
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: ANTHROPIC_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: OPENAI_API_KEY
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "768Mi" # compose mem_limit 768m (~2 Chromium contexts)

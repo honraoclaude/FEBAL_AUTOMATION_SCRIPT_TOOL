@@ -1,0 +1,40 @@
+# NON-SECRET platform config (INFRA-02). The in-cluster URLs/hosts carry over
+# VERBATIM from docker-compose.yml — the compose service names ARE the in-cluster
+# Service DNS names (postgres / redis / neo4j / rabbitmq / api), so bolt://neo4j:7687,
+# redis://redis:6379/0, amqp://...@rabbitmq:5672/ etc. need no rewrite (RESEARCH
+# Pitfall 6). Sensitive env (JWT_SECRET, TARGET_CREDENTIAL_KEY, NEO4J_PASSWORD,
+# POSTGRES_PASSWORD, provider keys) lives in secret.example.yaml, NEVER here (T-11-10).
+#
+# DATABASE_URL embeds the password, so it is composed in the api/worker pod spec from
+# the POSTGRES_PASSWORD Secret key — it is NOT in this ConfigMap. The non-secret URL
+# fragments (host/port/db/user) and the LLM model / runner paths / flags live here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+data:
+  # --- Postgres connection fragments (password comes from the Secret) ---
+  POSTGRES_USER: "qa_platform"
+  POSTGRES_DB: "qa_platform"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+
+  # --- In-cluster service URLs (no secrets; verbatim from compose) ---
+  REDIS_URL: "redis://redis:6379/0"
+  NEO4J_URI: "bolt://neo4j:7687"
+  NEO4J_USER: "neo4j"
+  AMQP_URL: "amqp://guest:guest@rabbitmq:5672/"
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+
+  # --- LLM gateway (model is required; provider KEYS are in the Secret) ---
+  LLM_DEFAULT_MODEL: "anthropic:claude-3-5-sonnet-latest"
+
+  # --- Artifact workspaces + execution runner (in-container paths, compose D-04) ---
+  WORKSPACES_DIR: "/app/workspaces"
+  EXECUTION_CWD: "/app"
+
+  # --- Misc non-secret flags ---
+  COOKIE_SECURE: "false"
+  EXEC_PREFETCH_COUNT: "2"
+  # Admin bootstrap EMAIL is non-secret; the password is in the Secret.
+  ADMIN_EMAIL: "admin@example.com"

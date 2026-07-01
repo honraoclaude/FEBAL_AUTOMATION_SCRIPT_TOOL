@@ -1,0 +1,69 @@
+# web — Deployment + Service (INFRA-02).
+# Translated from docker-compose.yml:121-141 (mem_limit 1536m, node fetch :3000
+# healthcheck). Image = the GHCR PRODUCTION web image from Plan 02
+# (ghcr.io/honraoclaude/web:latest — multi-stage `next start`, NOT the dev/Turbopack
+# image; T-11-14). API_URL points at the in-cluster api Service.
+#
+# 3GB lever (RESEARCH Pitfall 4): web is the heaviest workload. During the explore
+# phase of the e2e, scale this Deployment to 0 (`kubectl scale deploy/web --replicas=0`)
+# and back to 1 for the dashboard step — the graph_mode precedent (stop web before the
+# memory-heavy work). See infra/k8s/README.md.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/honraoclaude/web:latest
+          ports:
+            - containerPort: 3000
+          env:
+            # In-cluster api Service URL (the next.config.ts rewrites() proxy reads this).
+            - name: API_URL
+              value: "http://api:8000"
+          resources:
+            requests:
+              memory: "768Mi"
+            limits:
+              memory: "1536Mi" # compose mem_limit 1536m
+          # Translate the compose node fetch :3000 healthcheck to httpGet probes.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6

@@ -1,0 +1,81 @@
+# Elasticsearch — Deployment + Service (INFRA-02 overlay).
+# Translated from docker-compose.yml:384-398 (elasticsearch:9.4.1, mem_limit 1536m,
+# ES_JAVA_OPTS -Xms512m -Xmx1g, discovery.type single-node, xpack.security.* false).
+# Stateless for local validation (an emptyDir-backed single node — no PVC; this is a
+# dev/validation overlay, not a durable prod search cluster).
+#
+# Plain http:// with security DISABLED matches the 10-04 client contract (the
+# AsyncElasticsearch("http://elasticsearch:9200") client has no TLS/auth). NOT for prod.
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: elasticsearch:9.4.1
+          ports:
+            - containerPort: 9200
+          env:
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx1g"
+            - name: discovery.type
+              value: "single-node"
+            # ES 9.x defaults security (HTTPS + auth) ON; disable for the plain-http,
+            # no-auth local-dev posture the client expects (10-04 Pitfall 1). NOT for prod.
+            - name: xpack.security.enabled
+              value: "false"
+            - name: xpack.security.http.ssl.enabled
+              value: "false"
+            - name: xpack.security.enrollment.enabled
+              value: "false"
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1536Mi" # compose mem_limit 1536m
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health?wait_for_status=yellow&timeout=1s
+              port: 9200
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: es-data
+          emptyDir: {}

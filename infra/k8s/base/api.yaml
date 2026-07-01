@@ -1,0 +1,113 @@
+# api — Deployment + Service (INFRA-02).
+# Translated from docker-compose.yml:44-119 (mem_limit 1g, python urllib /health
+# healthcheck, the explicit env block). Image = the GHCR production image from Plan 02
+# (ghcr.io/honraoclaude/api:latest — uvicorn --workers 2, no --reload; T-11-14). The api
+# is the API server + AMQP producer; the driver/client opens lazily so it boots even when
+# neo4j/ES is down (graceful degrade — no initContainer wait needed).
+#
+# Env split (RESEARCH Pattern 3): non-secret URLs/hosts via the ConfigMap (envFrom +
+# explicit refs); secrets (POSTGRES_PASSWORD, JWT_SECRET, TARGET_CREDENTIAL_KEY,
+# NEO4J_PASSWORD, ADMIN_PASSWORD, provider keys) via secretKeyRef (T-11-10). DATABASE_URL
+# embeds the password so it is composed inline with $(POSTGRES_PASSWORD) dependency
+# interpolation over the Secret-sourced env var (K8s expands $(VAR) within the env list).
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  selector:
+    app: api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/honraoclaude/api:latest
+          ports:
+            - containerPort: 8000
+          # Non-secret env: pull the whole ConfigMap, then add the explicit refs the
+          # composed values / secrets need.
+          envFrom:
+            - configMapRef:
+                name: platform-config
+          env:
+            # Secrets.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: JWT_SECRET
+            - name: TARGET_CREDENTIAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: TARGET_CREDENTIAL_KEY
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: NEO4J_PASSWORD
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: ADMIN_PASSWORD
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: ANTHROPIC_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platform-secrets
+                  key: OPENAI_API_KEY
+            # DATABASE_URL composed from the non-secret fragments + the Secret password.
+            # K8s expands $(VAR) against earlier-declared env vars (envFrom + above).
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
+          resources:
+            requests:
+              memory: "640Mi"
+            limits:
+              memory: "1Gi" # compose mem_limit 1g
+          # Translate the compose python urllib /health healthcheck to httpGet probes.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6

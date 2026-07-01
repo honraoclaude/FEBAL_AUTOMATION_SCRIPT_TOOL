@@ -1,0 +1,18 @@
+# Elasticsearch OVERLAY (INFRA-02, D-01) — the OPTIONAL search tier.
+#
+# Layers the ES Deployment+Service ON TOP of the core base. Search graceful-degrades
+# when this overlay is absent (the AsyncElasticsearch client opens lazily; a search query
+# 503s honestly, an on-write index swallows-and-logs — 10-04 contract), so the base alone
+# is a complete, runnable platform. This overlay is OFF for the SC1 e2e (the 3GB cap —
+# core + ES + monitoring cannot all fit at once; RESEARCH Pitfall 4).
+#
+# Render keyless:
+#   kustomize build infra/k8s/overlays/elasticsearch | kubeconform -strict -summary
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: qa-platform
+
+resources:
+  - ../../base
+  - elasticsearch.yaml

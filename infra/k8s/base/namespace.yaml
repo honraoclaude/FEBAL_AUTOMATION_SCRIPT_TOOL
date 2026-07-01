@@ -1,0 +1,9 @@
+# Namespace for the Autonomous QA Engineer Platform (INFRA-02).
+# All base + overlay + monitoring resources land here (the kustomization sets
+# `namespace: qa-platform` so every manifest is namespaced uniformly).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-platform
+  labels:
+    app.kubernetes.io/part-of: qa-platform

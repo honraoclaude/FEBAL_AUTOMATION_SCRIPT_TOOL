@@ -1,6 +1,11 @@
 # Secrets — never commit (.env.example documents the shape)
 .env
 
+# K8s real secrets — only secret.example.yaml (placeholders) is committed (T-11-10 / V14).
+# Copy it to secret.yaml with real values for a live deploy; that file stays local.
+infra/k8s/**/secret.yaml
+infra/k8s/**/secret.*.local.yaml
+
 # Node
 node_modules/
 .next/

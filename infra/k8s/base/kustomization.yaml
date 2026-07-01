@@ -1,0 +1,33 @@
+# Kustomize BASE — the 7 CORE platform workloads (INFRA-02, D-01).
+#
+# Mechanical translation of infra/docker-compose.yml (RESEARCH Pattern 3). The CORE
+# set is always-on and includes Neo4j (D-01 — Neo4j is NOT a graph profile in K8s).
+# Elasticsearch is the OPTIONAL overlay (infra/k8s/overlays/elasticsearch); search
+# graceful-degrades when ES is absent (the AsyncElasticsearch client opens lazily).
+# Monitoring (Prometheus/Grafana/exporters) is a SEPARATE manifest group
+# (infra/k8s/monitoring) so it is not deployed during the 3GB-constrained e2e.
+#
+# Render keyless (no cluster):
+#   kustomize build infra/k8s/base | kubeconform -strict -summary
+#   (or: kubectl kustomize infra/k8s/base   — kubectl bundles kustomize v5)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: qa-platform
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: qa-platform
+    includeSelectors: false
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.example.yaml
+  - postgres.yaml
+  - redis.yaml
+  - rabbitmq.yaml
+  - neo4j.yaml
+  - api.yaml
+  - worker.yaml
+  - web.yaml
