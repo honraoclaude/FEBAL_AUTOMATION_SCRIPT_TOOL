@@ -281,7 +281,9 @@ def _effective_caps(run_budget_overrides: dict | None) -> dict:
 )
 async def _invoke(model_str: str, messages, *, temperature: float, max_tokens: int):
     """Single provider round-trip, retried on TransientProviderError only."""
-    chat = init_chat_model(model_str, temperature=temperature, max_tokens=max_tokens)
+    # timeout caps a stuck provider round-trip (the OpenAI SDK default is 600s) so a hung call
+    # cannot block a run past its wall-clock budget; tenacity retries on transient failures.
+    chat = init_chat_model(model_str, temperature=temperature, max_tokens=max_tokens, timeout=45)
     return await chat.ainvoke(messages)
 
 

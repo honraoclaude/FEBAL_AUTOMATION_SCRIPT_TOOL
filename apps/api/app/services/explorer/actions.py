@@ -14,7 +14,10 @@ Each menu entry's `locator_chain` is the full prioritized chain (data-testid→a
 
 from __future__ import annotations
 
+import asyncio
 from urllib.parse import urljoin, urlsplit, urlunsplit
+
+import structlog
 
 from app.services.explorer.locators import extract_locator_chain
 
@@ -43,38 +46,62 @@ def _same_origin(url: str, base_url: str) -> bool:
     return (u.scheme, u.netloc) == (b.scheme, b.netloc)
 
 
+# Per-element enumeration is bounded: element_handle.evaluate() has NO default Playwright
+# timeout, so a single element whose DOM state stalls the JS can hang the whole exploration
+# forever (observed live on a real target). Each element is capped and skipped on timeout/error
+# so enumeration always completes — a menu missing one weird element is fine; a hung run is not.
+log = structlog.get_logger()
+_ELEMENT_ENUM_TIMEOUT_S = 5.0
+
+
+async def _describe_element(h, i: int, page, base_url: str) -> tuple[dict, dict | None]:  # noqa: ANN001
+    """Build one menu entry (+ optional in-origin candidate) for a single element handle."""
+    role = await h.get_attribute("role")
+    if not role:
+        role = (await h.evaluate("e => e.tagName.toLowerCase()")) or "element"
+    label_raw = (await h.inner_text()) or (await h.get_attribute("aria-label")) or ""
+    label = label_raw.strip()[:80]
+    href = await h.get_attribute("href")
+    entry: dict = {
+        "index": i,
+        "role": role,
+        "label": label,
+        # EXPL-09: full prioritized locator chain (data-testid→aria-label→role→text→xpath).
+        "locator_chain": await extract_locator_chain(h),
+    }
+    candidate: dict | None = None
+    if href:
+        absolute = urljoin(page.url, href)
+        entry["url"] = absolute
+        if _same_origin(absolute, base_url):
+            candidate = {"key": page_key(absolute), "url": absolute, "label": label}
+    return entry, candidate
+
+
 async def enumerate_actions(page, base_url: str) -> tuple[list[dict], list[dict]]:  # noqa: ANN001
     """Build the constrained menu + the in-origin frontier candidates from the live page.
 
     Returns (menu, candidates):
       - menu: [{index, role, label, url?, locator_chain}] — the LLM picks an index (D-02).
       - candidates: [{key, url, label}] for in-origin a[href] targets (H-2 frontier feed).
+
+    Each element's read is bounded by `_ELEMENT_ENUM_TIMEOUT_S`; an element that times out or
+    errors is SKIPPED (never blocks the run) — see the module note above.
     """
     handles = await page.query_selector_all(_CANDIDATE_SELECTOR)
     menu: list[dict] = []
     candidates: list[dict] = []
     for i, h in enumerate(handles):
-        role = await h.get_attribute("role")
-        if not role:
-            role = (await h.evaluate("e => e.tagName.toLowerCase()")) or "element"
-        label_raw = (await h.inner_text()) or (await h.get_attribute("aria-label")) or ""
-        label = label_raw.strip()[:80]
-        href = await h.get_attribute("href")
-        entry: dict = {
-            "index": i,
-            "role": role,
-            "label": label,
-            # EXPL-09: full prioritized locator chain (data-testid→aria-label→role→text→xpath).
-            "locator_chain": await extract_locator_chain(h),
-        }
-        if href:
-            absolute = urljoin(page.url, href)
-            entry["url"] = absolute
-            if _same_origin(absolute, base_url):
-                candidates.append(
-                    {"key": page_key(absolute), "url": absolute, "label": label}
-                )
+        try:
+            entry, candidate = await asyncio.wait_for(
+                _describe_element(h, i, page, base_url), timeout=_ELEMENT_ENUM_TIMEOUT_S
+            )
+        except (TimeoutError, Exception) as exc:  # noqa: BLE001 -- skip un-enumerable elements
+            log.info("enumerate_element_skipped", index=i, error=str(exc)[:200])
+            continue
         menu.append(entry)
+        if candidate is not None:
+            candidates.append(candidate)
     return menu, candidates
 
 
