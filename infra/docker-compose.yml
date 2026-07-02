@@ -332,6 +332,11 @@ services:
     ports:
       - "7687:7687" # Bolt (host-side neo4j_session fixture connects here)
       - "7474:7474" # HTTP browser / healthcheck
+    volumes:
+      # Durable graph store: without this the discovered knowledge graph is lost on any
+      # `compose down`/recreate of this container (it only survived plain restarts via the
+      # writable layer). Named volume makes the graph persist across teardown like pgdata.
+      - neo4jdata:/data
 
   rabbitmq:
     image: rabbitmq:4-management
@@ -463,3 +468,4 @@ services:
 
 volumes:
   pgdata:
+  neo4jdata: # durable knowledge-graph store (neo4j /data) — survives compose down/recreate
