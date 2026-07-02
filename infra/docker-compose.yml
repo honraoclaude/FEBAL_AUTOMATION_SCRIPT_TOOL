@@ -44,6 +44,11 @@ services:
   api:
     build: ../apps/api
     mem_limit: 1g
+    # LOCAL DEV command override (D-06): the image CMD is the PRODUCTION `--workers 2` (for GHCR/K8s).
+    # For local compose we run a SINGLE-process `--reload` server — the intended dev loop (the image
+    # itself notes dev uses a --reload override) — which also frees ~0.45 GB so the in-container
+    # Chromium the explorer launches fits under the 1 GB mem_limit (a 2-worker api + Chromium OOMs it).
+    command: ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"]
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
